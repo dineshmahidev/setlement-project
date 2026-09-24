@@ -1,0 +1,48 @@
+# Secrets / env
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+auth.json
+
+# Dependencies / build
+node_modules/
+vendor/
+dist/
+build/
+public/build/
+public/hot
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Laravel runtime
+backend/storage/*.key
+backend/storage/pail
+backend/storage/logs/*
+!backend/storage/logs/.gitignore
+backend/bootstrap/cache/*
+!backend/bootstrap/cache/.gitignore
+backend/database/*.sqlite
+.phpunit.result.cache
+.phpunit.cache/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+
+# Local assets (not app source)
+*.jpg
+*.jpeg
+*.png.local
+
+# Spec (optional local) — keep out of public repo if secret
+# SVMA_Agro_Master_Development_Spec.md
