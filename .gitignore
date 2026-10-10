@@ -19,14 +19,10 @@ yarn-debug.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Backend lives in setlement-project-backend repo
+/backend/
+
 # Laravel runtime
-backend/storage/*.key
-backend/storage/pail
-backend/storage/logs/*
-!backend/storage/logs/.gitignore
-backend/bootstrap/cache/*
-!backend/bootstrap/cache/.gitignore
-backend/database/*.sqlite
 .phpunit.result.cache
 .phpunit.cache/
 
