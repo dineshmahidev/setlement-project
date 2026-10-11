@@ -32,6 +32,7 @@ export default function Items() {
       columns={[
         { key: 'code', label: 'Code' },
         { key: 'name', label: 'Name' },
+        { key: 'material_type', label: 'Material Type' },
         { key: 'category', label: 'Category', render: (r) => r.category?.name },
         { key: 'unit', label: 'Unit', render: (r) => r.unit?.code },
         { key: 'min_stock_level', label: 'Min Stock', align: 'right' },
@@ -41,10 +42,25 @@ export default function Items() {
       fields={[
         { name: 'code', label: 'Item Code', required: true },
         { name: 'name', label: 'Item Name', required: true },
+        {
+          name: 'material_type',
+          label: 'Material Type',
+          type: 'select',
+          default: 'Raw',
+          options: [
+            { value: 'Raw', label: 'Raw' },
+            { value: 'Boiled', label: 'Boiled' },
+            { value: 'Silky', label: 'Silky' },
+            { value: 'Brown', label: 'Brown' },
+            { value: 'Other', label: 'Other' },
+          ],
+        },
+        { name: 'default_oil_pct', label: 'Default Oil %', type: 'number', step: '0.01' },
         { name: 'category_id', label: 'Category', type: 'select', options: categories },
         { name: 'unit_id', label: 'Unit', type: 'select', options: units },
         { name: 'min_stock_level', label: 'Min Stock Level', type: 'number', step: '0.001' },
         { name: 'max_stock_level', label: 'Max Stock Level', type: 'number', step: '0.001' },
+        { name: 'description', label: 'Description', type: 'textarea' },
         {
           name: 'status',
           label: 'Status',

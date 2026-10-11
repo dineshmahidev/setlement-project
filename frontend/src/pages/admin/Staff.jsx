@@ -22,7 +22,7 @@ const empty = {
   role_id: '',
   default_branch_id: '',
   branch_ids: [],
-  status: 'ACTIVE',
+  status: 'active',
 }
 
 export default function Staff() {
@@ -65,9 +65,8 @@ export default function Staff() {
       api.get('/roles').catch(() => ({ data: [] })),
       api.get('/branches?per_page=100').catch(() => ({ data: [] })),
     ]).then(([r, b]) => {
-      setRoles(Array.isArray(r.data) ? r.data : r.data.data || [])
-      const bl = Array.isArray(b.data) ? b.data : b.data.data || []
-      setBranches(bl)
+      setRoles(r.data?.data?.roles || r.data?.roles || extractList(r))
+      setBranches(extractList(b))
     })
   }, [])
 

@@ -37,7 +37,7 @@ export default function Roles() {
     setLoading(true)
     try {
       const res = await api.get('/roles')
-      setRoles(Array.isArray(res.data) ? res.data : res.data.data || [])
+      setRoles(res.data?.data?.roles || res.data?.roles || extractList(res))
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Failed to load roles'))
       setRoles([])

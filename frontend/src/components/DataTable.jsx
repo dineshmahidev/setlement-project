@@ -3,20 +3,20 @@ import Spinner from './Spinner'
 
 export function Table({ children, className = '' }) {
   return (
-    <div className={`overflow-x-auto rounded-lg border border-slate-200 bg-white ${className}`}>
-      <table className="min-w-full text-left text-sm">{children}</table>
+    <div className={`overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ${className}`}>
+      <table className="min-w-full text-left text-xs">{children}</table>
     </div>
   )
 }
 
 export function THead({ columns }) {
   return (
-    <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+    <thead className="bg-gradient-to-r from-[#071426] via-[#0D2440] to-[#071426] text-[11px] uppercase tracking-widest text-slate-200 border-b border-slate-800">
       <tr>
         {columns.map((c, i) => (
           <th
             key={c.key || i}
-            className={`px-3 py-2.5 font-medium ${c.align === 'right' ? 'text-right' : ''} ${c.className || ''}`}
+            className={`px-4 py-3.5 font-black text-slate-200 ${c.align === 'right' ? 'text-right' : ''} ${c.className || ''}`}
             style={c.width ? { width: c.width } : undefined}
           >
             {c.label ?? c}
@@ -33,7 +33,12 @@ export function TBody({ children }) {
 
 export function Tr({ children, onClick }) {
   return (
-    <tr className={`text-slate-700 ${onClick ? 'cursor-pointer hover:bg-slate-50' : 'hover:bg-slate-50/60'}`} onClick={onClick}>
+    <tr
+      className={`text-slate-700 transition-colors duration-150 even:bg-slate-50/30 ${
+        onClick ? 'cursor-pointer hover:bg-amber-50/50' : 'hover:bg-slate-50/80'
+      }`}
+      onClick={onClick}
+    >
       {children}
     </tr>
   )
@@ -41,7 +46,7 @@ export function Tr({ children, onClick }) {
 
 export function Td({ children, className = '', align = 'left' }) {
   return (
-    <td className={`px-3 py-2.5 text-sm ${align === 'right' ? 'text-right tabular-nums' : ''} ${className}`}>
+    <td className={`px-4 py-3 text-xs font-medium text-slate-700 ${align === 'right' ? 'text-right tabular-nums font-semibold' : ''} ${className}`}>
       {children ?? '—'}
     </td>
   )
@@ -50,15 +55,16 @@ export function Td({ children, className = '', align = 'left' }) {
 export function DataTable({ columns, rows, loading, emptyTitle, emptyMessage, onRowClick, rowKey = 'id', actions }) {
   if (loading) {
     return (
-      <div className="flex justify-center py-14">
-        <Spinner className="h-7 w-7" />
+      <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
+        <Spinner className="h-8 w-8 text-[#C9A227] mb-2" />
+        <span className="text-xs font-semibold text-slate-400">Loading records...</span>
       </div>
     )
   }
 
   if (!rows || rows.length === 0) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white">
+      <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-2xs">
         <EmptyState title={emptyTitle} message={emptyMessage} />
       </div>
     )
@@ -88,3 +94,5 @@ export function DataTable({ columns, rows, loading, emptyTitle, emptyMessage, on
     </Table>
   )
 }
+
+export default DataTable

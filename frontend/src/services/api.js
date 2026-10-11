@@ -1,6 +1,38 @@
 import axios from 'axios'
 
-export const API_BASE = '/api'
+const PRODUCTION_API = 'https://api.shrieelaxmi.in/api'
+
+function trimSlash(url) {
+  return String(url || '').trim().replace(/\/+$/, '')
+}
+
+function isLocalHostname(hostname) {
+  if (!hostname) return true
+  if (['localhost', '127.0.0.1', '::1', '[::1]', '0.0.0.0'].includes(hostname)) return true
+  if (hostname.endsWith('.local')) return true
+  return /^192\.168\./.test(hostname) || /^10\./.test(hostname) || /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
+}
+
+function resolveBaseUrl() {
+  const forced = trimSlash(import.meta.env.VITE_API_BASE_URL)
+  if (forced) return forced
+
+  const hostname = typeof window === 'undefined' ? '' : window.location.hostname
+  const local = isLocalHostname(hostname)
+
+  // Dev server proxies /api -> local Laravel (see vite.config.js)
+  if (import.meta.env.DEV && local) return '/api'
+
+  if (local) {
+    const localBase = trimSlash(import.meta.env.VITE_LOCAL_API_URL)
+    if (localBase) return localBase
+    return `http://${hostname || '127.0.0.1'}:8000/api`
+  }
+
+  return PRODUCTION_API
+}
+
+export const API_BASE = resolveBaseUrl()
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -11,14 +43,41 @@ export function getToken() {
   return localStorage.getItem('token')
 }
 
+export function getCompanyId() {
+  return localStorage.getItem('company_id')
+}
+
+export function setCompanyId(companyId) {
+  if (companyId) localStorage.setItem('company_id', String(companyId))
+  else localStorage.removeItem('company_id')
+}
+
 export function setToken(token) {
   if (token) localStorage.setItem('token', token)
   else localStorage.removeItem('token')
 }
 
+function companyHeaders() {
+  const headers = {}
+  const branchId = localStorage.getItem('branch_id')
+  const companyId = getCompanyId()
+  if (branchId) headers['X-Branch-Id'] = branchId
+  if (companyId) headers['X-Company-Id'] = companyId
+  return headers
+}
+
+/** Headers every API call must carry (auth + company + branch scope). */
+export function requestHeaders(extra = {}) {
+  const headers = { ...companyHeaders(), ...extra }
+  const token = getToken()
+  if (token) headers.Authorization = `Bearer ${token}`
+  return headers
+}
+
 api.interceptors.request.use((config) => {
   const token = getToken()
   if (token) config.headers.Authorization = `Bearer ${token}`
+  Object.assign(config.headers, companyHeaders())
   return config
 })
 
@@ -47,11 +106,15 @@ export function apiErrorMessage(error, fallback = 'Something went wrong') {
   return error?.message || fallback
 }
 
-function apiUrl(path) {
-  if (path.startsWith('http')) return path
-  if (path.startsWith('/api')) return path
-  if (path.startsWith('/')) return `${API_BASE}${path}`
-  return `${API_BASE}/${path}`
+export function apiUrl(path) {
+  const p = String(path || '')
+  if (/^https?:\/\//i.test(p)) return p
+  const base = API_BASE.replace(/\/+$/, '')
+  const rest = p.startsWith('/') ? p : `/${p}`
+  // Tolerate callers that already prefix "/api"
+  const basePath = base.slice(base.lastIndexOf('/'))
+  const stripped = rest === basePath ? '' : rest.startsWith(`${basePath}/`) ? rest.slice(basePath.length) : rest
+  return `${base}${stripped}`
 }
 
 function filenameFromResponse(res, fallback) {
@@ -100,9 +163,8 @@ function saveBlob(blob, filename, forcePdf = false) {
 }
 
 async function fetchBlob(path) {
-  const token = getToken()
   const res = await axios.get(apiUrl(path), {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: requestHeaders(),
     responseType: 'blob',
     timeout: 60000,
   })

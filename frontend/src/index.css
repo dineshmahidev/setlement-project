@@ -1,32 +1,99 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-heading: 'DM Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Typography scale (Lovable-inspired, 1.25 ratio) */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+
+  /* Brand palette (retained) */
+  --color-navy-950: #051a2d;
+  --color-navy-900: #07233b;
+  --color-navy-800: #0b3558;
+  --color-navy-700: #0f4675;
+  --color-navy-600: #145994;
+  --color-gold-600: #976508;
+  --color-gold-500: #b37d14;
+  --color-gold-400: #c59b27;
+  --color-gold-300: #d69e2e;
+  --color-gold-100: #f7eedb;
+  --color-cream-50: #fdfbf7;
+  --color-cream-100: #fbf5ea;
+  --color-highlight: #faedcd;
 }
 
-html,
-body,
-#root {
-  height: 100%;
-}
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
 
-body {
-  margin: 0;
-  font-family: var(--font-sans);
-  background: #f1f5f9;
-  color: #0f172a;
-  -webkit-font-smoothing: antialiased;
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-weight: 400;
+    line-height: 1.5;
+    font-size: 1rem;
+    background: #f8fafc;
+    color: #0f172a;
+  }
+
+  /* Headings: weight 600, tight letter-spacing (-0.025em) */
+  h1, h2, h3, h4, h5, h6,
+  .font-heading {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+  }
+
+  h1 { font-size: 2.25rem; }
+  h2 { font-size: 1.875rem; }
+  h3 { font-size: 1.5rem; }
+  h4 { font-size: 1.25rem; }
+  h5 { font-size: 1.125rem; }
+  h6 { font-size: 1rem; }
+
+  /* Buttons & navigation: weight 500 */
+  button,
+  [role="button"],
+  nav a,
+  nav button {
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  input,
+  select,
+  textarea {
+    font: inherit;
+    font-weight: 400;
+  }
+
+  /* Numeric/code spans stay monospace-consistent */
+  code, kbd, samp, pre {
+    font-family: var(--font-mono);
+  }
 }
 
 * {
   box-sizing: border-box;
-}
-
-input,
-select,
-textarea,
-button {
-  font: inherit;
 }
 
 ::-webkit-scrollbar {

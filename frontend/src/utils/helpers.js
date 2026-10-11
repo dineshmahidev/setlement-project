@@ -9,32 +9,93 @@ export function formatMoney(value, currency = 'INR') {
       minimumFractionDigits: 2,
     })
   } catch {
-    return n.toFixed(2)
+    return `₹${n.toFixed(2)}`
   }
 }
 
 export function formatNumber(value, digits = 3) {
   const n = Number(value || 0)
   if (Number.isNaN(n)) return '0'
-  return n.toLocaleString('en-IN', { maximumFractionDigits: digits })
+  try {
+    return n.toLocaleString('en-IN', { maximumFractionDigits: digits })
+  } catch {
+    return String(n)
+  }
 }
 
 export function formatDate(value) {
   if (!value) return '—'
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return String(value)
-  return d.toLocaleDateString('en-GB')
+  if (typeof value === 'string') {
+    const clean = value.trim()
+    // Standard YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) {
+      const [y, m, d] = clean.split('-')
+      return `${d}/${m}/${y}`
+    }
+    // YYYY-MM-DD HH:MM:SS or ISO
+    if (/^\d{4}-\d{2}-\d{2}/.test(clean)) {
+      const parts = clean.split('T')[0].split(' ')[0].split('-')
+      if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`
+      }
+    }
+  }
+  try {
+    const d = new Date(value)
+    if (Number.isNaN(d.getTime())) return String(value)
+    return d.toLocaleDateString('en-GB')
+  } catch {
+    return String(value || '—')
+  }
 }
 
 export function formatDateTime(value) {
   if (!value) return '—'
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return String(value)
-  return d.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })
+  try {
+    const str = typeof value === 'string' ? value.replace(' ', 'T') : value
+    const d = new Date(str)
+    if (Number.isNaN(d.getTime())) return String(value)
+    return d.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    })
+  } catch {
+    return String(value || '—')
+  }
 }
 
 export function today() {
-  return new Date().toISOString().slice(0, 10)
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+export function monthStart() {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  return `${y}-${m}-01`
+}
+
+export function extractList(res) {
+  if (!res) return []
+  if (Array.isArray(res)) return res
+  if (Array.isArray(res.data)) return res.data
+  if (Array.isArray(res.data?.data)) return res.data.data
+  if (Array.isArray(res.data?.data?.roles)) return res.data.data.roles
+  if (Array.isArray(res.data?.roles)) return res.data.roles
+  if (Array.isArray(res.data?.data?.branches)) return res.data.data.branches
+  if (Array.isArray(res.data?.branches)) return res.data.branches
+  if (Array.isArray(res.data?.data?.data)) return res.data.data.data
+  if (Array.isArray(res.data?.items)) return res.data.items
+  if (Array.isArray(res.items)) return res.items
+  return []
 }
 
 export function qs(params = {}) {
