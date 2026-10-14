@@ -52,7 +52,7 @@ export default function LaxmiTradersPage() {
             </div>
             <div className="space-y-2">
               <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-amber-500/20 backdrop-blur-md px-3.5 py-1 text-xs font-bold text-amber-300 uppercase tracking-wider">
-                LAXMI GROUP BUSINESS VERTICAL
+                SHRIEE LAXMI GROUP BUSINESS VERTICAL
               </div>
               <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight">
                 {cms?.company_name || 'LAXMI TRADERS'}

@@ -11,13 +11,13 @@ export default function AboutPage() {
       <section className="relative py-16 bg-gradient-to-b from-[#F3F6FD] via-[#F8FAFD] to-[#FAFAFC] border-b border-slate-200/80 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
           <span className="text-xs font-black text-[#C9A227] uppercase tracking-widest block bg-amber-50 inline-block px-3 py-1 rounded-full border border-amber-200">
-            ABOUT LAXMI GROUP
+            ABOUT SHRIEE LAXMI GROUP
           </span>
           <h1 className="text-4xl sm:text-6xl font-black text-[#071426]">
             Building Trust. Growing Together.
           </h1>
           <p className="text-sm sm:text-base text-slate-600 max-w-2xl leading-relaxed">
-            Laxmi Group is a premier corporate business group headquartered in Tiruchirappalli, Tamil Nadu, operating across trading, distribution, and feed-related business segments.
+            Shriee Laxmi Group is a premier corporate business group headquartered in Tiruchirappalli, Tamil Nadu, operating across trading, distribution, and feed-related business segments.
           </p>
         </div>
       </section>
@@ -34,7 +34,7 @@ export default function AboutPage() {
                 Dependable Sourcing, Customer Commitment & Sustainable Growth
               </h2>
               <p className="text-sm text-slate-600 leading-relaxed">
-                At Laxmi Group, our business operations are anchored in transparency, operational reliability, and customer satisfaction. We connect regional producers, suppliers, and buyers with structured logistics and dependable service.
+                At Shriee Laxmi Group, our business operations are anchored in transparency, operational reliability, and customer satisfaction. We connect regional producers, suppliers, and buyers with structured logistics and dependable service.
               </p>
               <div className="pt-2">
                 <button

@@ -1,9 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { MapPin, ExternalLink, Navigation } from 'lucide-react'
+import api from '../../services/api'
 
-const LOCATIONS = [
+const DEFAULT_LOCATIONS = [
   {
     id: 'laxmi',
+    slug: 'laxmi-traders',
     tag: 'TRADING HUB',
     name: 'LAXMI TRADERS',
     address: '103, Bharathiyar Street, Ariyamangalam, Tiruchirappalli, Tamil Nadu – 620010',
@@ -13,6 +15,7 @@ const LOCATIONS = [
   },
   {
     id: 'sm',
+    slug: 'sm-traders',
     tag: 'COMMERCIAL SUPPLY',
     name: 'S M TRADERS',
     address: '103/A, Bharathiyar Street, Ariyamangalam, Tiruchirappalli, Tamil Nadu – 620010',
@@ -22,6 +25,7 @@ const LOCATIONS = [
   },
   {
     id: 'shriee',
+    slug: 'shriee-feeds',
     tag: 'FEED OPERATIONS',
     name: 'SHRIEE FEEDS',
     address: 'Door No. 3/1044, Nandanar Metu Mill New Colony, Manapparai / Usilampatti, Tiruchirappalli – 621312',
@@ -32,7 +36,36 @@ const LOCATIONS = [
 ]
 
 export default function OurPresencePage() {
-  const [selectedHub, setSelectedHub] = useState(LOCATIONS[0])
+  const [locations, setLocations] = useState(DEFAULT_LOCATIONS)
+  const [selectedHub, setSelectedHub] = useState(DEFAULT_LOCATIONS[0])
+
+  useEffect(() => {
+    api.get('/public/cms')
+      .then((res) => {
+        const companies = res.data?.data || []
+        if (Array.isArray(companies) && companies.length > 0) {
+          setLocations((prev) =>
+            prev.map((loc) => {
+              const matched = companies.find((c) => c.slug === loc.slug || c.code?.toLowerCase() === loc.id.toLowerCase())
+              if (matched) {
+                return {
+                  ...loc,
+                  address: matched.address || loc.address,
+                  mapUrl: matched.map_url || loc.mapUrl,
+                }
+              }
+              return loc
+            })
+          )
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    const updated = locations.find((l) => l.id === selectedHub.id)
+    if (updated) setSelectedHub(updated)
+  }, [locations, selectedHub.id])
 
   return (
     <div className="pt-24 space-y-0 bg-[#FAFAFC] text-slate-800">

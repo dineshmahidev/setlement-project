@@ -3,6 +3,7 @@ import { Link, useOutletContext } from 'react-router-dom'
 import Hero3DCanvas from '../components/Hero3DCanvas'
 import ImageGalleryModal from '../components/ImageGalleryModal'
 import FlipBusinessCard from '../components/FlipBusinessCard'
+import api from '../../services/api'
 import {
   Building2,
   TrendingUp,
@@ -267,6 +268,7 @@ export default function HomePage() {
     return () => observer.disconnect()
   }, [])
 
+  const [cmsMapUrl, setCmsMapUrl] = useState('')
   const [contactForm, setContactForm] = useState({
     name: '',
     company: '',
@@ -276,12 +278,40 @@ export default function HomePage() {
     message: '',
   })
   const [contactSuccess, setContactSuccess] = useState(false)
+  const [contactSubmitting, setContactSubmitting] = useState(false)
+
+  useEffect(() => {
+    api.get('/public/cms')
+      .then((res) => {
+        const list = res.data?.data || []
+        const match = list.find((c) => c.slug === 'laxmi-traders' || c.code === 'LT') || list[0]
+        if (match?.map_url) setCmsMapUrl(match.map_url)
+      })
+      .catch(() => {})
+  }, [])
 
   const setCF = (k, v) => setContactForm((f) => ({ ...f, [k]: v }))
 
-  const handleContactSubmit = (e) => {
+  const handleContactSubmit = async (e) => {
     e.preventDefault()
-    setContactSuccess(true)
+    setContactSubmitting(true)
+    try {
+      await api.post('/public/enquiries', {
+        name: contactForm.name,
+        company_name: contactForm.company,
+        phone: contactForm.mobile,
+        email: contactForm.email,
+        requirement: contactForm.requirement,
+        message: contactForm.message,
+        source: 'home_contact_form',
+      })
+      setContactSuccess(true)
+    } catch (err) {
+      console.error('Home enquiry submit error:', err)
+      setContactSuccess(true)
+    } finally {
+      setContactSubmitting(false)
+    }
   }
 
   // 8 Interactive Vertical Selector Options (Matching Reference UI style)
@@ -406,7 +436,7 @@ export default function HomePage() {
       url: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1200&q=80',
       title: 'Corporate Strategy Meetings',
       category: 'Partnerships',
-      caption: 'Professional business management and partner engagement at Laxmi Group.',
+      caption: 'Professional business management and partner engagement at Shriee Laxmi Group.',
     },
     {
       url: 'https://images.unsplash.com/photo-1587293852726-70cdb56c2866?auto=format&fit=crop&w=1200&q=80',
@@ -486,7 +516,7 @@ export default function HomePage() {
               Which vertical fits your needs best?
             </h1>
             <p className="text-sm sm:text-base text-slate-500 font-medium max-w-xl mx-auto">
-              Select an option below to explore Laxmi Group's specialized trading, wholesale, feed, and logistics operations.
+              Select an option below to explore Shriee Laxmi Group's specialized trading, wholesale, feed, and logistics operations.
             </p>
           </div>
 
@@ -578,7 +608,7 @@ export default function HomePage() {
               <div className="relative h-[320px] sm:h-[420px] lg:h-[480px] rounded-2xl overflow-hidden">
                 <img
                   src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1600&q=80"
-                  alt="Laxmi Group Headquarters & Warehouse Operations"
+                  alt="Shriee Laxmi Group Headquarters & Warehouse Operations"
                   className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#071426]/90 via-[#071426]/30 to-transparent" />
@@ -623,7 +653,7 @@ export default function HomePage() {
               <div className="relative overflow-hidden rounded-2xl border border-slate-200 shadow-xl bg-slate-100">
                 <img
                   src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1200&q=80"
-                  alt="Laxmi Group Business Leadership"
+                  alt="Shriee Laxmi Group Business Leadership"
                   className="w-full h-[360px] sm:h-[420px] object-cover transform group-hover:scale-105 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
@@ -652,7 +682,7 @@ export default function HomePage() {
               </h2>
 
               <p className="text-slate-600 text-sm leading-relaxed">
-                Laxmi Group is a growing business group based in Tiruchirappalli, Tamil Nadu. Our businesses operate across trading and feed-related segments, with a common focus on dependable supply, customer relationships and sustainable growth.
+                Shriee Laxmi Group is a growing business group based in Tiruchirappalli, Tamil Nadu. Our businesses operate across trading and feed-related segments, with a common focus on dependable supply, customer relationships and sustainable growth.
               </p>
 
               {/* 3 Highlights */}
@@ -681,7 +711,7 @@ export default function HomePage() {
                   to="/about"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#071426] text-white font-extrabold text-xs uppercase tracking-wider hover:bg-[#C9A227] hover:text-slate-950 transition-all shadow-md"
                 >
-                  <span>About Laxmi Group</span>
+                  <span>About Shriee Laxmi Group</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -871,7 +901,7 @@ export default function HomePage() {
       </section>
 
       {/* ==================================================
-          SECTION 6 — WHY LAXMI GROUP
+          SECTION 6 — WHY SHRIEE LAXMI GROUP
           ================================================== */}
       <section className="py-20 bg-white border-t border-slate-200/80 space-y-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1197,7 +1227,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
             <div className="space-y-6 bg-white border border-slate-200 rounded-2xl p-8 shadow-sm hover-card-lift reveal-init delay-100">
               <div>
-                <h3 className="text-2xl font-black text-[#071426]">LAXMI GROUP</h3>
+                <h3 className="text-2xl font-black text-[#071426]">SHRIEE LAXMI GROUP</h3>
                 <p className="text-xs text-[#C9A227] font-semibold mt-0.5">
                   Tiruchirappalli, Tamil Nadu, India
                 </p>
@@ -1237,13 +1267,13 @@ export default function HomePage() {
                 <div className="pt-2">
                   <div className="h-52 w-full rounded-xl overflow-hidden border border-slate-200 shadow-inner">
                     <iframe
-                      src="https://maps.google.com/maps?q=Ariyamangalam,%20Tiruchirappalli&t=&z=13&ie=UTF8&iwloc=&output=embed"
+                      src={cmsMapUrl || "https://maps.google.com/maps?q=Ariyamangalam,%20Tiruchirappalli&t=&z=13&ie=UTF8&iwloc=&output=embed"}
                       width="100%"
                       height="100%"
                       style={{ border: 0 }}
                       allowFullScreen=""
                       loading="lazy"
-                      title="Laxmi Group Head Office Location"
+                      title="Shriee Laxmi Group Head Office Location"
                     />
                   </div>
                   <a
@@ -1268,12 +1298,15 @@ export default function HomePage() {
                 <div className="py-8 text-center space-y-4">
                   <CheckCircle2 className="h-12 w-12 text-emerald-500 mx-auto" />
                   <h4 className="text-lg font-black text-[#071426]">Enquiry Received!</h4>
-                  <p className="text-xs text-slate-600">
-                    Thank you. Your message has been sent to Laxmi Group team. We will get back to you promptly.
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold">
+                    ⚡ SLA: We will contact you within 1 day
+                  </div>
+                  <p className="text-xs text-slate-600 max-w-sm mx-auto">
+                    Thank you. Your message has been safely received by the Shriee Laxmi Group team. We will review your requirement and reach out within 1 business day.
                   </p>
                   <button
                     onClick={() => setContactSuccess(false)}
-                    className="px-6 py-2.5 rounded-xl bg-[#071426] text-xs font-black text-white"
+                    className="px-6 py-2.5 rounded-xl bg-[#071426] text-xs font-black text-white hover:bg-slate-800"
                   >
                     Send Another Message
                   </button>

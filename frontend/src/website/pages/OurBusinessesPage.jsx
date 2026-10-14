@@ -14,7 +14,7 @@ export default function OurBusinessesPage() {
           </span>
           <h1 className="text-4xl sm:text-6xl font-black text-[#071426]">Our Businesses</h1>
           <p className="text-sm sm:text-base text-slate-600 max-w-2xl leading-relaxed">
-            Discover the business entities forming Laxmi Group. Click or tap any card to flip between the company logo and the operations facility banner.
+            Discover the business entities forming Shriee Laxmi Group. Click or tap any card to flip between the company logo and the operations facility banner.
           </p>
         </div>
       </section>

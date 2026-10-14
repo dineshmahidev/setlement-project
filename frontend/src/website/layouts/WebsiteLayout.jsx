@@ -1,12 +1,18 @@
-import React, { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import EnquiryModal from '../components/EnquiryModal'
 import { MessageSquare } from 'lucide-react'
+import { trackPageVisit } from '../../services/trafficTracker'
 
 export default function WebsiteLayout() {
   const [enquiryOpen, setEnquiryOpen] = useState(false)
+  const location = useLocation()
+
+  useEffect(() => {
+    trackPageVisit(location.pathname)
+  }, [location.pathname])
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-800 font-sans selection:bg-[#C9A227] selection:text-white overflow-x-hidden w-full max-w-full">

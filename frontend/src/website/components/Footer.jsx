@@ -14,19 +14,27 @@ export default function Footer({ onOpenEnquiry }) {
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
               <img
-                src="/images/laxmi_horizontal_logo.jpg"
-                alt="Laxmi Group Agro Traders & Feeds"
-                className="h-12 w-auto object-contain rounded-md drop-shadow-md bg-white p-1"
+                src="/logos/shree_laxmi_transparent.png"
+                alt="Shriee Laxmi Group Agro Traders & Feeds"
+                className="h-12 w-auto object-contain drop-shadow-md"
                 onError={(e) => {
-                  e.currentTarget.src = '/logos/laxmi_traders_transparent.png'
+                  e.currentTarget.src = '/logos/shree_laxmi.png'
                 }}
               />
+              <div className="flex flex-col">
+                <span className="text-base font-black tracking-tight text-white leading-tight">
+                  SHRIEE LAXMI GROUP
+                </span>
+                <span className="text-[10px] font-bold text-[#E0BD55] tracking-wider uppercase">
+                  Agro Commodities & Feeds
+                </span>
+              </div>
             </div>
 
             <p className="text-sm text-slate-300/80 leading-relaxed max-w-md">
               "Building Trust. Growing Together."
               <br />
-              Laxmi Group is a premier business group based in Tiruchirappalli, Tamil Nadu, operating across trading, distribution, and feed-related business segments.
+              Shriee Laxmi Group is a premier business group based in Tiruchirappalli, Tamil Nadu, operating across trading, distribution, and feed-related business segments.
             </p>
 
             <div className="flex items-center gap-3 pt-2">
@@ -126,7 +134,7 @@ export default function Footer({ onOpenEnquiry }) {
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-[#C9A227] shrink-0 mt-0.5" />
                 <span>
-                  <strong>LAXMI GROUP</strong>
+                  <strong>SHRIEE LAXMI GROUP</strong>
                   <br />
                   Tiruchirappalli,
                   <br />
@@ -143,7 +151,7 @@ export default function Footer({ onOpenEnquiry }) {
 
         {/* Bottom Bar */}
         <div className="mt-12 pt-6 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">
-          <p>© 2026 Laxmi Group. All Rights Reserved.</p>
+          <p>© 2026 Shriee Laxmi Group. All Rights Reserved.</p>
           <div className="flex items-center gap-6 text-[11px]">
             <Link to="/contact" className="hover:text-white transition-colors">
               Privacy Policy

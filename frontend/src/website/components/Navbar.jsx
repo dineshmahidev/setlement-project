@@ -40,16 +40,24 @@ export default function Navbar({ onOpenEnquiry }) {
           }`}
         >
           <div className="flex items-center justify-between">
-            {/* Horizontal Corporate Brand Logo */}
-            <Link to="/" className="flex items-center group shrink-0 pl-1">
+            {/* Corporate Brand Logo */}
+            <Link to="/" className="flex items-center gap-2.5 group shrink-0 pl-1">
               <img
-                src="/images/laxmi_horizontal_logo.jpg"
-                alt="Laxmi Group Agro Traders & Feeds"
-                className="h-10 sm:h-12 w-auto object-contain rounded-md transition-transform group-hover:scale-102 drop-shadow-xs"
+                src="/logos/shree_laxmi_transparent.png"
+                alt="Shriee Laxmi Group Agro Traders & Feeds"
+                className="h-10 sm:h-12 w-auto object-contain transition-transform group-hover:scale-105 drop-shadow-xs"
                 onError={(e) => {
-                  e.currentTarget.src = '/logos/laxmi_traders_transparent.png'
+                  e.currentTarget.src = '/logos/shree_laxmi.png'
                 }}
               />
+              <div className="flex flex-col">
+                <span className="text-sm sm:text-base font-black tracking-tight text-[#02492a] group-hover:text-emerald-900 leading-tight">
+                  SHRIEE LAXMI GROUP
+                </span>
+                <span className="text-[9px] sm:text-[10px] font-bold text-[#8C6E14] tracking-wider uppercase">
+                  Agro Commodities & Feeds
+                </span>
+              </div>
             </Link>
 
             {/* Desktop Nav Links (Clean readable typography over airy light-green gradient) */}
@@ -122,14 +130,24 @@ export default function Navbar({ onOpenEnquiry }) {
           <div className="fixed inset-y-0 right-0 w-full max-w-xs bg-white border-l border-slate-200 p-6 flex flex-col justify-between shadow-2xl z-50 overflow-y-auto">
             <div className="space-y-6">
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <img
-                  src="/images/laxmi_horizontal_logo.jpg"
-                  alt="Laxmi Group Logo"
-                  className="h-10 w-auto object-contain rounded-md"
-                  onError={(e) => {
-                    e.currentTarget.src = '/logos/laxmi_traders_transparent.png'
-                  }}
-                />
+                <div className="flex items-center gap-2">
+                  <img
+                    src="/logos/shree_laxmi_transparent.png"
+                    alt="Shriee Laxmi Group"
+                    className="h-9 w-auto object-contain"
+                    onError={(e) => {
+                      e.currentTarget.src = '/logos/shree_laxmi.png'
+                    }}
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black tracking-tight text-[#02492a]">
+                      SHRIEE LAXMI GROUP
+                    </span>
+                    <span className="text-[8px] font-bold text-[#8C6E14] uppercase">
+                      Agro & Feeds
+                    </span>
+                  </div>
+                </div>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
                   className="p-1.5 rounded-lg text-slate-500 hover:text-black hover:bg-slate-100"

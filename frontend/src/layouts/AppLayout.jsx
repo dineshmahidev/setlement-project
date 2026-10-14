@@ -26,10 +26,12 @@ import {
   Briefcase,
   Trash2,
   ShieldCheck,
+  TrendingUp,
 } from 'lucide-react'
 
 const SETTLEMENT_NAVIGATION = [
   { label: 'Dashboard', to: '/panel', icon: LayoutDashboard, perm: null, end: true },
+  { label: 'Leads & Traffic', to: '/panel/leads-traffic', icon: TrendingUp, perm: null },
   { label: 'Vendors', to: '/panel/vendors', icon: Users2, perm: 'vendors.view' },
   { label: 'Products', to: '/panel/products', icon: Package, perm: 'products.view' },
   { label: 'Invoices', to: '/panel/invoices', icon: Receipt, perm: null },
@@ -41,6 +43,7 @@ const MASTER_ADMIN_NAVIGATION = [
   { label: 'Godowns', to: '/panel/branches', icon: Building2 },
   { label: 'Companies', to: '/panel/companies', icon: Briefcase },
   { label: 'Website CMS', to: '/panel/cms', icon: Globe },
+  { label: 'Leads & Traffic', to: '/panel/leads-traffic', icon: TrendingUp },
   { label: 'Users', to: '/panel/users', icon: UserCheck },
   { label: 'Settings', to: '/panel/settings', icon: Settings },
   { label: 'Audit Logs', to: '/panel/audit-logs', icon: ShieldCheck },
@@ -60,7 +63,7 @@ const INVENTORY_NAVIGATION = [
   { id: 'ledger', label: 'Stock Ledger', to: '/panel/inventory?tab=ledger', icon: BookOpen, perm: 'inventory.view' },
 ]
 
-function SuperAdminBranchSelector({ branches, branchId, setBranchId, user, companyName = 'LAXMI GROUP' }) {
+function SuperAdminBranchSelector({ branches, branchId, setBranchId, user, companyName = 'SHRIEE LAXMI GROUP' }) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const dropdownRef = useRef(null)

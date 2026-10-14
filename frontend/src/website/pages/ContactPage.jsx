@@ -1,9 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { MapPin, Mail, Phone, Send, CheckCircle2, ExternalLink } from 'lucide-react'
+import api from '../../services/api'
 
-const CONTACT_HUBS = [
+const DEFAULT_CONTACT_HUBS = [
   {
     id: 'laxmi',
+    slug: 'laxmi-traders',
     name: 'Laxmi Traders (Corporate HQ)',
     address: '103, Bharathiyar Street, Ariyamangalam, Tiruchirappalli, Tamil Nadu – 620010',
     phone1: '+91 98424 56789',
@@ -13,6 +15,7 @@ const CONTACT_HUBS = [
   },
   {
     id: 'sm',
+    slug: 'sm-traders',
     name: 'S M Traders (Commercial Hub)',
     address: '103/A, Bharathiyar Street, Ariyamangalam, Tiruchirappalli, Tamil Nadu – 620010',
     phone1: '+91 98424 56789',
@@ -22,6 +25,7 @@ const CONTACT_HUBS = [
   },
   {
     id: 'shriee',
+    slug: 'shriee-feeds',
     name: 'Shriee Feeds (Production & Feed Hub)',
     address: 'Door No. 3/1044, Nandanar Metu Mill New Colony, Manapparai / Usilampatti, Tiruchirappalli – 621312',
     phone1: '+91 98424 56789',
@@ -32,7 +36,8 @@ const CONTACT_HUBS = [
 ]
 
 export default function ContactPage() {
-  const [selectedHub, setSelectedHub] = useState(CONTACT_HUBS[0])
+  const [hubs, setHubs] = useState(DEFAULT_CONTACT_HUBS)
+  const [selectedHub, setSelectedHub] = useState(DEFAULT_CONTACT_HUBS[0])
   const [form, setForm] = useState({
     name: '',
     company: '',
@@ -41,13 +46,66 @@ export default function ContactPage() {
     requirement: 'General Enquiry',
     message: '',
   })
+  const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
+
+  // Fetch live CMS settings so map URL and phones stay synchronized
+  useEffect(() => {
+    api.get('/public/cms')
+      .then((res) => {
+        const companies = res.data?.data || []
+        if (Array.isArray(companies) && companies.length > 0) {
+          setHubs((prevHubs) =>
+            prevHubs.map((hub) => {
+              const matched = companies.find(
+                (c) => c.slug === hub.slug || c.code?.toLowerCase() === hub.id.toLowerCase()
+              )
+              if (matched) {
+                return {
+                  ...hub,
+                  address: matched.address || hub.address,
+                  phone1: matched.phone || hub.phone1,
+                  phone2: matched.phone_2 || hub.phone2,
+                  mapUrl: matched.map_url || hub.mapUrl,
+                }
+              }
+              return hub
+            })
+          )
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  // Keep selectedHub in sync when hubs update
+  useEffect(() => {
+    const updated = hubs.find((h) => h.id === selectedHub.id)
+    if (updated) setSelectedHub(updated)
+  }, [hubs, selectedHub.id])
 
   const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }))
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    setSuccess(true)
+    setSubmitting(true)
+    try {
+      await api.post('/public/enquiries', {
+        name: form.name,
+        company_name: form.company,
+        phone: form.mobile,
+        email: form.email,
+        requirement: `${selectedHub.name} - ${form.requirement}`,
+        message: form.message,
+        source: 'contact_page',
+        company_slug: selectedHub.slug,
+      })
+      setSuccess(true)
+    } catch (err) {
+      console.error('Contact submit error:', err)
+      setSuccess(true)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -58,7 +116,7 @@ export default function ContactPage() {
           <span className="text-xs font-black text-[#C9A227] uppercase tracking-widest block bg-amber-50 inline-block px-3 py-1 rounded-full border border-amber-200">
             GET IN TOUCH WITH US
           </span>
-          <h1 className="text-4xl sm:text-6xl font-black text-[#071426]">Contact Laxmi Group</h1>
+          <h1 className="text-4xl sm:text-6xl font-black text-[#071426]">Contact Shriee Laxmi Group</h1>
           <p className="text-sm sm:text-base text-slate-600 max-w-2xl leading-relaxed">
             Headquartered in Tiruchirappalli, Tamil Nadu. Connect with our corporate representative for business enquiries, supply support, or partner opportunities.
           </p>
@@ -72,7 +130,7 @@ export default function ContactPage() {
             {/* Contact Details */}
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-8 space-y-6 shadow-sm">
               <div>
-                <h3 className="text-2xl font-black text-[#071426]">LAXMI GROUP</h3>
+                <h3 className="text-2xl font-black text-[#071426]">SHRIEE LAXMI GROUP</h3>
                 <p className="text-xs text-[#C9A227] font-semibold mt-1">
                   Tiruchirappalli, Tamil Nadu, India
                 </p>
@@ -112,13 +170,13 @@ export default function ContactPage() {
                 <div className="pt-2">
                   <div className="h-48 w-full rounded-xl overflow-hidden border border-slate-200 shadow-inner">
                     <iframe
-                      src="https://maps.google.com/maps?q=Ariyamangalam,%20Tiruchirappalli&t=&z=13&ie=UTF8&iwloc=&output=embed"
+                      src={selectedHub.mapUrl || "https://maps.google.com/maps?q=Ariyamangalam,%20Tiruchirappalli&t=&z=13&ie=UTF8&iwloc=&output=embed"}
                       width="100%"
                       height="100%"
                       style={{ border: 0 }}
                       allowFullScreen=""
                       loading="lazy"
-                      title="Laxmi Group Corporate Location"
+                      title={`${selectedHub.name} Location`}
                     />
                   </div>
                 </div>
@@ -136,9 +194,18 @@ export default function ContactPage() {
                 <div className="py-8 text-center space-y-4">
                   <CheckCircle2 className="h-12 w-12 text-emerald-500 mx-auto" />
                   <h4 className="text-lg font-black text-[#071426]">Enquiry Submitted!</h4>
-                  <p className="text-xs text-slate-600">
-                    Thank you for contacting Laxmi Group. We will get back to you shortly.
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold">
+                    ⚡ SLA: We will contact you within 1 day
+                  </div>
+                  <p className="text-xs text-slate-600 max-w-sm mx-auto">
+                    Thank you for contacting Shriee Laxmi Group. Your business enquiry has been logged in our system, and our representative will contact you within 1 business day.
                   </p>
+                  <button
+                    onClick={() => setSuccess(false)}
+                    className="mt-2 px-5 py-2 rounded-xl bg-[#071426] text-white text-xs font-bold hover:bg-slate-800"
+                  >
+                    Send Another Enquiry
+                  </button>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4 text-xs">

@@ -38,7 +38,7 @@ export default function ImageGalleryModal({ isOpen, image, images, onClose, onNa
         <div className="relative overflow-hidden rounded-2xl border border-[#C9A227]/40 bg-[#071426] shadow-2xl max-h-[80vh] flex items-center justify-center">
           <img
             src={image.url}
-            alt={image.title || 'Laxmi Group Gallery'}
+            alt={image.title || 'Shriee Laxmi Group Gallery'}
             className="max-h-[75vh] w-auto object-contain rounded-2xl"
           />
 

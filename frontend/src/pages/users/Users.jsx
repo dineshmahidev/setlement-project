@@ -401,7 +401,7 @@ export default function Users() {
                   const companyName =
                     u.companies && u.companies.length > 0
                       ? u.companies.map((c) => c.company_name).join(', ')
-                      : u.default_branch?.company?.company_name || 'Laxmi Group'
+                      : u.default_branch?.company?.company_name || 'Shriee Laxmi Group'
 
                   return (
                     <tr

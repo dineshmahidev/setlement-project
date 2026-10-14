@@ -2,7 +2,7 @@ import { cloneElement, isValidElement, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
-// Laxmi Group Corporate Website Imports
+// Shriee Laxmi Group Corporate Website Imports
 import WebsiteLayout from '../website/layouts/WebsiteLayout'
 import HomePage from '../website/pages/HomePage'
 import AboutPage from '../website/pages/AboutPage'
@@ -40,6 +40,7 @@ import Production from '../pages/inventory/Production'
 import Transfer from '../pages/inventory/Transfer'
 import Companies from '../pages/admin/Companies'
 import WebsiteCms from '../pages/cms/WebsiteCms'
+import LeadsTraffic from '../pages/leads/LeadsTraffic'
 import Trash from '../pages/trash/Trash'
 import Reports from '../pages/reports/Reports'
 import Users from '../pages/users/Users'
@@ -150,6 +151,7 @@ const panelChildren = [
   <Route key="inventory-transfer" path="inventory/transfer" element={<Transfer />} />,
   <Route key="vendor-ledger" path="vendor-ledger" element={<VendorLedger />} />,
   <Route key="reports" path="reports" element={<Reports />} />,
+  <Route key="leads-traffic" path="leads-traffic" element={<LeadsTraffic />} />,
 ]
 
 /** Keeps the URL in sync with the active company (/panel/:slug/...) and
@@ -170,7 +172,7 @@ export default function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* LAXMI GROUP Corporate Website Routes */}
+        {/* SHRIEE LAXMI GROUP Corporate Website Routes */}
         <Route path="/" element={<WebsiteLayout />}>
           <Route index element={<HomePage />} />
           <Route path="about" element={<AboutPage />} />
