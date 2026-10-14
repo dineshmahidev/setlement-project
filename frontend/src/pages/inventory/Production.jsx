@@ -21,19 +21,53 @@ function useMasterData() {
   const [items, setItems] = useState([])
   const [branches, setBranches] = useState([])
   const [lots, setLots] = useState([])
+
   useEffect(() => {
     Promise.all([
       api.get('/vendors?per_page=200').catch(() => ({ data: [] })),
-      api.get('/items?per_page=200').catch(() => ({ data: [] })),
+      api.get('/items?all=true').catch(() => api.get('/items?per_page=200').catch(() => ({ data: [] }))),
+      api.get('/products?all=true').catch(() => api.get('/products?per_page=200').catch(() => ({ data: [] }))),
       api.get('/branches?per_page=200').catch(() => ({ data: [] })),
       api.get('/lots?per_page=500&status=OPEN').catch(() => ({ data: [] })),
-    ]).then(([v, i, b, l]) => {
-      setVendors(extractList(v.data))
-      setItems(extractList(i.data))
-      setBranches(extractList(b.data))
-      setLots(extractList(l.data))
+    ]).then(([v, i, p, b, l]) => {
+      setVendors(extractList(v.data ?? v))
+
+      const rawItems = extractList(i.data ?? i)
+      const rawProducts = extractList(p.data ?? p)
+
+      const mergedItems = [
+        ...rawItems.map((item) => ({
+          ...item,
+          id: item.id,
+          name: item.name || item.item_name || item.product_name,
+          code: item.code || item.item_code,
+          unit_id: item.unit_id || item.unit?.id,
+          unit: item.unit,
+        })),
+        ...rawProducts
+          .filter(
+            (prod) =>
+              !rawItems.some(
+                (it) =>
+                  (it.name && it.name.toLowerCase() === (prod.product_name || prod.name || '').toLowerCase())
+              )
+          )
+          .map((prod) => ({
+            ...prod,
+            id: prod.id,
+            name: prod.product_name || prod.name,
+            code: prod.product_code || prod.code,
+            unit_id: prod.unit_id,
+            unit: prod.unit || { code: 'MT', name: 'Metric Ton' },
+          })),
+      ]
+
+      setItems(mergedItems)
+      setBranches(extractList(b.data ?? b))
+      setLots(extractList(l.data ?? l))
     })
   }, [])
+
   return { vendors, items, branches, lots }
 }
 
@@ -418,7 +452,7 @@ export default function Production() {
                 <option value="">Select…</option>
                 {items.map((i) => (
                   <option key={i.id} value={i.id}>
-                    {i.name}
+                    {i.name || i.product_name} {i.code ? `(${i.code})` : ''}
                   </option>
                 ))}
               </Select>

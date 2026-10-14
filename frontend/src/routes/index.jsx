@@ -80,7 +80,7 @@ function RequireSuperAdmin({ children }) {
 }
 
 function Guest({ children }) {
-  const { user, loading } = useAuth()
+  const { loading } = useAuth()
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#FAFAFC]">
@@ -88,7 +88,6 @@ function Guest({ children }) {
       </div>
     )
   }
-  if (user) return <Navigate to="/panel" replace />
   return children
 }
 

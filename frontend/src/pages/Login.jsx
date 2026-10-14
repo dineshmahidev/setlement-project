@@ -16,7 +16,7 @@ import {
 import { apiErrorMessage } from '../services/api'
 
 export default function Login() {
-  const { login } = useAuth()
+  const { user, login } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('admin@laxmitraders.com')
   const [password, setPassword] = useState('password')
@@ -204,6 +204,23 @@ export default function Login() {
                 </p>
               </div>
             </div>
+
+            {/* Active Session Indicator (Allows user to stay on login page or navigate) */}
+            {user && (
+              <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-3 text-xs flex items-center justify-between gap-2 shadow-xs">
+                <div className="min-w-0">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-amber-800">Active Session</div>
+                  <div className="font-semibold text-slate-900 truncate">{user.name} ({user.email})</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate('/panel')}
+                  className="shrink-0 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-1.5 rounded-lg text-xs transition shadow-xs cursor-pointer flex items-center gap-1"
+                >
+                  Dashboard <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
 
             {/* Error Message */}
             {error && (

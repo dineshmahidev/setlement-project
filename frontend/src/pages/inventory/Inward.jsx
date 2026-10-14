@@ -21,26 +21,63 @@ function useMasterData() {
   const [vendors, setVendors] = useState([])
   const [items, setItems] = useState([])
   const [branches, setBranches] = useState([])
+  const [units, setUnits] = useState([])
+
   useEffect(() => {
     Promise.all([
       api.get('/vendors?per_page=200').catch(() => ({ data: [] })),
-      api.get('/items?per_page=200').catch(() => ({ data: [] })),
+      api.get('/items?all=true').catch(() => api.get('/items?per_page=200').catch(() => ({ data: [] }))),
+      api.get('/products?all=true').catch(() => api.get('/products?per_page=200').catch(() => ({ data: [] }))),
       api.get('/branches?per_page=200').catch(() => ({ data: [] })),
-    ]).then(([v, i, b]) => {
-      setVendors(extractList(v.data))
-      setItems(extractList(i.data))
-      setBranches(extractList(b.data))
+      api.get('/units?all=true').catch(() => api.get('/units').catch(() => ({ data: [] }))),
+    ]).then(([v, i, p, b, u]) => {
+      setVendors(extractList(v.data ?? v))
+
+      const rawItems = extractList(i.data ?? i)
+      const rawProducts = extractList(p.data ?? p)
+
+      const mergedItems = [
+        ...rawItems.map((item) => ({
+          ...item,
+          id: item.id,
+          name: item.name || item.item_name || item.product_name,
+          code: item.code || item.item_code,
+          unit_id: item.unit_id || item.unit?.id,
+          unit: item.unit,
+        })),
+        ...rawProducts
+          .filter(
+            (prod) =>
+              !rawItems.some(
+                (it) =>
+                  (it.name && it.name.toLowerCase() === (prod.product_name || prod.name || '').toLowerCase())
+              )
+          )
+          .map((prod) => ({
+            ...prod,
+            id: prod.id,
+            name: prod.product_name || prod.name,
+            code: prod.product_code || prod.code,
+            unit_id: prod.unit_id,
+            unit: prod.unit || { code: 'MT', name: 'Metric Ton' },
+          })),
+      ]
+
+      setItems(mergedItems)
+      setBranches(extractList(b.data ?? b))
+      setUnits(extractList(u.data ?? u))
     })
   }, [])
-  return { vendors, items, branches }
+
+  return { vendors, items, branches, units }
 }
 
-const emptyItem = () => ({ item_id: '', lot_number: '', quantity: '', oil_pct: '', rate: '', amount: '' })
+const emptyItem = () => ({ item_id: '', lot_number: '', quantity: '', unit_id: '', oil_pct: '', rate: '', amount: '' })
 
 export default function Inward() {
   const toast = useToast()
   const { branchId, activeCompany } = useAuth()
-  const { vendors, items, branches } = useMasterData()
+  const { vendors, items, branches, units } = useMasterData()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('')
@@ -95,9 +132,15 @@ export default function Inward() {
   }
 
   function setItemField(idx, key, value) {
-    setFormItems((items) => {
-      const next = items.map((it, i) => (i === idx ? { ...it, [key]: value } : it))
+    setFormItems((itemsList) => {
+      const next = itemsList.map((it, i) => (i === idx ? { ...it, [key]: value } : it))
       const cur = next[idx]
+      if (key === 'item_id' && value) {
+        const matchedItem = items.find((x) => String(x.id) === String(value))
+        if (matchedItem) {
+          cur.unit_id = matchedItem.unit_id || matchedItem.unit?.id || ''
+        }
+      }
       if (key === 'quantity' || key === 'rate') {
         cur.amount = Number(cur.quantity || 0) * Number(cur.rate || 0)
       }
@@ -126,6 +169,7 @@ export default function Inward() {
           item_id: Number(it.item_id),
           lot_number: it.lot_number || null,
           quantity: Number(it.quantity),
+          unit_id: it.unit_id ? Number(it.unit_id) : null,
           oil_pct: it.oil_pct === '' ? null : Number(it.oil_pct),
           rate: it.rate === '' ? null : Number(it.rate),
           amount: it.amount === '' ? null : Number(it.amount),
@@ -297,6 +341,7 @@ export default function Inward() {
                     <th className="px-2 py-2 text-left">Item</th>
                     <th className="px-2 py-2 text-left">Lot No</th>
                     <th className="px-2 py-2 text-right">Qty</th>
+                    <th className="px-2 py-2 text-left w-24">Unit</th>
                     <th className="px-2 py-2 text-right">Oil %</th>
                     <th className="px-2 py-2 text-right">Rate</th>
                     <th className="px-2 py-2 text-right">Amount</th>
@@ -304,32 +349,54 @@ export default function Inward() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {formItems.map((it, idx) => (
-                    <tr key={idx}>
-                      <td className="px-2 py-1.5">
-                        <Select value={it.item_id} onChange={(e) => setItemField(idx, 'item_id', e.target.value)}>
-                          <option value="">Select…</option>
-                          {items.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
-                        </Select>
-                      </td>
-                      <td className="px-2 py-1.5"><Input value={it.lot_number} onChange={(e) => setItemField(idx, 'lot_number', e.target.value)} placeholder="LOT-1" /></td>
-                      <td className="px-2 py-1.5"><Input type="number" step="0.001" value={it.quantity} onChange={(e) => setItemField(idx, 'quantity', e.target.value)} className="text-right" /></td>
-                      <td className="px-2 py-1.5"><Input type="number" step="0.01" value={it.oil_pct} onChange={(e) => setItemField(idx, 'oil_pct', e.target.value)} className="text-right" /></td>
-                      <td className="px-2 py-1.5"><Input type="number" step="0.01" value={it.rate} onChange={(e) => setItemField(idx, 'rate', e.target.value)} className="text-right" /></td>
-                      <td className="px-2 py-1.5 text-right font-bold text-slate-800">{formatNumber(it.amount)}</td>
-                      <td className="px-2 py-1.5 text-center">
-                        {formItems.length > 1 && (
-                          <button type="button" onClick={() => setFormItems((f) => f.filter((_, i) => i !== idx))} className="text-rose-500 hover:text-rose-700">
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  {formItems.map((it, idx) => {
+                    const matchedItem = items.find((x) => String(x.id) === String(it.item_id))
+                    return (
+                      <tr key={idx}>
+                        <td className="px-2 py-1.5 min-w-[160px]">
+                          <Select value={it.item_id} onChange={(e) => setItemField(idx, 'item_id', e.target.value)}>
+                            <option value="">Select item…</option>
+                            {items.map((i) => (
+                              <option key={i.id} value={i.id}>
+                                {i.name || i.product_name} {i.code ? `(${i.code})` : ''}
+                              </option>
+                            ))}
+                          </Select>
+                        </td>
+                        <td className="px-2 py-1.5 min-w-[110px]"><Input value={it.lot_number} onChange={(e) => setItemField(idx, 'lot_number', e.target.value)} placeholder="LOT-1" /></td>
+                        <td className="px-2 py-1.5 w-24"><Input type="number" step="0.001" value={it.quantity} onChange={(e) => setItemField(idx, 'quantity', e.target.value)} className="text-right" /></td>
+                        <td className="px-2 py-1.5 w-24">
+                          <Select
+                            value={it.unit_id || matchedItem?.unit_id || ''}
+                            onChange={(e) => setItemField(idx, 'unit_id', e.target.value)}
+                          >
+                            <option value="">
+                              {matchedItem?.unit?.code || matchedItem?.unit?.name || 'Unit…'}
+                            </option>
+                            {units.map((u) => (
+                              <option key={u.id} value={u.id}>
+                                {u.code || u.name}
+                              </option>
+                            ))}
+                          </Select>
+                        </td>
+                        <td className="px-2 py-1.5 w-20"><Input type="number" step="0.01" value={it.oil_pct} onChange={(e) => setItemField(idx, 'oil_pct', e.target.value)} className="text-right" /></td>
+                        <td className="px-2 py-1.5 w-24"><Input type="number" step="0.01" value={it.rate} onChange={(e) => setItemField(idx, 'rate', e.target.value)} className="text-right" /></td>
+                        <td className="px-2 py-1.5 text-right font-bold text-slate-800">{formatNumber(it.amount)}</td>
+                        <td className="px-2 py-1.5 text-center">
+                          {formItems.length > 1 && (
+                            <button type="button" onClick={() => setFormItems((f) => f.filter((_, i) => i !== idx))} className="text-rose-500 hover:text-rose-700 cursor-pointer">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
                 <tfoot className="bg-slate-50 font-bold">
                   <tr>
-                    <td colSpan={5} className="px-2 py-2 text-right text-slate-600">Grand Total</td>
+                    <td colSpan={6} className="px-2 py-2 text-right text-slate-600">Grand Total</td>
                     <td className="px-2 py-2 text-right text-[#0B1A2D]">{formatMoney(grandTotal)}</td>
                     <td />
                   </tr>
