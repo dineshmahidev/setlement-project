@@ -39,6 +39,9 @@ Thumbs.db
 *.jpg
 *.jpeg
 *.png.local
+!frontend/public/**
+*.zip
+1000316564.png
 
 # Spec (optional local) — keep out of public repo if secret
 # SVMA_Agro_Master_Development_Spec.md

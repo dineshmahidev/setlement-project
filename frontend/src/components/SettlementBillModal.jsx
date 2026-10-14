@@ -8,9 +8,10 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
   const { activeCompany } = useAuth()
   if (!isOpen || !settlement) return null
 
-  const co = activeCompany || {}
+  const co = settlement.branch?.company || activeCompany || {}
   const coName = co.company_name || 'LAXMI TRADERS'
   const coMonogram = co.settlement_prefix || (co.short_name || coName || 'LT').slice(0, 2).toUpperCase()
+  const coLogo = co.logo_transparent_path || co.logo_path
   const coTagline = co.tagline || 'AGRO PRODUCTS & GRAINS'
   const coSubTagline = co.sub_tagline || 'Quality Grains | Trusted Trade | Sustainable Tomorrow'
   const coGstin = co.gstin || '-'
@@ -126,9 +127,17 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
             {/* Top Company Header */}
             <div className="flex items-center justify-between pb-2 border-b-2 border-[#0b3558]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#fdfbf7] border border-[#b37d14] flex items-center justify-center font-black text-[#0b3558] text-base">
-                  {coMonogram}
-                </div>
+                {coLogo ? (
+                  <img
+                    src={coLogo.startsWith('/') ? coLogo : `/${coLogo}`}
+                    alt={coName}
+                    className="h-11 w-auto max-w-[60px] object-contain drop-shadow-xs"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-[#fdfbf7] border border-[#b37d14] flex items-center justify-center font-black text-[#0b3558] text-base">
+                    {coMonogram}
+                  </div>
+                )}
                 <div>
                   <h1 className="text-lg font-black tracking-wider text-[#0b3558] uppercase leading-none">
                     {coName}

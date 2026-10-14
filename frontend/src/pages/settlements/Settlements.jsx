@@ -158,9 +158,9 @@ export default function Settlements() {
                   <th className="py-3.5 px-4 text-right">Final Wt (MT)</th>
                   <th className="py-3.5 px-4 text-center">Oil %</th>
                   <th className="py-3.5 px-4 text-right">Oil Qty (KG)</th>
-                  <th className="py-3.5 px-4 text-right">Bran Value (â‚¹)</th>
-                  <th className="py-3.5 px-4 text-right">Rebate (â‚¹)</th>
-                  <th className="py-3.5 px-4 text-right">Net Payable (â‚¹)</th>
+                  <th className="py-3.5 px-4 text-right">Bran Value (₹)</th>
+                  <th className="py-3.5 px-4 text-right">Rebate (₹)</th>
+                  <th className="py-3.5 px-4 text-right">Net Payable (₹)</th>
                   <th className="py-3.5 px-4 text-center">Status</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
@@ -189,17 +189,17 @@ export default function Settlements() {
                       {Number(s.oil_quantity_kg).toFixed(3)}
                     </td>
                     <td className="py-3 px-4 text-right font-medium text-slate-900">
-                      â‚¹{Number(s.bran_value).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                      ₹{Number(s.bran_value).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                     </td>
                     <td className="py-3 px-4 text-right font-semibold">
                       {Number(s.rebate_amount) > 0 ? (
                         s.debit_notes?.[0]?.transaction_type === 'credit' ? (
                           <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[11px] font-bold inline-block">
-                            +â‚¹{Number(s.rebate_amount).toLocaleString('en-IN')} (CN)
+                            +₹{Number(s.rebate_amount).toLocaleString('en-IN')} (CN)
                           </span>
                         ) : (
                           <span className="text-amber-800 bg-amber-50 px-2 py-0.5 rounded text-[11px] font-bold inline-block">
-                            -â‚¹{Number(s.rebate_amount).toLocaleString('en-IN')} (DN)
+                            -₹{Number(s.rebate_amount).toLocaleString('en-IN')} (DN)
                           </span>
                         )
                       ) : (
@@ -207,7 +207,7 @@ export default function Settlements() {
                       )}
                     </td>
                     <td className="py-3 px-4 text-right font-bold text-[#0b3558]">
-                      â‚¹{Number(s.net_payable).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                      ₹{Number(s.net_payable).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <StatusBadge status={s.status} />

@@ -9,7 +9,7 @@ export default function WebsiteLayout() {
   const [enquiryOpen, setEnquiryOpen] = useState(false)
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-800 font-sans selection:bg-[#C9A227] selection:text-white">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-800 font-sans selection:bg-[#C9A227] selection:text-white overflow-x-hidden w-full max-w-full">
       {/* Header Navbar */}
       <Navbar onOpenEnquiry={() => setEnquiryOpen(true)} />
 

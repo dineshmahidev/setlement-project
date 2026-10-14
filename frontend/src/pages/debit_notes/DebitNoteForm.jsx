@@ -428,7 +428,7 @@ export default function DebitNoteForm() {
                     required
                     value={item.amount}
                     onChange={(e) => handleItemChange(index, 'amount', parseFloat(e.target.value) || 0)}
-                    placeholder="Taxable Amount (â‚¹)"
+                    placeholder="Taxable Amount (₹)"
                     className="w-full rounded-xl bg-[#f4f6f9] px-3.5 py-2.5 text-xs font-black text-slate-900 text-right focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#b37d14]"
                   />
                 </div>
@@ -504,29 +504,29 @@ export default function DebitNoteForm() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
               <div>
                 <span className="text-[11px] uppercase tracking-wider text-slate-300 font-bold block">Taxable Base</span>
-                <span className="text-xl font-black text-white">â‚¹{Number(formData.taxable_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span className="text-xl font-black text-white">₹{Number(formData.taxable_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
               {!formData.is_interstate ? (
                 <>
                   <div>
                     <span className="text-[11px] uppercase tracking-wider text-slate-300 font-bold block">CGST 2.5%</span>
-                    <span className="text-xl font-black text-white">â‚¹{calc.cgst_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span className="text-xl font-black text-white">₹{calc.cgst_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div>
                     <span className="text-[11px] uppercase tracking-wider text-slate-300 font-bold block">SGST 2.5%</span>
-                    <span className="text-xl font-black text-white">â‚¹{calc.sgst_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span className="text-xl font-black text-white">₹{calc.sgst_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                 </>
               ) : (
                 <div>
                   <span className="text-[11px] uppercase tracking-wider text-slate-300 font-bold block">IGST 5.0%</span>
-                  <span className="text-xl font-black text-white">â‚¹{calc.igst_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  <span className="text-xl font-black text-white">₹{calc.igst_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
               )}
               <div className="bg-[#b37d14] rounded-xl p-3 shadow-inner">
                 <span className="text-[11px] uppercase tracking-wider text-amber-100 font-black block">Total Note Value</span>
                 <span className="text-2xl font-black text-white">
-                  â‚¹{calc.total_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  ₹{calc.total_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </span>
               </div>
             </div>

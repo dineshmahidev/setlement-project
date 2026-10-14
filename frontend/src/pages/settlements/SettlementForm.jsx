@@ -15,7 +15,6 @@ import {
   DollarSign,
   AlertCircle,
   CheckCircle2,
-  Sparkles,
   Eye,
   Percent,
   Truck,
@@ -80,7 +79,7 @@ export default function SettlementForm() {
     loading_charges: '',
     unloading_charges: '',
     tds_rate: '', // Percentage input (e.g. 0.10 for 0.1% TDS)
-    tds: '',      // Computed or manual TDS amount in â‚¹
+    tds: '',      // Computed or manual TDS amount in ₹
     advance_paid: '',
     lorry_freight: '',
     other_charges: '',
@@ -273,12 +272,12 @@ export default function SettlementForm() {
       : autoFinalWeightMt
     const finalWeightKg = finalWeightMt * 1000
 
-    // 2. Oil & Bran Value Calculation: Final Weight (MT) Ã— Final Rate Ã— Oil Content
+    // 2. Oil & Bran Value Calculation: Final Weight (MT) × Final Rate × Oil Content
     const oilContent = parseFloat(formData.oil_content) || 0
     const finalRate = parseFloat(formData.final_unit_rate) || 0
     const oilQtyKg = (finalWeightKg * oilContent) / 100.0
 
-    // Formula: Final Weight (MT) Ã— Final Rate Ã— Oil Content
+    // Formula: Final Weight (MT) × Final Rate × Oil Content
     const rawBranValue = finalWeightMt * finalRate * oilContent
     const branValue = Number(rawBranValue.toFixed(2))
 
@@ -642,7 +641,7 @@ export default function SettlementForm() {
           {invoicesList.length > 0 && (
             <div className="rounded-xl bg-[#fef3c7] p-4 space-y-2">
               <label className="block text-xs font-black text-[#78350f] uppercase flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-[#b37d14]" />
+                <Receipt className="w-4 h-4 text-[#b37d14]" />
                 Auto-Fill From Existing Purchase Invoice
               </label>
               <select
@@ -656,7 +655,7 @@ export default function SettlementForm() {
                 <option value="">-- Select Invoice to Auto-populate Bill, Date, Weight & Taxable Value --</option>
                 {(Array.isArray(invoicesList) ? invoicesList : []).map((inv) => (
                   <option key={inv.id} value={inv.id}>
-                    {inv.invoice_number} ({inv.invoice_date}) | Wt: {inv.net_weight_mt} MT | Rate: â‚¹{inv.rate} | Taxable: â‚¹{Number(inv.taxable_amount).toLocaleString('en-IN')}
+                    {inv.invoice_number} ({inv.invoice_date}) | Wt: {inv.net_weight_mt} MT | Rate: ₹{inv.rate} | Taxable: ₹{Number(inv.taxable_amount).toLocaleString('en-IN')}
                   </option>
                 ))}
               </select>
@@ -940,17 +939,17 @@ export default function SettlementForm() {
         </div>
 
         {/* ========================================================================= */}
-        {/* SECTION 3: EXACT SETTLEMENT CALCULATION: FINAL WEIGHT Ã— FINAL RATE Ã— OIL CONTENT */}
+        {/* SECTION 3: EXACT SETTLEMENT CALCULATION: FINAL WEIGHT × FINAL RATE × OIL CONTENT */}
         {/* ========================================================================= */}
         <div className="rounded-2xl bg-[#0b3558] p-6 text-white shadow-xl space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
             <div>
               <span className="text-xs uppercase tracking-widest text-[#d69e2e] font-black flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-[#d69e2e]" />
-                Live Settlement Calculation (Final Weight Ã— Final Rate Ã— Oil Content)
+                <Calculator className="w-4 h-4 text-[#d69e2e]" />
+                Live Settlement Calculation (Final Weight × Final Rate × Oil Content)
               </span>
               <p className="text-xs text-slate-300 mt-0.5">
-                Formula: <strong>Final Weight (MT) Ã— Final Rate (â‚¹) Ã— Oil Content (%) = Bran Value / Total Value</strong>
+                Formula: <strong>Final Weight (MT) × Final Rate (₹) × Oil Content (%) = Bran Value / Total Value</strong>
               </p>
             </div>
 
@@ -958,7 +957,7 @@ export default function SettlementForm() {
               {/* Cont. Rate */}
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-1">
-                  Cont. Unit Rate (â‚¹)
+                  Cont. Unit Rate (₹)
                 </label>
                 <input
                   type="number"
@@ -973,7 +972,7 @@ export default function SettlementForm() {
               {/* Final Rate */}
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-[#d69e2e] mb-1">
-                  Final Unit Rate (â‚¹) <span className="text-red-400">*</span>
+                  Final Unit Rate (₹) <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="number"
@@ -1001,10 +1000,10 @@ export default function SettlementForm() {
 
             <div className="rounded-xl bg-[#07233b] p-3.5 shadow-sm">
               <span className="text-[10.5px] uppercase tracking-wider text-[#d69e2e] font-bold block">
-                2. Final Unit Rate (â‚¹)
+                2. Final Unit Rate (₹)
               </span>
               <span className="text-xl font-black text-[#d69e2e] mt-1 block font-mono">
-                â‚¹{Number(formData.final_unit_rate || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                ₹{Number(formData.final_unit_rate || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
               </span>
               <span className="text-[10px] text-amber-200/80 font-semibold">(Unit Rate)</span>
             </div>
@@ -1021,13 +1020,13 @@ export default function SettlementForm() {
 
             <div className="rounded-xl bg-emerald-600 p-3.5 shadow-md flex flex-col justify-center">
               <span className="text-[10.5px] uppercase tracking-wider text-emerald-100 font-black block">
-                Bran Value (â‚¹)
+                Bran Value (₹)
               </span>
               <span className="text-xl font-black text-white mt-1 block font-mono">
-                â‚¹{Number(calc.bran_value).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ₹{Number(calc.bran_value).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
               <span className="text-[9.5px] text-emerald-100 font-bold mt-0.5">
-                {Number(calc.final_weight_mt).toFixed(3)} Ã— {Number(formData.final_unit_rate || 0).toFixed(2)} Ã— {Number(formData.oil_content || 0).toFixed(2)}
+                {Number(calc.final_weight_mt).toFixed(3)} × {Number(formData.final_unit_rate || 0).toFixed(2)} × {Number(formData.oil_content || 0).toFixed(2)}
               </span>
             </div>
           </div>
@@ -1050,7 +1049,7 @@ export default function SettlementForm() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-800 uppercase mb-1.5">
-                Original Invoice Taxable Value (â‚¹)
+                Original Invoice Taxable Value (₹)
               </label>
               <input
                 type="number"
@@ -1064,7 +1063,7 @@ export default function SettlementForm() {
 
             <div>
               <label className="block text-xs font-bold text-slate-800 uppercase mb-1.5">
-                Manual Adjustment (+/- â‚¹)
+                Manual Adjustment (+/- ₹)
               </label>
               <input
                 type="number"
@@ -1097,10 +1096,10 @@ export default function SettlementForm() {
                     <CheckCircle2 className="w-5 h-5 text-emerald-300 shrink-0" />
                     <div>
                       <h3 className="text-sm font-black text-white uppercase">
-                        Credit Note Value Detected: â‚¹{Number(calc.rebate_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        Credit Note Value Detected: ₹{Number(calc.rebate_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </h3>
                       <p className="text-xs text-emerald-100">
-                        Settlement Value (â‚¹{Number(calc.bran_value).toLocaleString('en-IN')}) exceeds Original Bill Value (â‚¹{Number(formData.original_invoice_value || 0).toLocaleString('en-IN')}).
+                        Settlement Value (₹{Number(calc.bran_value).toLocaleString('en-IN')}) exceeds Original Bill Value (₹{Number(formData.original_invoice_value || 0).toLocaleString('en-IN')}).
                         A <strong>Credit Note</strong> will be automatically generated and credited to the Vendor Ledger.
                       </p>
                     </div>
@@ -1113,29 +1112,29 @@ export default function SettlementForm() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center bg-white/10 p-3.5 rounded-xl">
                   <div>
                     <span className="text-[10px] font-bold text-emerald-200 uppercase block">Credit Taxable</span>
-                    <span className="text-base font-black text-white">â‚¹{Number(calc.debit_note.taxable_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span className="text-base font-black text-white">₹{Number(calc.debit_note.taxable_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                   {!formData.is_interstate ? (
                     <>
                       <div>
                         <span className="text-[10px] font-bold text-emerald-200 uppercase block">CGST 2.5%</span>
-                        <span className="text-base font-black text-white">â‚¹{Number(calc.debit_note.cgst_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        <span className="text-base font-black text-white">₹{Number(calc.debit_note.cgst_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <div>
                         <span className="text-[10px] font-bold text-emerald-200 uppercase block">SGST 2.5%</span>
-                        <span className="text-base font-black text-white">â‚¹{Number(calc.debit_note.sgst_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        <span className="text-base font-black text-white">₹{Number(calc.debit_note.sgst_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                       </div>
                     </>
                   ) : (
                     <div>
                       <span className="text-[10px] font-bold text-emerald-200 uppercase block">IGST 5.0%</span>
-                      <span className="text-base font-black text-white">â‚¹{Number(calc.debit_note.igst_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-base font-black text-white">₹{Number(calc.debit_note.igst_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
                   )}
                   <div className="bg-[#047857] rounded-lg p-1.5 shadow-sm">
                     <span className="text-[10px] font-black text-emerald-100 uppercase block">Total Credit Note</span>
                     <span className="text-base font-black text-white">
-                      â‚¹{Number(calc.debit_note.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      ₹{Number(calc.debit_note.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                 </div>
@@ -1147,10 +1146,10 @@ export default function SettlementForm() {
                     <AlertCircle className="w-5 h-5 text-[#f59e0b] shrink-0" />
                     <div>
                       <h3 className="text-sm font-black text-white uppercase">
-                        Rebate / Debit Note Detected: â‚¹{Number(calc.rebate_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        Rebate / Debit Note Detected: ₹{Number(calc.rebate_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </h3>
                       <p className="text-xs text-amber-200">
-                        Original Invoice (â‚¹{Number(formData.original_invoice_value || 0).toLocaleString('en-IN')}) exceeds Settlement Value (â‚¹{Number(calc.bran_value).toLocaleString('en-IN')}).
+                        Original Invoice (₹{Number(formData.original_invoice_value || 0).toLocaleString('en-IN')}) exceeds Settlement Value (₹{Number(calc.bran_value).toLocaleString('en-IN')}).
                         A <strong>Debit Note</strong> will be automatically generated and debited to the Vendor Ledger.
                       </p>
                     </div>
@@ -1163,29 +1162,29 @@ export default function SettlementForm() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center bg-white/10 p-3.5 rounded-xl">
                   <div>
                     <span className="text-[10px] font-bold text-amber-200 uppercase block">Rebate Taxable</span>
-                    <span className="text-base font-black text-white">â‚¹{Number(calc.debit_note.taxable_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span className="text-base font-black text-white">₹{Number(calc.debit_note.taxable_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                   {!formData.is_interstate ? (
                     <>
                       <div>
                         <span className="text-[10px] font-bold text-amber-200 uppercase block">CGST 2.5%</span>
-                        <span className="text-base font-black text-white">â‚¹{Number(calc.debit_note.cgst_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        <span className="text-base font-black text-white">₹{Number(calc.debit_note.cgst_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <div>
                         <span className="text-[10px] font-bold text-amber-200 uppercase block">SGST 2.5%</span>
-                        <span className="text-base font-black text-white">â‚¹{Number(calc.debit_note.sgst_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        <span className="text-base font-black text-white">₹{Number(calc.debit_note.sgst_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                       </div>
                     </>
                   ) : (
                     <div>
                       <span className="text-[10px] font-bold text-amber-200 uppercase block">IGST 5.0%</span>
-                      <span className="text-base font-black text-white">â‚¹{Number(calc.debit_note.igst_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-base font-black text-white">₹{Number(calc.debit_note.igst_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
                   )}
                   <div className="bg-[#b37d14] rounded-lg p-1.5 shadow-sm">
                     <span className="text-[10px] font-black text-amber-100 uppercase block">Total Debit Note</span>
                     <span className="text-base font-black text-white">
-                      â‚¹{Number(calc.debit_note.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      ₹{Number(calc.debit_note.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                 </div>
@@ -1256,7 +1255,7 @@ export default function SettlementForm() {
                 </label>
                 {calc.tds_amount > 0 && (
                   <span className="text-[10.5px] font-black text-red-600">
-                    -â‚¹{Number(calc.tds_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    -₹{Number(calc.tds_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </span>
                 )}
               </div>
@@ -1359,23 +1358,23 @@ export default function SettlementForm() {
                 Settlement Net Payable Breakdown
               </span>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-emerald-100 mt-1 font-semibold">
-                <span>Taxable Base: <strong>â‚¹{Number(calc.subtotal_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>
+                <span>Taxable Base: <strong>₹{Number(calc.subtotal_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>
                 {!formData.is_interstate ? (
                   <>
-                    <span>CGST 2.5%: <strong>â‚¹{Number(calc.cgst_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>
-                    <span>SGST 2.5%: <strong>â‚¹{Number(calc.sgst_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>
+                    <span>CGST 2.5%: <strong>₹{Number(calc.cgst_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>
+                    <span>SGST 2.5%: <strong>₹{Number(calc.sgst_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>
                   </>
                 ) : (
-                  <span>IGST 5.0%: <strong>â‚¹{Number(calc.igst_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>
+                  <span>IGST 5.0%: <strong>₹{Number(calc.igst_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>
                 )}
-                <span>Deductions: <strong>â‚¹{Number(formData.tds + formData.advance_paid + formData.lorry_freight).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>
+                <span>Deductions: <strong>₹{Number(formData.tds + formData.advance_paid + formData.lorry_freight).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>
               </div>
             </div>
 
             <div className="text-right">
               <span className="text-[11px] font-black text-emerald-200 uppercase tracking-wider block">FINAL NET PAYABLE</span>
               <span className="text-3xl sm:text-4xl font-black text-white font-mono">
-                â‚¹{Number(calc.net_payable).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ₹{Number(calc.net_payable).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
           </div>

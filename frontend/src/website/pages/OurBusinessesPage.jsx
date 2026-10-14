@@ -1,9 +1,8 @@
 import React from 'react'
-import { Link, useOutletContext } from 'react-router-dom'
-import { ArrowRight, Building2, MapPin, ShieldCheck } from 'lucide-react'
+import { useOutletContext } from 'react-router-dom'
+import FlipBusinessCard from '../components/FlipBusinessCard'
 
 export default function OurBusinessesPage() {
-  const { onOpenEnquiry } = useOutletContext()
 
   return (
     <div className="pt-24 space-y-0 bg-[#FAFAFC] text-slate-800">
@@ -15,7 +14,7 @@ export default function OurBusinessesPage() {
           </span>
           <h1 className="text-4xl sm:text-6xl font-black text-[#071426]">Our Businesses</h1>
           <p className="text-sm sm:text-base text-slate-600 max-w-2xl leading-relaxed">
-            Discover the business entities forming Laxmi Group, serving trading, commercial distribution, and feed requirements across Tamil Nadu.
+            Discover the business entities forming Laxmi Group. Click or tap any card to flip between the company logo and the operations facility banner.
           </p>
         </div>
       </section>
@@ -25,73 +24,58 @@ export default function OurBusinessesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* LAXMI TRADERS */}
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/50 overflow-hidden shadow-sm hover:shadow-xl hover:border-[#C9A227] transition-all p-6 space-y-4 flex flex-col justify-between">
-              <div className="space-y-3">
-                <span className="text-[10px] font-black text-[#E0BD55] bg-[#071426] px-3 py-1 rounded-full uppercase tracking-wider inline-block">
-                  Trading & Distribution
-                </span>
-                <h2 className="text-2xl font-black text-[#071426]">LAXMI TRADERS</h2>
-                <p className="text-xs text-[#C9A227] font-bold">
-                  Ariyamangalam, Tiruchirappalli • GSTIN: 33BWLKP6363A3ZN
-                </p>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Laxmi Traders is an established trading business based in Ariyamangalam, Tiruchirappalli, serving customers through dependable sourcing and supply.
-                </p>
-              </div>
-              <Link
-                to="/business/laxmi-traders"
-                className="flex items-center justify-between px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-xs font-bold text-[#071426] hover:bg-[#071426] hover:text-white transition-all shadow-sm"
-              >
-                <span>View Full Details</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
+            <FlipBusinessCard
+              name="LAXMI TRADERS"
+              category="Trading & Distribution"
+              meaning="Growth, Trade & Business"
+              logo="/logos/laxmi_traders_transparent.png"
+              banner="/banners/laxmi_traders_banner.png"
+              location="103, Bharathiyar Street, Ariyamangalam, Tiruchirappalli - 620010"
+              gstin="33BWLKP6363A3ZN"
+              godowns="2 Active Godowns (Ariyamangalam & Bazaar)"
+              phone="+91 98424 56789 / 0431-2456789"
+              description="Established commercial trading business based in Ariyamangalam, Tiruchirappalli, serving customers through dependable sourcing and commodity supply."
+              keyProducts={['Cottonseed Oil Cake', 'Grain Trading', 'Agro Commodities']}
+              link="/business/laxmi-traders"
+              autoFlipDelay={700}
+              autoFlipDuration={3600}
+            />
 
             {/* S M TRADERS */}
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/50 overflow-hidden shadow-sm hover:shadow-xl hover:border-[#C9A227] transition-all p-6 space-y-4 flex flex-col justify-between">
-              <div className="space-y-3">
-                <span className="text-[10px] font-black text-[#E0BD55] bg-[#071426] px-3 py-1 rounded-full uppercase tracking-wider inline-block">
-                  Trading Business
-                </span>
-                <h2 className="text-2xl font-black text-[#071426]">S M TRADERS</h2>
-                <p className="text-xs text-[#C9A227] font-bold">
-                  Ariyamangalam, Tiruchirappalli • GSTIN: 33DTNPM3407G1ZQ
-                </p>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  S M Traders operates from Ariyamangalam, Tiruchirappalli, with a focus on reliable supply and professional business relationships.
-                </p>
-              </div>
-              <Link
-                to="/business/sm-traders"
-                className="flex items-center justify-between px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-xs font-bold text-[#071426] hover:bg-[#071426] hover:text-white transition-all shadow-sm"
-              >
-                <span>View Full Details</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
+            <FlipBusinessCard
+              name="S M TRADERS"
+              category="Trading & Warehousing"
+              meaning="Godown, Grains & Farming"
+              logo="/logos/sm_traders_transparent.png"
+              banner="/banners/sm_traders_banner.png"
+              location="103/A, Bharathiyar Street, Ariyamangalam, Tiruchirappalli - 620010"
+              gstin="33DTNPM3407G1ZQ"
+              godowns="Bulk Grain Godown Capacity"
+              phone="+91 98424 67890 / 0431-2456790"
+              description="Wholesale grain trading operations with spacious godowns, transparent weighing, and robust farmer-to-market trade."
+              keyProducts={['Bulk Grains', 'Warehouse Storage', 'Commercial Distribution']}
+              link="/business/sm-traders"
+              autoFlipDelay={1400}
+              autoFlipDuration={3600}
+            />
 
             {/* SHRIEE FEEDS */}
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/50 overflow-hidden shadow-sm hover:shadow-xl hover:border-[#C9A227] transition-all p-6 space-y-4 flex flex-col justify-between">
-              <div className="space-y-3">
-                <span className="text-[10px] font-black text-[#E0BD55] bg-[#071426] px-3 py-1 rounded-full uppercase tracking-wider inline-block">
-                  Feed & Related Products
-                </span>
-                <h2 className="text-2xl font-black text-[#071426]">SHRIEE FEEDS</h2>
-                <p className="text-xs text-[#C9A227] font-bold">
-                  Manapparai / Usilampatti • GSTIN: 33BOZPS3759G1Z5
-                </p>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Shriee Feeds is a feed-focused business serving customers through dependable product supply and long-term business relationships.
-                </p>
-              </div>
-              <Link
-                to="/business/shriee-feeds"
-                className="flex items-center justify-between px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-xs font-bold text-[#071426] hover:bg-[#071426] hover:text-white transition-all shadow-sm"
-              >
-                <span>View Full Details</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
+            <FlipBusinessCard
+              name="SHRIEE FEEDS"
+              category="Cattle & Poultry Feeds"
+              meaning="Agriculture, Cattle & Poultry"
+              logo="/logos/shree_feeds_transparent.png"
+              banner="/banners/shree_feeds_banner.png"
+              location="Door No. 3/1044, Nandanar Metu Mill New Colony, Manapparai - 621306"
+              gstin="33BOZPS3759G1Z5"
+              godowns="Feed Mill & Processing Godown"
+              phone="+91 98424 78901 / 0431-2456791"
+              description="High-protein cattle feeds and specialized poultry nutrition engineered for superior livestock health, higher yield, and farmer prosperity."
+              keyProducts={['High-Protein Feed', 'Cattle Nutrition', 'Poultry Rations']}
+              link="/business/shriee-feeds"
+              autoFlipDelay={2100}
+              autoFlipDuration={3600}
+            />
           </div>
         </div>
       </section>

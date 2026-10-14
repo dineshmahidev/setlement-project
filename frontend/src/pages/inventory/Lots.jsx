@@ -79,23 +79,23 @@ export default function Lots() {
         actions={<Button variant="secondary" onClick={load} loading={loading}><RefreshCw className="h-3.5 w-3.5" /> Refresh</Button>}
       />
 
-      {/* KPI ribbon */}
+      {/* KPI ribbon - Solid Colors */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="rounded-xl border border-slate-200 bg-white p-3">
-          <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Open Lots</span>
-          <div className="text-lg font-extrabold text-[#0B1A2D]">{formatNumber(tot.total_lots ?? rows.length)}</div>
+        <div className="rounded-xl bg-[#0b3558] p-3.5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
+          <span className="text-[10px] font-bold uppercase text-[#faedcd] tracking-wider block">Open Lots</span>
+          <div className="text-xl font-black text-white mt-0.5">{formatNumber(tot.total_lots ?? rows.length)}</div>
         </div>
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3">
-          <span className="text-[10px] font-bold uppercase text-emerald-700 tracking-wider">Available Qty</span>
-          <div className="text-lg font-extrabold text-emerald-900">{formatNumber(tot.total_available ?? 0)}</div>
+        <div className="rounded-xl bg-emerald-600 p-3.5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
+          <span className="text-[10px] font-bold uppercase text-emerald-100 tracking-wider block">Available Qty</span>
+          <div className="text-xl font-black text-white mt-0.5">{formatNumber(tot.total_available ?? 0)} MT</div>
         </div>
-        <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3">
-          <span className="text-[10px] font-bold uppercase text-amber-700 tracking-wider">Stock Value</span>
-          <div className="text-lg font-extrabold text-amber-900">{formatMoney(tot.total_value ?? 0)}</div>
+        <div className="rounded-xl bg-[#b37d14] p-3.5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
+          <span className="text-[10px] font-bold uppercase text-amber-100 tracking-wider block">Stock Value</span>
+          <div className="text-xl font-black text-white mt-0.5">{formatMoney(tot.total_value ?? 0)}</div>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-3">
-          <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Avg Oil %</span>
-          <div className="text-lg font-extrabold text-[#0B1A2D]">{formatNumber(tot.avg_oil_pct ?? 0, 2)}</div>
+        <div className="rounded-xl bg-[#1e40af] p-3.5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
+          <span className="text-[10px] font-bold uppercase text-blue-100 tracking-wider block">Avg Oil %</span>
+          <div className="text-xl font-black text-white mt-0.5">{formatNumber(tot.avg_oil_pct ?? 0, 2)}%</div>
         </div>
       </div>
 

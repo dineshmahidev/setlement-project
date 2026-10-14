@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import api, { apiErrorMessage } from '../../services/api'
 import { useToast } from '../../context/ToastContext'
+import { Upload, Image as ImageIcon, X } from 'lucide-react'
 import {
   Button,
   ConfirmDialog,
@@ -13,6 +14,7 @@ import {
   Select,
   StatusBadge,
   Textarea,
+  ReplaceablePicture,
 } from '../../components'
 
 /**
@@ -280,6 +282,22 @@ export default function CrudPage({
                   />
                   {f.label}
                 </label>
+              )
+            }
+            if (f.type === 'image') {
+              return (
+                <div key={f.name} className={f.full ? 'sm:col-span-2' : ''}>
+                  <ReplaceablePicture
+                    label={f.label}
+                    sublabel={f.sublabel}
+                    value={form[f.name] || ''}
+                    onChange={(val) => setField(f.name, val)}
+                    presets={f.presets}
+                    darkBg={f.name.includes('transparent') || f.name.includes('signature')}
+                    aspectRatio={f.aspectRatio || (f.name.includes('signature') ? 'signature' : f.name.includes('banner') ? 'banner' : 'logo')}
+                    required={f.required}
+                  />
+                </div>
               )
             }
             return (

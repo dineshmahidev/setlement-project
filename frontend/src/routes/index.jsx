@@ -30,13 +30,17 @@ import DebitNoteForm from '../pages/debit_notes/DebitNoteForm'
 import VendorLedger from '../pages/ledger/VendorLedger'
 import Inventory from '../pages/inventory/Inventory'
 import Grades from '../pages/inventory/Grades'
+import Items from '../pages/inventory/Items'
 import Materials from '../pages/inventory/Materials'
+import Units from '../pages/masters/Units'
 import Lots from '../pages/inventory/Lots'
 import Inward from '../pages/inventory/Inward'
 import Outward from '../pages/inventory/Outward'
 import Production from '../pages/inventory/Production'
 import Transfer from '../pages/inventory/Transfer'
 import Companies from '../pages/admin/Companies'
+import WebsiteCms from '../pages/cms/WebsiteCms'
+import Trash from '../pages/trash/Trash'
 import Reports from '../pages/reports/Reports'
 import Users from '../pages/users/Users'
 import Settings from '../pages/settings/Settings'
@@ -55,6 +59,23 @@ function Protected({ children }) {
     )
   }
   if (!user) return <Navigate to="/panel/login" replace />
+  return children
+}
+
+function RequireSuperAdmin({ children }) {
+  const { user, isSuperAdmin, loading } = useAuth()
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#FAFAFC]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#C9A227] border-t-transparent"></div>
+          <span className="text-xs font-bold text-slate-600">Verifying security clearance...</span>
+        </div>
+      </div>
+    )
+  }
+  if (!user) return <Navigate to="/panel/login" replace />
+  if (!isSuperAdmin) return <Navigate to="/panel" replace />
   return children
 }
 
@@ -91,7 +112,16 @@ function PanelHome() {
 const panelChildren = [
   <Route key="index" index element={<PanelHome />} />,
 
-  <Route key="branches" path="branches" element={<Branches />} />,
+  // Restricted Confidential Routes: Super Admin / Master Admin Only
+  <Route key="branches" path="branches" element={<RequireSuperAdmin><Branches /></RequireSuperAdmin>} />,
+  <Route key="companies" path="companies" element={<RequireSuperAdmin><Companies /></RequireSuperAdmin>} />,
+  <Route key="cms" path="cms" element={<RequireSuperAdmin><WebsiteCms /></RequireSuperAdmin>} />,
+  <Route key="users" path="users" element={<RequireSuperAdmin><Users /></RequireSuperAdmin>} />,
+  <Route key="settings" path="settings" element={<RequireSuperAdmin><Settings /></RequireSuperAdmin>} />,
+  <Route key="audit-logs" path="audit-logs" element={<RequireSuperAdmin><AuditLogs /></RequireSuperAdmin>} />,
+  <Route key="trash" path="trash" element={<RequireSuperAdmin><Trash /></RequireSuperAdmin>} />,
+
+  // Standard Operational Routes: Accessible with role permissions
   <Route key="vendors" path="vendors" element={<Vendors />} />,
   <Route key="products" path="products" element={<Products />} />,
 
@@ -110,19 +140,17 @@ const panelChildren = [
   <Route key="debit-notes-edit" path="debit-notes/:id/edit" element={<DebitNoteForm />} />,
 
   <Route key="inventory" path="inventory" element={<Inventory />} />,
+  <Route key="inventory-items" path="inventory/items" element={<Items />} />,
+  <Route key="inventory-materials" path="inventory/materials" element={<Items />} />,
+  <Route key="inventory-units" path="inventory/units" element={<Units />} />,
   <Route key="inventory-grades" path="inventory/grades" element={<Grades />} />,
-  <Route key="inventory-materials" path="inventory/materials" element={<Materials />} />,
   <Route key="inventory-lots" path="inventory/lots" element={<Lots />} />,
   <Route key="inventory-inward" path="inventory/inward" element={<Inward />} />,
   <Route key="inventory-outward" path="inventory/outward" element={<Outward />} />,
   <Route key="inventory-production" path="inventory/production" element={<Production />} />,
   <Route key="inventory-transfer" path="inventory/transfer" element={<Transfer />} />,
-  <Route key="companies" path="companies" element={<Companies />} />,
   <Route key="vendor-ledger" path="vendor-ledger" element={<VendorLedger />} />,
   <Route key="reports" path="reports" element={<Reports />} />,
-  <Route key="users" path="users" element={<Users />} />,
-  <Route key="settings" path="settings" element={<Settings />} />,
-  <Route key="audit-logs" path="audit-logs" element={<AuditLogs />} />,
 ]
 
 /** Keeps the URL in sync with the active company (/panel/:slug/...) and

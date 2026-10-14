@@ -3,6 +3,14 @@ import api from '../../services/api'
 import CrudPage from './CrudPage'
 import { useAuth } from '../../context/AuthContext'
 
+const MATERIAL_TYPES = [
+  { value: 'Raw', label: 'Raw' },
+  { value: 'Boiled', label: 'Boiled' },
+  { value: 'Silky', label: 'Silky' },
+  { value: 'Brown', label: 'Brown' },
+  { value: 'Other', label: 'Other' },
+]
+
 export default function Items() {
   const { can } = useAuth()
   const [categories, setCategories] = useState([])
@@ -10,11 +18,11 @@ export default function Items() {
 
   useEffect(() => {
     Promise.all([
-      api.get('/categories').catch(() => ({ data: [] })),
-      api.get('/units').catch(() => ({ data: [] })),
+      api.get('/categories?all=true').catch(() => api.get('/categories').catch(() => ({ data: [] }))),
+      api.get('/units?all=true').catch(() => api.get('/units').catch(() => ({ data: [] }))),
     ]).then(([c, u]) => {
-      const cl = Array.isArray(c.data) ? c.data : c.data.data || []
-      const ul = Array.isArray(u.data) ? u.data : u.data.data || []
+      const cl = Array.isArray(c.data) ? c.data : c.data?.data || []
+      const ul = Array.isArray(u.data) ? u.data : u.data?.data || []
       setCategories(cl.map((x) => ({ value: x.id, label: x.name })))
       setUnits(ul.map((x) => ({ value: x.id, label: `${x.name} (${x.code})` })))
     })
@@ -23,44 +31,48 @@ export default function Items() {
   return (
     <CrudPage
       title="Items"
-      subtitle="Item master with stock levels"
+      subtitle="Item master with type and measurement units"
       endpoint="/items"
-      canCreate={can('items.create')}
-      canEdit={can('items.edit')}
-      canDelete={can('items.delete')}
+      canCreate={can('items.create') || can('inventory.view')}
+      canEdit={can('items.edit') || can('inventory.view')}
+      canDelete={can('items.delete') || can('inventory.view')}
       searchPlaceholder="Search items…"
       columns={[
         { key: 'code', label: 'Code' },
-        { key: 'name', label: 'Name' },
-        { key: 'material_type', label: 'Material Type' },
-        { key: 'category', label: 'Category', render: (r) => r.category?.name },
-        { key: 'unit', label: 'Unit', render: (r) => r.unit?.code },
-        { key: 'min_stock_level', label: 'Min Stock', align: 'right' },
-        { key: 'max_stock_level', label: 'Max Stock', align: 'right' },
+        { key: 'name', label: 'Item Name' },
+        { key: 'material_type', label: 'Type' },
+        {
+          key: 'unit',
+          label: 'Unit',
+          render: (r) => (r.unit ? `${r.unit.name} (${r.unit.code})` : '—'),
+        },
+        { key: 'category', label: 'Category', render: (r) => r.category?.name || '—' },
         { key: 'status', label: 'Status', status: true },
       ]}
       fields={[
-        { name: 'code', label: 'Item Code', required: true },
-        { name: 'name', label: 'Item Name', required: true },
+        { name: 'name', label: 'Item Name', required: true, placeholder: 'e.g. Sona Masoori, Bran, etc.' },
         {
           name: 'material_type',
-          label: 'Material Type',
+          label: 'Material / Item Type',
           type: 'select',
           default: 'Raw',
-          options: [
-            { value: 'Raw', label: 'Raw' },
-            { value: 'Boiled', label: 'Boiled' },
-            { value: 'Silky', label: 'Silky' },
-            { value: 'Brown', label: 'Brown' },
-            { value: 'Other', label: 'Other' },
-          ],
+          options: MATERIAL_TYPES,
         },
-        { name: 'default_oil_pct', label: 'Default Oil %', type: 'number', step: '0.01' },
-        { name: 'category_id', label: 'Category', type: 'select', options: categories },
-        { name: 'unit_id', label: 'Unit', type: 'select', options: units },
-        { name: 'min_stock_level', label: 'Min Stock Level', type: 'number', step: '0.001' },
-        { name: 'max_stock_level', label: 'Max Stock Level', type: 'number', step: '0.001' },
-        { name: 'description', label: 'Description', type: 'textarea' },
+        {
+          name: 'unit_id',
+          label: 'Unit',
+          type: 'select',
+          options: units,
+          placeholder: 'Select Unit',
+        },
+        {
+          name: 'category_id',
+          label: 'Category',
+          type: 'select',
+          options: categories,
+          placeholder: 'Select Category (Optional)',
+        },
+        { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Optional remarks' },
         {
           name: 'status',
           label: 'Status',
@@ -76,8 +88,6 @@ export default function Items() {
         ...form,
         category_id: form.category_id ? Number(form.category_id) : null,
         unit_id: form.unit_id ? Number(form.unit_id) : null,
-        min_stock_level: form.min_stock_level === '' ? 0 : Number(form.min_stock_level),
-        max_stock_level: form.max_stock_level === '' ? 0 : Number(form.max_stock_level),
       })}
     />
   )

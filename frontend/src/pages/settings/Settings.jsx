@@ -13,6 +13,7 @@ import {
   Plus,
   CheckCircle2,
 } from 'lucide-react'
+import ReplaceablePicture from '../../components/ReplaceablePicture'
 
 export default function Settings() {
   const toast = useToast()
@@ -711,10 +712,44 @@ export default function Settings() {
 
           {/* 7. Terms & Signature */}
           {activeTab === 'terms' && (
-            <form onSubmit={handleSaveCompany} className="space-y-5">
-              <h2 className="text-lg font-semibold text-slate-900 border-b border-slate-100 pb-3">
-                PDF Terms & Conditions and Signature
-              </h2>
+            <form onSubmit={handleSaveCompany} className="space-y-6">
+              <div className="border-b border-slate-100 pb-3">
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Company Digital Signature & PDF Terms
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Manage company-wise authorized digital signature that appears across all generated PDF bills, challans, settlement sheets, debit notes, and ledger statements.
+                </p>
+              </div>
+
+              {/* Digital Signature Replaceable Picture */}
+              <div className="rounded-2xl border border-slate-200 bg-gradient-to-b from-slate-50/50 to-white p-5 shadow-2xs">
+                <ReplaceablePicture
+                  label="Active Company Digital Signature"
+                  sublabel="Renders directly above 'Authorized Signatory' across all 8 PDF templates (Settlement Bill, Debit Note, Inward, Outward, etc.)."
+                  value={data.company.signature_path || ''}
+                  onChange={(val) => {
+                    setData((prev) => ({
+                      ...prev,
+                      company: {
+                        ...prev.company,
+                        signature_path: val,
+                      },
+                    }))
+                  }}
+                  darkBg={true}
+                  aspectRatio="signature"
+                  badgeText="All 8 PDFs"
+                  presets={[
+                    { label: 'Laxmi Traders Signature', value: '/signatures/laxmi_signature.png' },
+                    { label: 'S M Traders Signature', value: '/signatures/sm_signature.png' },
+                    { label: 'Shriee Feeds Signature', value: '/signatures/shriee_signature.png' },
+                    { label: 'Default Group Signature', value: '/signatures/default_signature.png' },
+                  ]}
+                />
+              </div>
+
+              {/* Title and Terms & Conditions */}
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
@@ -725,6 +760,7 @@ export default function Settings() {
                     name="authorized_signatory_title"
                     value={data.company.authorized_signatory_title || ''}
                     onChange={handleCompanyChange}
+                    placeholder="Authorized Signatory / Managing Partner"
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                   />
                 </div>
@@ -751,7 +787,7 @@ export default function Settings() {
                   className="flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-emerald-700 disabled:opacity-50"
                 >
                   <Save className="w-4 h-4" />
-                  {saving ? 'Saving...' : 'Save Terms'}
+                  {saving ? 'Saving...' : 'Save Terms & Signature'}
                 </button>
               </div>
             </form>

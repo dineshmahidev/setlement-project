@@ -117,105 +117,116 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Metric Cards Grid - Full Solid Colors with Zero Borders */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Card 1: Today Settlements (Solid Full Emerald) */}
-        <div className="rounded-2xl bg-emerald-600 p-5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-100">Today's Settlements</span>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-700/80 text-white">
-              <Scale className="w-5 h-5" />
+      {/* Metric & Inventory Cards - Unified Single Row with Solid Colors */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {/* Card 1: Today Settlements (Solid Emerald) */}
+        <div className="rounded-2xl bg-emerald-600 p-5 text-white shadow-sm transition-transform hover:-translate-y-0.5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-100">Today's Settlements</span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-700/80 text-white shrink-0">
+                <Scale className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="text-3xl font-black tracking-tight text-white">{cards.today_settlements || 0}</span>
+              <span className="text-xs font-medium text-emerald-100">entries</span>
             </div>
           </div>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-black tracking-tight text-white">{cards.today_settlements || 0}</span>
-            <span className="text-xs font-medium text-emerald-100">entries</span>
-          </div>
-          <div className="mt-2 inline-flex items-center rounded-md bg-emerald-700/70 px-2.5 py-1 text-xs font-bold text-white">
-            Valued at ₹{(cards.today_settlement_value || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+          <div className="mt-3 inline-flex items-center rounded-md bg-emerald-700/70 px-2.5 py-1 text-[11px] font-bold text-white truncate w-fit max-w-full">
+            Valued at ₹{(cards.today_settlement_value || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </div>
         </div>
 
-        {/* Card 2: Total Vendor Payable (Solid Full Royal Navy) */}
-        <div className="rounded-2xl bg-[#0b3558] p-5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#faedcd]">Total Vendor Payable</span>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#07233b] text-[#d69e2e]">
-              <ArrowUpRight className="w-5 h-5" />
+        {/* Card 2: Active Masters (Solid Deep Blue) */}
+        <div className="rounded-2xl bg-[#1e40af] p-5 text-white shadow-sm transition-transform hover:-translate-y-0.5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-blue-100">Active Masters</span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1d4ed8] text-white shrink-0">
+                <Users2 className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-center justify-between">
+              <div>
+                <span className="text-3xl font-black text-white">{cards.total_vendors || 0}</span>
+                <span className="block text-[11px] font-bold text-blue-200 uppercase">Vendors</span>
+              </div>
+              <div className="h-8 w-px bg-white/25" />
+              <div>
+                <span className="text-3xl font-black text-white">{cards.total_branches || 0}</span>
+                <span className="block text-[11px] font-bold text-blue-200 uppercase">Godowns</span>
+              </div>
             </div>
           </div>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-black tracking-tight text-white">
-              ₹{(cards.total_payable || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-            </span>
-          </div>
-          <p className="mt-2 text-xs font-medium text-[#f7eedb]">Total liability across active vendors</p>
-        </div>
-
-        {/* Card 3: Pending Debit Notes (Solid Full Amber / Gold) */}
-        <div className="rounded-2xl bg-[#b37d14] p-5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-100">Pending Debit Notes</span>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#976508] text-white">
-              <FileText className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-black tracking-tight text-white">{cards.pending_debit_notes || 0}</span>
-            <span className="text-xs font-bold text-amber-100">Rebate notes pending</span>
-          </div>
-          <div className="mt-2 inline-flex items-center rounded-md bg-[#976508]/70 px-2.5 py-1 text-xs font-bold text-white">
-            Quality differences & deductions
+          <div className="mt-3 text-[11px] font-medium text-blue-100">
+            Registered operational masters
           </div>
         </div>
 
-        {/* Card 4: Active Masters (Solid Full Deep Blue) */}
-        <div className="rounded-2xl bg-[#1e40af] p-5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-100">Active Masters</span>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1d4ed8] text-white">
-              <Users2 className="w-5 h-5" />
+        {/* Card 3: Current Stock (Solid Royal Navy) */}
+        <div className="rounded-2xl bg-[#0b3558] p-5 text-white shadow-sm transition-transform hover:-translate-y-0.5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#faedcd]">Current Stock</span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#07233b] text-[#d69e2e] shrink-0">
+                <Package className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="text-3xl font-black tracking-tight text-white">
+                {Number(invKpis?.current_stock_qty || 0).toLocaleString('en-IN')}
+              </span>
+              <span className="text-xs font-medium text-slate-200">MT</span>
             </div>
           </div>
-          <div className="mt-4 flex items-center justify-between">
-            <div>
-              <span className="text-3xl font-black text-white">{cards.total_vendors || 0}</span>
-              <span className="block text-[11px] font-bold text-blue-200 uppercase">Vendors</span>
+          <div className="mt-3 inline-flex items-center rounded-md bg-[#07233b]/80 px-2.5 py-1 text-[11px] font-bold text-[#faedcd] w-fit">
+            {invKpis?.active_lots || 0} open lots
+          </div>
+        </div>
+
+        {/* Card 4: Total Inward (Solid Teal / Emerald) */}
+        <div className="rounded-2xl bg-teal-700 p-5 text-white shadow-sm transition-transform hover:-translate-y-0.5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-teal-100">Total Inward</span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-800 text-white shrink-0">
+                <ArrowDownRight className="w-5 h-5" />
+              </div>
             </div>
-            <div className="h-8 w-px bg-white/25" />
-            <div>
-              <span className="text-3xl font-black text-white">{cards.total_branches || 0}</span>
-              <span className="block text-[11px] font-bold text-blue-200 uppercase">Godowns</span>
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="text-3xl font-black tracking-tight text-white">
+                {Number(invKpis?.total_in_qty || 0).toLocaleString('en-IN')}
+              </span>
+              <span className="text-xs font-medium text-teal-100">MT</span>
             </div>
+          </div>
+          <div className="mt-3 inline-flex items-center rounded-md bg-teal-800/80 px-2.5 py-1 text-[11px] font-bold text-white truncate w-fit max-w-full">
+            Valued at ₹{Number(invKpis?.total_inward_value || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+          </div>
+        </div>
+
+        {/* Card 5: Total Outward (Solid Rose) */}
+        <div className="rounded-2xl bg-rose-600 p-5 text-white shadow-sm transition-transform hover:-translate-y-0.5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-rose-100">Total Outward</span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-700 text-white shrink-0">
+                <ArrowUpRight className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="text-3xl font-black tracking-tight text-white">
+                {Number(invKpis?.total_out_qty || 0).toLocaleString('en-IN')}
+              </span>
+              <span className="text-xs font-medium text-rose-100">MT</span>
+            </div>
+          </div>
+          <div className="mt-3 inline-flex items-center rounded-md bg-rose-700/80 px-2.5 py-1 text-[11px] font-bold text-white truncate w-fit max-w-full">
+            Valued at ₹{Number(invKpis?.total_outward_value || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </div>
         </div>
       </div>
-
-      {/* Inventory KPIs */}
-      {invKpis && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Current Stock</span>
-            <div className="mt-1 text-xl font-black text-[#0b3558]">{Number(invKpis.current_stock_qty || 0).toLocaleString('en-IN')}</div>
-            <span className="text-[11px] font-semibold text-slate-500">{invKpis.active_lots || 0} open lots</span>
-          </div>
-          <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3.5 shadow-xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Stock Value</span>
-            <div className="mt-1 text-xl font-black text-amber-900">₹{Number(invKpis.stock_value || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
-            <span className="text-[11px] font-semibold text-amber-700">Valuation (WAC)</span>
-          </div>
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3.5 shadow-xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Total Inward</span>
-            <div className="mt-1 text-xl font-black text-emerald-900">{Number(invKpis.total_in_qty || 0).toLocaleString('en-IN')}</div>
-            <span className="text-[11px] font-semibold text-emerald-700">₹{Number(invKpis.total_inward_value || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
-          </div>
-          <div className="rounded-xl border border-rose-200 bg-rose-50/60 p-3.5 shadow-xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700">Total Outward</span>
-            <div className="mt-1 text-xl font-black text-rose-900">{Number(invKpis.total_out_qty || 0).toLocaleString('en-IN')}</div>
-            <span className="text-[11px] font-semibold text-rose-700">₹{Number(invKpis.total_outward_value || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
-          </div>
-        </div>
-      )}
 
       {/* Quick Action Bar */}
       <div className="flex flex-wrap items-center gap-3">
@@ -235,83 +246,7 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      {/* Charts & Analytics */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Godown-wise Distribution */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold text-[#0b3558]">Godown-wise Settlement Value</h2>
-            <Building2 className="w-4 h-4 text-[#b37d14]" />
-          </div>
-          <div className="space-y-3">
-            {Array.isArray(charts.branch_wise) && charts.branch_wise.length ? (
-              charts.branch_wise.map((b, idx) => (
-                <div key={idx} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-slate-700">{b.branch_name}</span>
-                    <span className="font-bold text-[#0b3558]">₹{Number(b.total_value).toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-[#0b3558]"
-                      style={{
-                        width: `${Math.min(
-                          100,
-                          (Number(b.total_value) /
-                            Math.max(1, ...charts.branch_wise.map((item) => Number(item.total_value) || 0))) *
-                            100,
-                        )}%`,
-                      }}
-                    />
-                  </div>
-                  <span className="text-[10px] text-slate-400">{b.count} settlements recorded</span>
-                </div>
-              ))
-            ) : (
-              <p className="text-xs text-slate-400 py-6 text-center">No branch settlements in this period</p>
-            )}
-          </div>
-        </div>
 
-        {/* Product-wise Breakdown */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold text-[#0b3558]">Product-wise Settlement Volume</h2>
-            <Package className="w-4 h-4 text-[#b37d14]" />
-          </div>
-          <div className="space-y-3">
-            {Array.isArray(charts.product_wise) && charts.product_wise.length ? (
-              charts.product_wise.map((p, idx) => (
-                <div key={idx} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-slate-700">{p.product_name}</span>
-                    <span className="font-bold text-[#b37d14]">{Number(p.total_weight_mt).toFixed(3)} MT</span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-[#d69e2e]"
-                      style={{
-                        width: `${Math.min(
-                          100,
-                          (Number(p.total_weight_mt) /
-                            Math.max(1, ...charts.product_wise.map((item) => Number(item.total_weight_mt) || 0))) *
-                            100,
-                        )}%`,
-                      }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-[10px] text-slate-400">
-                    <span>{p.count} bills</span>
-                    <span className="font-medium text-[#0b3558]">Total: ₹{Number(p.total_value).toLocaleString('en-IN')}</span>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-xs text-slate-400 py-6 text-center">No product data in this period</p>
-            )}
-          </div>
-        </div>
-      </div>
 
       {/* Recent Settlements Table */}
       <div className="rounded-2xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">

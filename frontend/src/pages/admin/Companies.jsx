@@ -16,6 +16,25 @@ export default function Companies() {
       canDelete
       searchPlaceholder="Search companies…"
       columns={[
+        {
+          key: 'logo_transparent_path',
+          label: 'Logo',
+          render: (r) => {
+            const logo = r.logo_transparent_path || r.logo_path || '/logos/laxmi_traders_transparent.png'
+            return (
+              <div className="flex items-center gap-2">
+                <img
+                  src={logo.startsWith('/') ? logo : `/${logo}`}
+                  alt={r.company_name}
+                  className="h-8 w-8 object-contain bg-white border border-slate-200 rounded p-1 shadow-2xs"
+                  onError={(e) => {
+                    e.currentTarget.src = '/logos/laxmi_traders_transparent.png'
+                  }}
+                />
+              </div>
+            )
+          },
+        },
         { key: 'code', label: 'Code' },
         { key: 'company_name', label: 'Company Name' },
         { key: 'gstin', label: 'GSTIN' },
@@ -25,7 +44,23 @@ export default function Companies() {
           label: 'Godowns',
           render: (r) =>
             (r.branches || []).map((b) => b.branch_name || b.name).join(', ') ||
-            (Array.isArray(r.branch_ids) ? r.branch_ids.length : 0),
+            (r.branches_count ? `${r.branches_count} godown${r.branches_count > 1 ? 's' : ''}` : '0'),
+        },
+        {
+          key: 'signature_path',
+          label: 'Digital Signature',
+          render: (r) =>
+            r.signature_path ? (
+              <div className="flex items-center gap-2">
+                <img
+                  src={r.signature_path}
+                  alt="Signature"
+                  className="h-7 max-w-[90px] object-contain bg-white border border-slate-200 rounded px-1.5 py-0.5 shadow-2xs"
+                />
+              </div>
+            ) : (
+              <span className="text-slate-400 text-xs italic">Default</span>
+            ),
         },
         { key: 'status', label: 'Status', status: true },
       ]}
@@ -43,6 +78,51 @@ export default function Companies() {
         { name: 'pincode', label: 'Pincode' },
         { name: 'phone', label: 'Phone' },
         { name: 'email', label: 'Email', type: 'email' },
+        {
+          name: 'signature_path',
+          label: 'Digital Signature (Replaceable Picture)',
+          type: 'image',
+          full: true,
+          presets: [
+            { label: 'Laxmi Traders', value: '/signatures/laxmi_signature.png' },
+            { label: 'S M Traders', value: '/signatures/sm_signature.png' },
+            { label: 'Shriee Feeds', value: '/signatures/shriee_signature.png' },
+            { label: 'Default Group', value: '/signatures/default_signature.png' },
+          ],
+        },
+        {
+          name: 'logo_transparent_path',
+          label: 'Transparent Logo (Replaceable Picture)',
+          type: 'image',
+          presets: [
+            { label: 'Laxmi Transparent', value: '/logos/laxmi_traders_transparent.png' },
+            { label: 'SM Transparent', value: '/logos/sm_traders_transparent.png' },
+            { label: 'Shree Feeds Transparent', value: '/logos/shree_feeds_transparent.png' },
+          ],
+        },
+        {
+          name: 'logo_path',
+          label: 'Solid Logo (Replaceable Picture)',
+          type: 'image',
+          presets: [
+            { label: 'Laxmi Solid', value: '/logos/laxmi_traders.png' },
+            { label: 'SM Solid', value: '/logos/sm_traders.png' },
+            { label: 'Shree Feeds Solid', value: '/logos/shree_feeds.png' },
+          ],
+        },
+        {
+          name: 'banner_path',
+          label: 'Hero Banner (Replaceable Picture)',
+          type: 'image',
+          full: true,
+          presets: [
+            { label: 'Homepage Banner', value: '/banners/homepage_banner.png' },
+            { label: 'Laxmi Traders Banner', value: '/banners/laxmi_traders_banner.png' },
+            { label: 'Shree Feeds Banner', value: '/banners/shree_feeds_banner.png' },
+            { label: 'SM Traders Banner', value: '/banners/sm_traders_banner.png' },
+          ],
+        },
+        { name: 'authorized_signatory_title', label: 'Signatory Title (e.g. Authorized Signatory)' },
         { name: 'address', label: 'Address', type: 'textarea', full: true },
         {
           name: 'status',

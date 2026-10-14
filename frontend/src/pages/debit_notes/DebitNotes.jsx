@@ -155,8 +155,8 @@ export default function DebitNotes() {
                   <th className="py-3.5 px-4">Invoice / Lot Ref</th>
                   <th className="py-3.5 px-4">Reason</th>
                   <th className="py-3.5 px-4 text-center">Type</th>
-                  <th className="py-3.5 px-4 text-right">Taxable (â‚¹)</th>
-                  <th className="py-3.5 px-4 text-right">Total (â‚¹)</th>
+                  <th className="py-3.5 px-4 text-right">Taxable (₹)</th>
+                  <th className="py-3.5 px-4 text-right">Total (₹)</th>
                   <th className="py-3.5 px-4 text-center">Status</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
@@ -191,10 +191,10 @@ export default function DebitNotes() {
                       </span>
                     </td>
                     <td className="py-3 px-4 text-right font-medium text-slate-900">
-                      â‚¹{Number(dn.taxable_amount).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                      ₹{Number(dn.taxable_amount).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                     </td>
                     <td className="py-3 px-4 text-right font-bold text-[#b37d14]">
-                      â‚¹{Number(dn.total_amount).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                      ₹{Number(dn.total_amount).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <StatusBadge status={dn.status} />

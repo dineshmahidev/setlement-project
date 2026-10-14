@@ -8,9 +8,9 @@ export default function Units() {
       title="Units"
       subtitle="Measurement units"
       endpoint="/units"
-      canCreate={can('items.create')}
-      canEdit={can('items.edit')}
-      canDelete={can('items.delete')}
+      canCreate={can('items.create') || can('inventory.view')}
+      canEdit={can('items.edit') || can('inventory.view')}
+      canDelete={can('items.delete') || can('inventory.view')}
       searchPlaceholder="Search units…"
       columns={[
         { key: 'code', label: 'Code' },

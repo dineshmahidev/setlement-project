@@ -13,19 +13,14 @@ export default function Footer({ onOpenEnquiry }) {
           {/* Column 1: Brand Info */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#C9A227] via-[#E0BD55] to-[#8C6E14] p-0.5 shadow-lg">
-                <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-[#071426]">
-                  <span className="font-black text-lg text-[#E0BD55]">LG</span>
-                </div>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-black text-white tracking-wider uppercase">
-                  LAXMI GROUP
-                </span>
-                <span className="text-[10px] font-bold text-[#E0BD55] tracking-widest uppercase">
-                  TIRUCHIRAPPALLI • TAMIL NADU
-                </span>
-              </div>
+              <img
+                src="/images/laxmi_horizontal_logo.jpg"
+                alt="Laxmi Group Agro Traders & Feeds"
+                className="h-12 w-auto object-contain rounded-md drop-shadow-md bg-white p-1"
+                onError={(e) => {
+                  e.currentTarget.src = '/logos/laxmi_traders_transparent.png'
+                }}
+              />
             </div>
 
             <p className="text-sm text-slate-300/80 leading-relaxed max-w-md">

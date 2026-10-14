@@ -3,7 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom'
 import api, { apiErrorMessage } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
-import { ArrowLeft, Save, Sparkles, Building, Users2, Package, Calculator, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Save, Building, Users2, Package, Calculator, CheckCircle2 } from 'lucide-react'
 import { Autocomplete, PageSpinner } from '../../components'
 import { today, extractList } from '../../utils/helpers'
 
@@ -377,7 +377,7 @@ export default function InvoiceForm() {
 
             <div>
               <label className="block text-xs font-bold text-slate-800 uppercase mb-1.5">
-                Contract Rate (â‚¹ / MT) <span className="text-red-500">*</span>
+                Contract Rate (₹ / MT) <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -451,29 +451,29 @@ export default function InvoiceForm() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
               <div>
                 <span className="text-[11px] uppercase tracking-wider text-slate-300 font-bold block">Taxable Base</span>
-                <span className="text-xl font-black text-white">â‚¹{calculations.taxable_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span className="text-xl font-black text-white">₹{calculations.taxable_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
               {!formData.is_interstate ? (
                 <>
                   <div>
                     <span className="text-[11px] uppercase tracking-wider text-slate-300 font-bold block">CGST 2.5%</span>
-                    <span className="text-xl font-black text-white">â‚¹{calculations.cgst_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span className="text-xl font-black text-white">₹{calculations.cgst_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div>
                     <span className="text-[11px] uppercase tracking-wider text-slate-300 font-bold block">SGST 2.5%</span>
-                    <span className="text-xl font-black text-white">â‚¹{calculations.sgst_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span className="text-xl font-black text-white">₹{calculations.sgst_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                 </>
               ) : (
                 <div>
                   <span className="text-[11px] uppercase tracking-wider text-slate-300 font-bold block">IGST 5.0%</span>
-                  <span className="text-xl font-black text-white">â‚¹{calculations.igst_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  <span className="text-xl font-black text-white">₹{calculations.igst_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
               )}
               <div className="bg-emerald-600 rounded-xl p-3 shadow-inner">
                 <span className="text-[11px] uppercase tracking-wider text-emerald-100 font-black block">Total Invoice</span>
                 <span className="text-2xl font-black text-white">
-                  â‚¹{calculations.total_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  ₹{calculations.total_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </span>
               </div>
             </div>

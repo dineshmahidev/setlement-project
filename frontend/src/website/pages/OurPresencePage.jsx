@@ -1,9 +1,38 @@
-import React from 'react'
-import { useOutletContext } from 'react-router-dom'
-import { MapPin, ShieldCheck, Building2 } from 'lucide-react'
+import React, { useState } from 'react'
+import { MapPin, ExternalLink, Navigation } from 'lucide-react'
+
+const LOCATIONS = [
+  {
+    id: 'laxmi',
+    tag: 'TRADING HUB',
+    name: 'LAXMI TRADERS',
+    address: '103, Bharathiyar Street, Ariyamangalam, Tiruchirappalli, Tamil Nadu – 620010',
+    gstin: '33BWLKP6363A3ZN',
+    mapUrl: 'https://maps.google.com/maps?q=103,%20Bharathiyar%20Street,%20Ariyamangalam,%20Tiruchirappalli&t=&z=14&ie=UTF8&iwloc=&output=embed',
+    directMapLink: 'https://www.google.com/maps/search/?api=1&query=103,+Bharathiyar+Street,+Ariyamangalam,+Tiruchirappalli',
+  },
+  {
+    id: 'sm',
+    tag: 'COMMERCIAL SUPPLY',
+    name: 'S M TRADERS',
+    address: '103/A, Bharathiyar Street, Ariyamangalam, Tiruchirappalli, Tamil Nadu – 620010',
+    gstin: '33DTNPM3407G1ZQ',
+    mapUrl: 'https://maps.google.com/maps?q=103/A,%20Bharathiyar%20Street,%20Ariyamangalam,%20Tiruchirappalli&t=&z=14&ie=UTF8&iwloc=&output=embed',
+    directMapLink: 'https://www.google.com/maps/search/?api=1&query=103/A,+Bharathiyar+Street,+Ariyamangalam,+Tiruchirappalli',
+  },
+  {
+    id: 'shriee',
+    tag: 'FEED OPERATIONS',
+    name: 'SHRIEE FEEDS',
+    address: 'Door No. 3/1044, Nandanar Metu Mill New Colony, Manapparai / Usilampatti, Tiruchirappalli – 621312',
+    gstin: '33BOZPS3759G1Z5',
+    mapUrl: 'https://maps.google.com/maps?q=Door%20No.%203/1044,%20Nandanar%20Metu%20Mill%20New%20Colony,%20Manapparai,%20Tiruchirappalli&t=&z=14&ie=UTF8&iwloc=&output=embed',
+    directMapLink: 'https://www.google.com/maps/search/?api=1&query=Door+No.+3/1044,+Nandanar+Metu+Mill+New+Colony,+Manapparai,+Tiruchirappalli',
+  },
+]
 
 export default function OurPresencePage() {
-  const { onOpenEnquiry } = useOutletContext()
+  const [selectedHub, setSelectedHub] = useState(LOCATIONS[0])
 
   return (
     <div className="pt-24 space-y-0 bg-[#FAFAFC] text-slate-800">
@@ -20,46 +49,87 @@ export default function OurPresencePage() {
         </div>
       </section>
 
-      {/* Locations */}
-      <section className="py-20 bg-white">
+      {/* Locations Cards */}
+      <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* LAXMI TRADERS */}
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 space-y-4 shadow-sm hover:shadow-md transition-all">
-              <span className="text-xs font-black text-[#C9A227] uppercase tracking-wider block">
-                TRADING HUB
-              </span>
-              <h3 className="text-2xl font-black text-[#071426]">LAXMI TRADERS</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                103, Bharathiyar Street, Ariyamangalam, Tiruchirappalli, Tamil Nadu – 620010
-              </p>
-              <div className="text-xs text-[#C9A227] font-bold">GSTIN: 33BWLKP6363A3ZN</div>
-            </div>
+            {LOCATIONS.map((loc) => {
+              const isSelected = selectedHub.id === loc.id
+              return (
+                <div
+                  key={loc.id}
+                  onClick={() => setSelectedHub(loc)}
+                  className={`rounded-2xl border p-6 space-y-4 transition-all cursor-pointer ${
+                    isSelected
+                      ? 'border-[#C9A227] bg-amber-50/50 shadow-md ring-2 ring-[#C9A227]/30'
+                      : 'border-slate-200 bg-slate-50/60 shadow-sm hover:shadow-md hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-[#C9A227] uppercase tracking-wider block">
+                      {loc.tag}
+                    </span>
+                    {isSelected && (
+                      <span className="rounded-full bg-[#071426] px-2.5 py-0.5 text-[10px] font-bold text-amber-300">
+                        Viewing Map
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-2xl font-black text-[#071426]">{loc.name}</h3>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    {loc.address}
+                  </p>
+                  <div className="text-xs text-[#C9A227] font-bold">GSTIN: {loc.gstin}</div>
+                  <button
+                    type="button"
+                    className="text-xs font-bold text-[#071426] flex items-center gap-1 hover:text-[#C9A227] transition-colors"
+                  >
+                    <Navigation className="h-3.5 w-3.5" /> View on Live Map ↓
+                  </button>
+                </div>
+              )
+            })}
+          </div>
 
-            {/* S M TRADERS */}
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 space-y-4 shadow-sm hover:shadow-md transition-all">
-              <span className="text-xs font-black text-[#C9A227] uppercase tracking-wider block">
-                COMMERCIAL SUPPLY
-              </span>
-              <h3 className="text-2xl font-black text-[#071426]">S M TRADERS</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                103/A, Bharathiyar Street, Ariyamangalam, Tiruchirappalli, Tamil Nadu – 620010
-              </p>
-              <div className="text-xs text-[#C9A227] font-bold">GSTIN: 33DTNPM3407G1ZQ</div>
-            </div>
-
-            {/* SHRIEE FEEDS */}
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 space-y-4 shadow-sm hover:shadow-md transition-all">
-              <span className="text-xs font-black text-[#C9A227] uppercase tracking-wider block">
-                FEED OPERATIONS
-              </span>
-              <h3 className="text-2xl font-black text-[#071426]">SHRIEE FEEDS</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Door No. 3/1044, Nandanar Metu Mill New Colony, Manapparai / Usilampatti, Tiruchirappalli – 621312
-              </p>
-              <div className="text-xs text-[#C9A227] font-bold">
-                GSTIN: 33BOZPS3759G1Z5 • Proprietor: K. Sakthi Murugan
+          {/* Interactive Embedded Google Map Section */}
+          <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-md">
+            <div className="bg-[#071426] p-5 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-md bg-amber-400/20 px-2.5 py-0.5 text-[10px] font-black uppercase text-amber-300">
+                    LIVE EMBEDDED MAP
+                  </span>
+                  <h3 className="text-lg font-black text-white">{selectedHub.name}</h3>
+                </div>
+                <p className="text-xs text-slate-300 mt-1 flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-[#C9A227]" />
+                  {selectedHub.address}
+                </p>
               </div>
+
+              <div className="flex items-center gap-3">
+                <a
+                  href={selectedHub.directMapLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#C9A227] to-[#E0BD55] px-4 py-2 text-xs font-black text-slate-950 uppercase tracking-wider hover:opacity-95 shadow-sm"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Open Navigation
+                </a>
+              </div>
+            </div>
+
+            <div className="w-full h-96 bg-slate-100">
+              <iframe
+                src={selectedHub.mapUrl}
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen=""
+                loading="lazy"
+                title={`${selectedHub.name} Embedded Map`}
+              />
             </div>
           </div>
         </div>
@@ -67,4 +137,3 @@ export default function OurPresencePage() {
     </div>
   )
 }
-

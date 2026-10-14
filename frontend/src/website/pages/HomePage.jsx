@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import Hero3DCanvas from '../components/Hero3DCanvas'
 import ImageGalleryModal from '../components/ImageGalleryModal'
+import FlipBusinessCard from '../components/FlipBusinessCard'
 import {
   Building2,
   TrendingUp,
@@ -10,18 +11,15 @@ import {
   Users,
   MapPin,
   ArrowRight,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   CheckCircle2,
   Package,
   Layers,
   Truck,
-  Sparkles,
   Phone,
   Mail,
   Send,
-  Eye,
   Store,
   Sprout,
   HelpCircle,
@@ -34,27 +32,35 @@ function HeroSlider({ onOpenEnquiry }) {
   const SLIDES = [
     {
       id: 1,
-      image: '/images/slide1.jpg',
-      badge: 'LAXMI GROUP • AGRO COMMODITIES & FEEDS',
+      image: '/banners/homepage_banner.png',
+      badge: 'SHREE LAXMI • AGRO COMMODITIES & FEEDS',
       title: 'KING OF AGRO COMMODITIES & CATTLE FEEDS',
       subtitle: 'Supplying Premium Cottonseed Oil Cakes, High-Protein Animal Nutrition, and Quality Grains across Tamil Nadu.',
       primaryAction: { label: 'Explore Products', link: '/products-services' },
     },
     {
       id: 2,
-      image: '/images/slide2.jpg',
-      badge: 'SHRIEE FEEDS & LAXMI TRADERS',
+      image: '/banners/laxmi_traders_banner.png',
+      badge: 'LAXMI TRADERS • GROWTH & COMMERCE',
       title: 'NURTURING LIVESTOCK • EMPOWERING FARMERS',
       subtitle: 'State-of-the-Art Processing Facilities & Wholesale Depots in Tiruchirappalli and Manapparai / Usilampatti.',
       primaryAction: { label: 'Our Businesses', link: '/our-businesses' },
     },
     {
       id: 3,
-      image: '/images/slide3.jpg',
-      badge: 'LOGISTICS & WAREHOUSING',
-      title: 'POWERFUL DISTRIBUTION & MULTI-GODOWN NETWORK',
+      image: '/banners/shree_feeds_banner.png',
+      badge: 'SHREE FEEDS • AGRICULTURE & POULTRY',
+      title: 'HIGH-PROTEIN FEEDS & LIVESTOCK NUTRITION',
       subtitle: 'Integrated Transport Fleet & Bulk Storage Facilities Ensuring On-Time Commodity Deliveries.',
-      primaryAction: { label: 'Our Presence', link: '/our-presence' },
+      primaryAction: { label: 'Shree Feeds', link: '/business/shriee-feeds' },
+    },
+    {
+      id: 4,
+      image: '/banners/sm_traders_banner.png',
+      badge: 'SM TRADERS • GODOWN, GRAINS & FARMING',
+      title: 'POWERFUL DISTRIBUTION & MULTI-GODOWN NETWORK',
+      subtitle: 'Spacious Grain Godowns & Agro Commodities Trading Network across Tamil Nadu.',
+      primaryAction: { label: 'SM Traders', link: '/business/sm-traders' },
     },
   ]
 
@@ -76,9 +82,9 @@ function HeroSlider({ onOpenEnquiry }) {
   const activeSlide = SLIDES[current]
 
   return (
-    <div className="pt-14 sm:pt-16 bg-[#071426] text-white">
-      {/* DESKTOP FULL COVER SLIDER */}
-      <div className="hidden sm:block relative w-full h-[75vh] min-h-[580px] overflow-hidden bg-slate-950">
+    <div className="pt-0 bg-white text-white">
+      {/* DESKTOP FULL COVER SLIDER (Fills top behind floating navbar) */}
+      <div className="hidden sm:block relative w-full h-[85vh] min-h-[620px] overflow-hidden bg-white">
         {SLIDES.map((slide, idx) => (
           <div
             key={slide.id}
@@ -89,16 +95,15 @@ function HeroSlider({ onOpenEnquiry }) {
             <img
               src={slide.image}
               alt={slide.title}
-              className="w-full h-full object-cover object-center"
+              className={`w-full h-full object-cover object-center ${idx === current ? 'animate-kenburns' : ''}`}
             />
 
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-slate-950/20" />
             <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-transparent to-slate-950/60" />
 
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center pt-16 sm:pt-20">
               <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white space-y-4 sm:space-y-6">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/20 border border-amber-400/40 backdrop-blur-md">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/20 border border-amber-400/40 backdrop-blur-md animate-badge-glow">
                   <span className="text-xs font-black uppercase tracking-widest text-amber-200">
                     {slide.badge}
                   </span>
@@ -166,8 +171,8 @@ function HeroSlider({ onOpenEnquiry }) {
       </div>
 
       {/* MOBILE SCREEN: ORIGINAL ASPECT RATIO IMAGE + DOWNSIDE CONTENT STACK */}
-      <div className="block sm:hidden bg-[#071426]">
-        <div className="relative w-full aspect-[16/9] overflow-hidden bg-black">
+      <div className="block sm:hidden bg-white pt-16">
+        <div className="relative w-full aspect-[16/9] overflow-hidden bg-white">
           <img
             src={activeSlide.image}
             alt={activeSlide.title}
@@ -205,7 +210,7 @@ function HeroSlider({ onOpenEnquiry }) {
         </div>
 
         {/* Mobile Downside Content Section */}
-        <div className="p-5 text-center space-y-3.5 bg-gradient-to-b from-[#071426] to-[#0A1D36] border-b border-slate-800">
+        <div className="p-5 text-center space-y-3.5 bg-gradient-to-b from-slate-900 to-slate-950 border-b border-slate-800">
           <span className="inline-block text-[10px] font-black uppercase tracking-widest text-[#E0BD55] bg-amber-500/10 border border-amber-400/30 px-3 py-0.5 rounded-full">
             {activeSlide.badge}
           </span>
@@ -242,6 +247,25 @@ export default function HomePage() {
   const { onOpenEnquiry } = useOutletContext()
   const [activeGalleryImage, setActiveGalleryImage] = useState(null)
   const [selectedVertical, setSelectedVertical] = useState('laxmi-traders')
+
+  // Global scroll reveal observer across all landing page sections
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-revealed')
+          }
+        })
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+    )
+
+    const elements = document.querySelectorAll('.reveal-init, .reveal-scale-init, .reveal-fade-init')
+    elements.forEach((el) => observer.observe(el))
+
+    return () => observer.disconnect()
+  }, [])
 
   const [contactForm, setContactForm] = useState({
     name: '',
@@ -432,21 +456,21 @@ export default function HomePage() {
           ================================================== */}
       <section className="relative min-h-[92vh] flex items-center justify-center pt-28 pb-20 overflow-hidden bg-gradient-to-b from-[#F3F6FD] via-[#F8FAFD] to-[#FAFAFC]">
         {/* Soft Ambient Mesh Background Blobs (Reference UI gradient backdrop) */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[550px] bg-gradient-to-tr from-indigo-200/50 via-purple-200/40 to-pink-200/50 blur-3xl rounded-full pointer-events-none -z-10" />
-        <div className="absolute bottom-10 left-10 w-[450px] h-[450px] bg-gradient-to-r from-blue-300/30 to-teal-200/40 blur-3xl rounded-full pointer-events-none -z-10" />
-        <div className="absolute bottom-10 right-10 w-[500px] h-[500px] bg-gradient-to-l from-rose-200/40 via-amber-200/30 to-purple-200/40 blur-3xl rounded-full pointer-events-none -z-10" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[550px] bg-gradient-to-tr from-indigo-200/50 via-purple-200/40 to-pink-200/50 blur-3xl rounded-full pointer-events-none -z-10 animate-float-slow" />
+        <div className="absolute bottom-10 left-10 w-[450px] h-[450px] bg-gradient-to-r from-blue-300/30 to-teal-200/40 blur-3xl rounded-full pointer-events-none -z-10 animate-float-reverse" />
+        <div className="absolute bottom-10 right-10 w-[500px] h-[500px] bg-gradient-to-l from-rose-200/40 via-amber-200/30 to-purple-200/40 blur-3xl rounded-full pointer-events-none -z-10 animate-pulse-glow" />
 
         {/* 3D Canvas Light Particles */}
         <Hero3DCanvas />
 
         <div className="relative z-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8 my-auto">
           {/* Top Emblem Logo Icon (Exact match to top icon in screenshot) */}
-          <div className="inline-flex items-center justify-center">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-gradient-to-tr from-[#FF5E62] via-[#FF9966] to-[#8E2DE2] p-0.5 shadow-2xl shadow-rose-400/30 transform hover:scale-105 transition-transform duration-300">
+          <div className="inline-flex items-center justify-center reveal-scale-init">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-gradient-to-tr from-[#FF5E62] via-[#FF9966] to-[#8E2DE2] p-0.5 shadow-2xl shadow-rose-400/30 transform hover:scale-110 hover:rotate-3 transition-transform duration-500 animate-badge-glow">
               <div className="w-full h-full rounded-[22px] bg-gradient-to-br from-amber-400 via-rose-500 to-indigo-600 flex items-center justify-center shadow-inner">
                 {/* Heart / Shield Glowing Emblem Shape */}
                 <svg
-                  className="w-9 h-9 sm:w-11 sm:h-11 text-white drop-shadow-md"
+                  className="w-9 h-9 sm:w-11 sm:h-11 text-white drop-shadow-md animate-pulse"
                   viewBox="0 0 24 24"
                   fill="currentColor"
                 >
@@ -457,7 +481,7 @@ export default function HomePage() {
           </div>
 
           {/* Headline Title */}
-          <div className="space-y-3 max-w-3xl mx-auto">
+          <div className="space-y-3 max-w-3xl mx-auto reveal-init delay-100">
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-[#071426] tracking-tight leading-tight">
               Which vertical fits your needs best?
             </h1>
@@ -467,8 +491,8 @@ export default function HomePage() {
           </div>
 
           {/* 8 Glassmorphic Selector Cards Grid (2 rows x 4 cols on desktop, matching reference UI) */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto pt-2">
-            {SELECTOR_OPTIONS.map((opt) => {
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto pt-2 reveal-init delay-150">
+            {SELECTOR_OPTIONS.map((opt, optIdx) => {
               const IconComp = opt.icon
               const isSelected = selectedVertical === opt.id
 
@@ -476,11 +500,12 @@ export default function HomePage() {
                 <button
                   key={opt.id}
                   onClick={() => setSelectedVertical(opt.id)}
-                  className={`group relative p-5 sm:p-6 rounded-2xl flex flex-col items-center justify-center text-center transition-all duration-300 ${
+                  className={`group relative p-5 sm:p-6 rounded-2xl flex flex-col items-center justify-center text-center transition-all duration-300 hover-card-lift ${
                     isSelected
                       ? 'bg-white/95 border-2 border-[#C9A227] shadow-xl ring-4 ring-[#C9A227]/20 scale-105 z-10'
-                      : 'bg-white/70 backdrop-blur-xl border border-slate-200/80 shadow-sm hover:shadow-lg hover:border-slate-300 hover:bg-white/90 hover:-translate-y-0.5'
+                      : 'bg-white/70 backdrop-blur-xl border border-slate-200/80 shadow-sm hover:shadow-lg hover:border-slate-300 hover:bg-white/90'
                   }`}
+                  style={{ animationDelay: `${optIdx * 50}ms` }}
                 >
                   {/* Selected Badge Checkmark */}
                   {isSelected && (
@@ -509,7 +534,7 @@ export default function HomePage() {
           </div>
 
           {/* Active Vertical Highlights Banner */}
-          <div className="max-w-3xl mx-auto p-5 sm:p-6 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-md text-left transition-all duration-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="max-w-3xl mx-auto p-5 sm:p-6 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-md text-left transition-all duration-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 reveal-init delay-200 hover-card-lift">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black uppercase tracking-wider text-[#C9A227] bg-amber-50 px-2.5 py-0.5 rounded-md border border-amber-200">
@@ -548,7 +573,7 @@ export default function HomePage() {
           </div>
 
           {/* Large High-Impact Hero Picture Section */}
-          <div className="pt-8">
+          <div className="pt-8 reveal-scale-init delay-250">
             <div className="relative group rounded-3xl overflow-hidden border border-slate-200/90 shadow-2xl bg-white p-2">
               <div className="relative h-[320px] sm:h-[420px] lg:h-[480px] rounded-2xl overflow-hidden">
                 <img
@@ -594,7 +619,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left Picture */}
-            <div className="relative group">
+            <div className="relative group reveal-scale-init">
               <div className="relative overflow-hidden rounded-2xl border border-slate-200 shadow-xl bg-slate-100">
                 <img
                   src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1200&q=80"
@@ -614,7 +639,7 @@ export default function HomePage() {
             </div>
 
             {/* Right Content */}
-            <div className="space-y-6">
+            <div className="space-y-6 reveal-init delay-150">
               <div className="inline-flex items-center gap-2 text-xs font-black text-[#C9A227] uppercase tracking-widest bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
                 <Building2 className="w-4 h-4 text-[#C9A227]" />
                 <span>WHO WE ARE</span>
@@ -632,19 +657,19 @@ export default function HomePage() {
 
               {/* 3 Highlights */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-1 hover:border-[#C9A227] transition-colors">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-1 hover:border-[#C9A227] transition-all hover-card-lift reveal-init delay-200">
                   <span className="text-xl font-black text-[#C9A227]">01</span>
                   <h4 className="text-xs font-bold text-[#071426] uppercase tracking-wider">Customer Focus</h4>
                   <p className="text-[11px] text-slate-500">Tailored supply and attentive partner service.</p>
                 </div>
 
-                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-1 hover:border-[#C9A227] transition-colors">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-1 hover:border-[#C9A227] transition-all hover-card-lift reveal-init delay-250">
                   <span className="text-xl font-black text-[#C9A227]">02</span>
                   <h4 className="text-xs font-bold text-[#071426] uppercase tracking-wider">Reliable Supply</h4>
                   <p className="text-[11px] text-slate-500">Consistent quality & dependable logistics.</p>
                 </div>
 
-                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-1 hover:border-[#C9A227] transition-colors">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-1 hover:border-[#C9A227] transition-all hover-card-lift reveal-init delay-300">
                   <span className="text-xl font-black text-[#C9A227]">03</span>
                   <h4 className="text-xs font-bold text-[#071426] uppercase tracking-wider">Long-Term Trust</h4>
                   <p className="text-[11px] text-slate-500">Enduring partnerships built over time.</p>
@@ -670,7 +695,7 @@ export default function HomePage() {
           ================================================== */}
       <section className="py-20 bg-[#F3F6FD] border-t border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center max-w-2xl mx-auto space-y-3">
+          <div className="text-center max-w-2xl mx-auto space-y-3 reveal-init">
             <span className="text-xs font-black text-[#C9A227] uppercase tracking-widest block">
               OUR BUSINESS VERTICALS
             </span>
@@ -682,117 +707,63 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* CARD 1: LAXMI TRADERS */}
-            <div className="group relative rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-md flex flex-col hover:shadow-2xl hover:border-[#C9A227] transition-all duration-300">
-              <div className="relative h-60 overflow-hidden">
-                <img
-                  src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1000&q=80"
-                  alt="Laxmi Traders Warehouse"
-                  className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
-                />
-                <span className="absolute top-4 left-4 rounded-full bg-[#071426] text-[#E0BD55] px-3 py-1 text-[10px] font-black uppercase tracking-wider">
-                  Trading & Distribution
-                </span>
-              </div>
-
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                <div>
-                  <h3 className="text-2xl font-black text-[#071426] tracking-tight group-hover:text-[#C9A227] transition-colors">
-                    LAXMI TRADERS
-                  </h3>
-                  <p className="text-xs text-[#C9A227] font-semibold mt-1">
-                    Ariyamangalam, Tiruchirappalli • GSTIN: 33BWLKP6363A3ZN
-                  </p>
-                  <p className="text-xs text-slate-600 leading-relaxed mt-3">
-                    Laxmi Traders is an established trading business based in Ariyamangalam, Tiruchirappalli, serving customers through dependable sourcing and supply.
-                  </p>
-                </div>
-
-                <div className="pt-2 border-t border-slate-100">
-                  <Link
-                    to="/business/laxmi-traders"
-                    className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-xs font-bold text-[#071426] hover:bg-[#071426] hover:text-white transition-all"
-                  >
-                    <span>Explore Laxmi Traders</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              </div>
+            <div className="reveal-init delay-100">
+              <FlipBusinessCard
+                name="LAXMI TRADERS"
+                category="Trading & Distribution"
+                meaning="Growth, Trade & Business"
+                logo="/logos/laxmi_traders_transparent.png"
+                banner="/banners/laxmi_traders_banner.png"
+                location="103, Bharathiyar Street, Ariyamangalam, Tiruchirappalli - 620010"
+                gstin="33BWLKP6363A3ZN"
+                godowns="2 Active Godowns (Ariyamangalam & Bazaar)"
+                phone="+91 98424 56789 / 0431-2456789"
+                description="Established commercial trading business based in Ariyamangalam, Tiruchirappalli, serving customers through dependable sourcing and commodity supply."
+                keyProducts={['Cottonseed Oil Cake', 'Grain Trading', 'Agro Commodities']}
+                link="/business/laxmi-traders"
+                autoFlipDelay={700}
+                autoFlipDuration={3600}
+              />
             </div>
 
             {/* CARD 2: S M TRADERS */}
-            <div className="group relative rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-md flex flex-col hover:shadow-2xl hover:border-[#C9A227] transition-all duration-300">
-              <div className="relative h-60 overflow-hidden">
-                <img
-                  src="https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=1000&q=80"
-                  alt="S M Traders Wholesale Operations"
-                  className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
-                />
-                <span className="absolute top-4 left-4 rounded-full bg-[#071426] text-[#E0BD55] px-3 py-1 text-[10px] font-black uppercase tracking-wider">
-                  Trading Business
-                </span>
-              </div>
-
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                <div>
-                  <h3 className="text-2xl font-black text-[#071426] tracking-tight group-hover:text-[#C9A227] transition-colors">
-                    S M TRADERS
-                  </h3>
-                  <p className="text-xs text-[#C9A227] font-semibold mt-1">
-                    Ariyamangalam, Tiruchirappalli • GSTIN: 33DTNPM3407G1ZQ
-                  </p>
-                  <p className="text-xs text-slate-600 leading-relaxed mt-3">
-                    S M Traders operates from Ariyamangalam, Tiruchirappalli, with a focus on reliable supply and professional business relationships.
-                  </p>
-                </div>
-
-                <div className="pt-2 border-t border-slate-100">
-                  <Link
-                    to="/business/sm-traders"
-                    className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-xs font-bold text-[#071426] hover:bg-[#071426] hover:text-white transition-all"
-                  >
-                    <span>Explore S M Traders</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              </div>
+            <div className="reveal-init delay-200">
+              <FlipBusinessCard
+                name="S M TRADERS"
+                category="Trading & Warehousing"
+                meaning="Godown, Grains & Farming"
+                logo="/logos/sm_traders_transparent.png"
+                banner="/banners/sm_traders_banner.png"
+                location="103/A, Bharathiyar Street, Ariyamangalam, Tiruchirappalli - 620010"
+                gstin="33DTNPM3407G1ZQ"
+                godowns="Bulk Grain Godown Capacity"
+                phone="+91 98424 67890 / 0431-2456790"
+                description="Wholesale grain trading operations with spacious godowns, transparent weighing, and robust farmer-to-market trade."
+                keyProducts={['Bulk Grains', 'Warehouse Storage', 'Commercial Distribution']}
+                link="/business/sm-traders"
+                autoFlipDelay={1400}
+                autoFlipDuration={3600}
+              />
             </div>
 
             {/* CARD 3: SHRIEE FEEDS */}
-            <div className="group relative rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-md flex flex-col hover:shadow-2xl hover:border-[#C9A227] transition-all duration-300">
-              <div className="relative h-60 overflow-hidden">
-                <img
-                  src="https://images.unsplash.com/photo-1595246140625-573b715d11dc?auto=format&fit=crop&w=1000&q=80"
-                  alt="Shriee Feeds Agriculture"
-                  className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
-                />
-                <span className="absolute top-4 left-4 rounded-full bg-[#071426] text-[#E0BD55] px-3 py-1 text-[10px] font-black uppercase tracking-wider">
-                  Feed & Related Products
-                </span>
-              </div>
-
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                <div>
-                  <h3 className="text-2xl font-black text-[#071426] tracking-tight group-hover:text-[#C9A227] transition-colors">
-                    SHRIEE FEEDS
-                  </h3>
-                  <p className="text-xs text-[#C9A227] font-semibold mt-1">
-                    Manapparai / Usilampatti • GSTIN: 33BOZPS3759G1Z5
-                  </p>
-                  <p className="text-xs text-slate-600 leading-relaxed mt-3">
-                    Shriee Feeds is a feed-focused business serving customers through dependable product supply and long-term business relationships.
-                  </p>
-                </div>
-
-                <div className="pt-2 border-t border-slate-100">
-                  <Link
-                    to="/business/shriee-feeds"
-                    className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-xs font-bold text-[#071426] hover:bg-[#071426] hover:text-white transition-all"
-                  >
-                    <span>Explore Shriee Feeds</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              </div>
+            <div className="reveal-init delay-300">
+              <FlipBusinessCard
+                name="SHRIEE FEEDS"
+                category="Cattle & Poultry Feeds"
+                meaning="Agriculture, Cattle & Poultry"
+                logo="/logos/shree_feeds_transparent.png"
+                banner="/banners/shree_feeds_banner.png"
+                location="Door No. 3/1044, Nandanar Metu Mill New Colony, Manapparai - 621306"
+                gstin="33BOZPS3759G1Z5"
+                godowns="Feed Mill & Processing Godown"
+                phone="+91 98424 78901 / 0431-2456791"
+                description="High-protein cattle feeds and specialized poultry nutrition engineered for superior livestock health, higher yield, and farmer prosperity."
+                keyProducts={['High-Protein Feed', 'Cattle Nutrition', 'Poultry Rations']}
+                link="/business/shriee-feeds"
+                autoFlipDelay={2100}
+                autoFlipDuration={3600}
+              />
             </div>
           </div>
         </div>
@@ -803,7 +774,7 @@ export default function HomePage() {
           ================================================== */}
       <section className="py-20 bg-white border-t border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center max-w-xl mx-auto space-y-2">
+          <div className="text-center max-w-xl mx-auto space-y-2 reveal-init">
             <span className="text-xs font-black text-[#C9A227] uppercase tracking-widest block">
               CORE CAPABILITIES
             </span>
@@ -811,8 +782,8 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 space-y-4 hover:border-[#C9A227] hover:bg-white hover:shadow-lg transition-all">
-              <div className="h-12 w-12 rounded-xl bg-amber-100 text-[#C9A227] flex items-center justify-center">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 space-y-4 hover:border-[#C9A227] hover:bg-white transition-all hover-card-lift group reveal-init delay-100">
+              <div className="h-12 w-12 rounded-xl bg-amber-100 text-[#C9A227] flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
                 <Layers className="h-6 w-6" />
               </div>
               <div>
@@ -824,8 +795,8 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 space-y-4 hover:border-[#C9A227] hover:bg-white hover:shadow-lg transition-all">
-              <div className="h-12 w-12 rounded-xl bg-amber-100 text-[#C9A227] flex items-center justify-center">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 space-y-4 hover:border-[#C9A227] hover:bg-white transition-all hover-card-lift group reveal-init delay-200">
+              <div className="h-12 w-12 rounded-xl bg-amber-100 text-[#C9A227] flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
                 <Truck className="h-6 w-6" />
               </div>
               <div>
@@ -837,8 +808,8 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 space-y-4 hover:border-[#C9A227] hover:bg-white hover:shadow-lg transition-all">
-              <div className="h-12 w-12 rounded-xl bg-amber-100 text-[#C9A227] flex items-center justify-center">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 space-y-4 hover:border-[#C9A227] hover:bg-white transition-all hover-card-lift group reveal-init delay-300">
+              <div className="h-12 w-12 rounded-xl bg-amber-100 text-[#C9A227] flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
                 <Package className="h-6 w-6" />
               </div>
               <div>
@@ -850,8 +821,8 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 space-y-4 hover:border-[#C9A227] hover:bg-white hover:shadow-lg transition-all">
-              <div className="h-12 w-12 rounded-xl bg-amber-100 text-[#C9A227] flex items-center justify-center">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 space-y-4 hover:border-[#C9A227] hover:bg-white transition-all hover-card-lift group reveal-init delay-400">
+              <div className="h-12 w-12 rounded-xl bg-amber-100 text-[#C9A227] flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
                 <Users className="h-6 w-6" />
               </div>
               <div>
@@ -872,25 +843,25 @@ export default function HomePage() {
       <section className="relative py-16 bg-[#071426] text-white overflow-hidden">
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
-            <div className="p-5 rounded-2xl border border-slate-700 bg-slate-900/80 backdrop-blur-md space-y-1">
-              <span className="text-3xl sm:text-4xl font-black text-[#E0BD55]">3+</span>
+            <div className="p-5 rounded-2xl border border-slate-700 bg-slate-900/80 backdrop-blur-md space-y-1 hover-card-lift hover-glow-gold reveal-scale-init delay-100">
+              <span className="text-3xl sm:text-4xl font-black text-[#E0BD55] animate-pulse">3+</span>
               <h4 className="text-xs font-black text-white uppercase tracking-wider">Business Verticals</h4>
               <p className="text-[11px] text-slate-400">Trading, Distribution & Feed</p>
             </div>
 
-            <div className="p-5 rounded-2xl border border-slate-700 bg-slate-900/80 backdrop-blur-md space-y-1">
+            <div className="p-5 rounded-2xl border border-slate-700 bg-slate-900/80 backdrop-blur-md space-y-1 hover-card-lift hover-glow-gold reveal-scale-init delay-200">
               <span className="text-2xl sm:text-3xl font-black text-[#E0BD55]">Tamil Nadu</span>
               <h4 className="text-xs font-black text-white uppercase tracking-wider">Business Presence</h4>
               <p className="text-[11px] text-slate-400">Centered in Tiruchirappalli</p>
             </div>
 
-            <div className="p-5 rounded-2xl border border-slate-700 bg-slate-900/80 backdrop-blur-md space-y-1">
+            <div className="p-5 rounded-2xl border border-slate-700 bg-slate-900/80 backdrop-blur-md space-y-1 hover-card-lift hover-glow-gold reveal-scale-init delay-300">
               <span className="text-2xl sm:text-3xl font-black text-[#E0BD55]">Customer First</span>
               <h4 className="text-xs font-black text-white uppercase tracking-wider">Business Approach</h4>
               <p className="text-[11px] text-slate-400">Reliable & Timely Supply</p>
             </div>
 
-            <div className="p-5 rounded-2xl border border-slate-700 bg-slate-900/80 backdrop-blur-md space-y-1">
+            <div className="p-5 rounded-2xl border border-slate-700 bg-slate-900/80 backdrop-blur-md space-y-1 hover-card-lift hover-glow-gold reveal-scale-init delay-400">
               <span className="text-2xl sm:text-3xl font-black text-[#E0BD55]">Long-Term</span>
               <h4 className="text-xs font-black text-white uppercase tracking-wider">Business Focus</h4>
               <p className="text-[11px] text-slate-400">Building Sustainable Trust</p>
@@ -904,7 +875,7 @@ export default function HomePage() {
           ================================================== */}
       <section className="py-20 bg-white border-t border-slate-200/80 space-y-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto space-y-3 mb-12">
+          <div className="text-center max-w-2xl mx-auto space-y-3 mb-12 reveal-init">
             <span className="text-xs font-black text-[#C9A227] uppercase tracking-widest block">
               OUR ADVANTAGES
             </span>
@@ -912,7 +883,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="flex gap-4 p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:shadow-md transition-all">
+            <div className="flex gap-4 p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:shadow-md transition-all hover-card-lift reveal-init delay-100">
               <span className="text-2xl font-black text-[#C9A227]">01</span>
               <div className="space-y-1">
                 <h3 className="text-lg font-black text-[#071426]">RELIABILITY</h3>
@@ -922,7 +893,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="flex gap-4 p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:shadow-md transition-all">
+            <div className="flex gap-4 p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:shadow-md transition-all hover-card-lift reveal-init delay-200">
               <span className="text-2xl font-black text-[#C9A227]">02</span>
               <div className="space-y-1">
                 <h3 className="text-lg font-black text-[#071426]">CUSTOMER FOCUS</h3>
@@ -932,7 +903,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="flex gap-4 p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:shadow-md transition-all">
+            <div className="flex gap-4 p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:shadow-md transition-all hover-card-lift reveal-init delay-300">
               <span className="text-2xl font-black text-[#C9A227]">03</span>
               <div className="space-y-1">
                 <h3 className="text-lg font-black text-[#071426]">QUALITY COMMITMENT</h3>
@@ -942,7 +913,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="flex gap-4 p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:shadow-md transition-all">
+            <div className="flex gap-4 p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:shadow-md transition-all hover-card-lift reveal-init delay-400">
               <span className="text-2xl font-black text-[#C9A227]">04</span>
               <div className="space-y-1">
                 <h3 className="text-lg font-black text-[#071426]">LONG-TERM TRUST</h3>
@@ -960,7 +931,7 @@ export default function HomePage() {
           ================================================== */}
       <section className="py-20 bg-[#F3F6FD] border-t border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center max-w-2xl mx-auto space-y-3">
+          <div className="text-center max-w-2xl mx-auto space-y-3 reveal-init">
             <span className="text-xs font-black text-[#C9A227] uppercase tracking-widest block">
               REGIONAL FOOTPRINT
             </span>
@@ -971,12 +942,12 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm hover:shadow-md transition-all">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm hover:shadow-xl transition-all hover-card-lift group reveal-init delay-100">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black text-[#C9A227] uppercase tracking-wider">
                   TRADING HUB
                 </span>
-                <MapPin className="h-5 w-5 text-[#C9A227]" />
+                <MapPin className="h-5 w-5 text-[#C9A227] group-hover:animate-bounce" />
               </div>
               <h3 className="text-xl font-black text-[#071426]">LAXMI TRADERS</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -987,12 +958,12 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm hover:shadow-md transition-all">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm hover:shadow-xl transition-all hover-card-lift group reveal-init delay-200">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black text-[#C9A227] uppercase tracking-wider">
                   COMMERCIAL SUPPLY
                 </span>
-                <MapPin className="h-5 w-5 text-[#C9A227]" />
+                <MapPin className="h-5 w-5 text-[#C9A227] group-hover:animate-bounce" />
               </div>
               <h3 className="text-xl font-black text-[#071426]">S M TRADERS</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -1003,12 +974,12 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm hover:shadow-md transition-all">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm hover:shadow-xl transition-all hover-card-lift group reveal-init delay-300">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black text-[#C9A227] uppercase tracking-wider">
                   FEED OPERATIONS
                 </span>
-                <MapPin className="h-5 w-5 text-[#C9A227]" />
+                <MapPin className="h-5 w-5 text-[#C9A227] group-hover:animate-bounce" />
               </div>
               <h3 className="text-xl font-black text-[#071426]">SHRIEE FEEDS</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -1027,7 +998,7 @@ export default function HomePage() {
           ================================================== */}
       <section className="py-20 bg-white border-t border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center max-w-xl mx-auto space-y-2">
+          <div className="text-center max-w-xl mx-auto space-y-2 reveal-init">
             <span className="text-xs font-black text-[#C9A227] uppercase tracking-widest block">
               FOUNDATIONAL PRINCIPLES
             </span>
@@ -1035,32 +1006,32 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 space-y-3">
-              <ShieldCheck className="h-8 w-8 text-[#C9A227]" />
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 space-y-3 hover-card-lift group reveal-init delay-100">
+              <ShieldCheck className="h-8 w-8 text-[#C9A227] group-hover:scale-110 transition-transform" />
               <h3 className="text-base font-black text-[#071426] uppercase tracking-wider">TRUST</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
                 The foundation of every relationship we build with customers and suppliers.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 space-y-3">
-              <Award className="h-8 w-8 text-[#C9A227]" />
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 space-y-3 hover-card-lift group reveal-init delay-200">
+              <Award className="h-8 w-8 text-[#C9A227] group-hover:scale-110 transition-transform" />
               <h3 className="text-base font-black text-[#071426] uppercase tracking-wider">INTEGRITY</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
                 Transparent, honest and responsible business practices.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 space-y-3">
-              <Sparkles className="h-8 w-8 text-[#C9A227]" />
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 space-y-3 hover-card-lift group reveal-init delay-300">
+              <CheckCircle2 className="h-8 w-8 text-[#C9A227] group-hover:scale-110 transition-transform" />
               <h3 className="text-base font-black text-[#071426] uppercase tracking-wider">QUALITY</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
                 Dependable products and attentive fulfillment.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 space-y-3">
-              <TrendingUp className="h-8 w-8 text-[#C9A227]" />
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 space-y-3 hover-card-lift group reveal-init delay-400">
+              <TrendingUp className="h-8 w-8 text-[#C9A227] group-hover:scale-110 transition-transform" />
               <h3 className="text-base font-black text-[#071426] uppercase tracking-wider">GROWTH</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
                 Growing together with our partners and communities.
@@ -1075,7 +1046,7 @@ export default function HomePage() {
           ================================================== */}
       <section className="py-20 bg-[#F3F6FD] border-t border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center max-w-xl mx-auto space-y-2">
+          <div className="text-center max-w-xl mx-auto space-y-2 reveal-init">
             <span className="text-xs font-black text-[#C9A227] uppercase tracking-widest block">
               OUR EVOLUTION
             </span>
@@ -1083,7 +1054,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="p-6 rounded-2xl border border-slate-200 bg-white space-y-3 shadow-sm">
+            <div className="p-6 rounded-2xl border border-slate-200 bg-white space-y-3 shadow-sm hover-card-lift reveal-init delay-100">
               <span className="text-[11px] font-black text-[#C9A227] bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
                 STAGE 01
               </span>
@@ -1093,7 +1064,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="p-6 rounded-2xl border border-slate-200 bg-white space-y-3 shadow-sm">
+            <div className="p-6 rounded-2xl border border-slate-200 bg-white space-y-3 shadow-sm hover-card-lift reveal-init delay-200">
               <span className="text-[11px] font-black text-[#C9A227] bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
                 STAGE 02
               </span>
@@ -1103,7 +1074,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="p-6 rounded-2xl border border-slate-200 bg-white space-y-3 shadow-sm">
+            <div className="p-6 rounded-2xl border border-slate-200 bg-white space-y-3 shadow-sm hover-card-lift reveal-init delay-300">
               <span className="text-[11px] font-black text-[#C9A227] bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
                 STAGE 03
               </span>
@@ -1113,7 +1084,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="p-6 rounded-2xl border border-slate-200 bg-white space-y-3 shadow-sm">
+            <div className="p-6 rounded-2xl border border-slate-200 bg-white space-y-3 shadow-sm hover-card-lift reveal-init delay-400">
               <span className="text-[11px] font-black text-[#C9A227] bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
                 STAGE 04
               </span>
@@ -1131,7 +1102,7 @@ export default function HomePage() {
           ================================================== */}
       <section className="py-20 bg-white border-t border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center max-w-2xl mx-auto space-y-3">
+          <div className="text-center max-w-2xl mx-auto space-y-3 reveal-init">
             <span className="text-xs font-black text-[#C9A227] uppercase tracking-widest block">
               VISUAL GALLERY
             </span>
@@ -1146,12 +1117,13 @@ export default function HomePage() {
               <div
                 key={idx}
                 onClick={() => setActiveGalleryImage(img)}
-                className="group relative cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm hover:shadow-xl hover:border-[#C9A227] transition-all"
+                className="group relative cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm hover:shadow-xl hover:border-[#C9A227] transition-all hover-card-lift reveal-scale-init"
+                style={{ transitionDelay: `${(idx % 4) * 80}ms` }}
               >
                 <img
                   src={img.url}
                   alt={img.title}
-                  className="w-full h-44 sm:h-52 object-cover transform group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-44 sm:h-52 object-cover transform group-hover:scale-110 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
                   <span className="text-[10px] font-black text-[#E0BD55] uppercase tracking-wider">
@@ -1176,9 +1148,12 @@ export default function HomePage() {
       {/* ==================================================
           SECTION 11 — PARTNERSHIP CTA
           ================================================== */}
-      <section className="relative py-20 bg-[#071426] text-white border-t border-slate-800">
-        <div className="relative z-10 max-w-4xl mx-auto px-4 text-center space-y-6">
-          <span className="text-xs font-black text-[#E0BD55] uppercase tracking-widest block">
+      <section className="relative py-20 bg-[#071426] text-white border-t border-slate-800 overflow-hidden">
+        {/* Soft Ambient glowing orb in background */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-amber-500/10 blur-3xl rounded-full pointer-events-none animate-pulse-glow" />
+
+        <div className="relative z-10 max-w-4xl mx-auto px-4 text-center space-y-6 reveal-scale-init">
+          <span className="text-xs font-black text-[#E0BD55] uppercase tracking-widest block animate-badge-glow">
             STRATEGIC COLLABORATION
           </span>
           <h2 className="text-3xl sm:text-5xl font-black text-white">
@@ -1190,13 +1165,13 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
             <button
               onClick={onOpenEnquiry}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-[#C9A227] to-[#E0BD55] text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg hover:scale-105 transition-all"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-[#C9A227] to-[#E0BD55] text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg hover:scale-105 active:scale-95 transition-all"
             >
               Send an Enquiry
             </button>
             <Link
               to="/contact"
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl border border-slate-600 bg-slate-900 text-white font-bold text-xs uppercase tracking-wider hover:border-[#C9A227] transition-all"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl border border-slate-600 bg-slate-900 text-white font-bold text-xs uppercase tracking-wider hover:border-[#C9A227] hover:bg-slate-800 transition-all"
             >
               Contact Us
             </Link>
@@ -1209,7 +1184,7 @@ export default function HomePage() {
           ================================================== */}
       <section className="py-20 bg-[#FAFAFC] border-t border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center max-w-2xl mx-auto space-y-3">
+          <div className="text-center max-w-2xl mx-auto space-y-3 reveal-init">
             <span className="text-xs font-black text-[#C9A227] uppercase tracking-widest block">
               REACH OUT TO US
             </span>
@@ -1220,7 +1195,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-            <div className="space-y-6 bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
+            <div className="space-y-6 bg-white border border-slate-200 rounded-2xl p-8 shadow-sm hover-card-lift reveal-init delay-100">
               <div>
                 <h3 className="text-2xl font-black text-[#071426]">LAXMI GROUP</h3>
                 <p className="text-xs text-[#C9A227] font-semibold mt-0.5">
@@ -1241,21 +1216,49 @@ export default function HomePage() {
                   <Mail className="h-5 w-5 text-[#C9A227] shrink-0" />
                   <div>
                     <strong className="text-[#071426] block">Official Group Email:</strong>
-                    <span>[Official email to be provided]</span>
+                    <a href="mailto:info@laxmitraders.in" className="hover:text-amber-700 text-slate-800 font-medium">info@laxmitraders.in</a>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <Phone className="h-5 w-5 text-[#C9A227] shrink-0" />
-                  <div>
-                    <strong className="text-[#071426] block">Official Phone Contact:</strong>
-                    <span>[Official phone to be provided]</span>
+                <div className="flex items-start gap-3">
+                  <Phone className="h-5 w-5 text-[#C9A227] shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <strong className="text-[#071426] block">Direct Corporate Numbers:</strong>
+                    <div className="font-bold text-slate-800">
+                      Mobile 1: <a href="tel:+919842456789" className="hover:text-amber-700">+91 98424 56789</a>
+                    </div>
+                    <div className="font-bold text-slate-800">
+                      Mobile 2: <a href="tel:+919443312345" className="hover:text-amber-700">+91 94433 12345</a>
+                    </div>
                   </div>
+                </div>
+
+                {/* Embedded Google Map */}
+                <div className="pt-2">
+                  <div className="h-52 w-full rounded-xl overflow-hidden border border-slate-200 shadow-inner">
+                    <iframe
+                      src="https://maps.google.com/maps?q=Ariyamangalam,%20Tiruchirappalli&t=&z=13&ie=UTF8&iwloc=&output=embed"
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen=""
+                      loading="lazy"
+                      title="Laxmi Group Head Office Location"
+                    />
+                  </div>
+                  <a
+                    href="https://www.google.com/maps/search/?api=1&query=Ariyamangalam,+Tiruchirappalli"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#C9A227] hover:underline mt-2"
+                  >
+                    <MapPin className="h-3.5 w-3.5" /> Open in Google Maps App →
+                  </a>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-2xl p-8 space-y-6 shadow-md">
+            <div className="bg-white border border-slate-200 rounded-2xl p-8 space-y-6 shadow-md hover-card-lift reveal-init delay-200">
               <h3 className="text-xl font-black text-[#071426] flex items-center gap-2">
                 <Send className="h-5 w-5 text-[#C9A227]" />
                 Send Business Enquiry

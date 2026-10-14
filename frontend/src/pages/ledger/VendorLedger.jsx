@@ -100,6 +100,8 @@ export default function VendorLedger() {
         vendor_id: selectedVendorId,
         ...(fromDate && { from_date: fromDate }),
         ...(toDate && { to_date: toDate }),
+        ...(selectedBranchId && { branch_id: selectedBranchId }),
+        ...(docTypeFilter && { document_type: docTypeFilter }),
       })
       await openPdf(`/ledger/pdf?${params.toString()}`, `Vendor_Ledger_${selectedVendorId}.pdf`)
     } catch (err) {
@@ -348,7 +350,7 @@ export default function VendorLedger() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {(Array.isArray(entries) ? entries : []).map((entry) => (
-                  <tr key={entry.id} className="hover:bg-[#fbf5ea]/60 transition-colors">
+                  <tr key={entry.id} className="odd:bg-[#f1f5f9] even:bg-white hover:bg-amber-50/60 transition-colors">
                     <td className="py-3 px-4 text-slate-600 font-medium">{formatDate(entry.transaction_date)}</td>
                     <td className="py-3 px-4 font-mono font-bold text-[#0b3558]">{entry.document_number || '-'}</td>
                     <td className="py-3 px-4">

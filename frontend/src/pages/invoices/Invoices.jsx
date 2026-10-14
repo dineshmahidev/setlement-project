@@ -147,8 +147,8 @@ export default function Invoices() {
                   <th className="py-3.5 px-4">Branch & Vendor</th>
                   <th className="py-3.5 px-4">Product / Lot</th>
                   <th className="py-3.5 px-4 text-right">Net Weight</th>
-                  <th className="py-3.5 px-4 text-right">Taxable (â‚¹)</th>
-                  <th className="py-3.5 px-4 text-right">Total (â‚¹)</th>
+                  <th className="py-3.5 px-4 text-right">Taxable (₹)</th>
+                  <th className="py-3.5 px-4 text-right">Total (₹)</th>
                   <th className="py-3.5 px-4 text-center">Status</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
@@ -174,10 +174,10 @@ export default function Invoices() {
                       {Number(inv.net_weight_mt).toFixed(3)} MT
                     </td>
                     <td className="py-3 px-4 text-right font-medium text-slate-900">
-                      â‚¹{Number(inv.taxable_amount).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                      ₹{Number(inv.taxable_amount).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                     </td>
                     <td className="py-3 px-4 text-right font-bold text-[#0b3558]">
-                      â‚¹{Number(inv.total_amount).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                      ₹{Number(inv.total_amount).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <StatusBadge status={inv.status} />

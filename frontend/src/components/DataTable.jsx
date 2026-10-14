@@ -3,7 +3,7 @@ import Spinner from './Spinner'
 
 export function Table({ children, className = '' }) {
   return (
-    <div className={`overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ${className}`}>
+    <div className={`overflow-x-auto rounded-2xl border border-slate-200/90 bg-white shadow-sm ${className}`}>
       <table className="min-w-full text-left text-xs">{children}</table>
     </div>
   )
@@ -31,12 +31,12 @@ export function TBody({ children }) {
   return <tbody className="divide-y divide-slate-100">{children}</tbody>
 }
 
-export function Tr({ children, onClick }) {
+export function Tr({ children, onClick, className = '' }) {
   return (
     <tr
-      className={`text-slate-700 transition-colors duration-150 even:bg-slate-50/30 ${
-        onClick ? 'cursor-pointer hover:bg-amber-50/50' : 'hover:bg-slate-50/80'
-      }`}
+      className={`text-slate-700 transition-colors duration-150 odd:bg-[#f1f5f9] even:bg-white ${
+        onClick ? 'cursor-pointer hover:bg-amber-50/70' : 'hover:bg-amber-50/50'
+      } ${className}`}
       onClick={onClick}
     >
       {children}
@@ -46,7 +46,7 @@ export function Tr({ children, onClick }) {
 
 export function Td({ children, className = '', align = 'left' }) {
   return (
-    <td className={`px-4 py-3 text-xs font-medium text-slate-700 ${align === 'right' ? 'text-right tabular-nums font-semibold' : ''} ${className}`}>
+    <td className={`px-4 py-3 text-xs font-medium text-slate-700 border-b border-slate-100/80 ${align === 'right' ? 'text-right tabular-nums font-semibold' : ''} ${className}`}>
       {children ?? '—'}
     </td>
   )

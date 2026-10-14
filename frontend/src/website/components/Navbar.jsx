@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { Menu, X, ChevronRight, ShieldCheck, Sparkles } from 'lucide-react'
+import { Menu, X, ChevronRight, ShieldCheck } from 'lucide-react'
 
 export default function Navbar({ onOpenEnquiry }) {
   const [scrolled, setScrolled] = useState(false)
@@ -30,19 +30,29 @@ export default function Navbar({ onOpenEnquiry }) {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200/90 shadow-md py-2 sm:py-2.5 transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Floating Navbar Container with Top, Left & Right Margins */}
+      <header className="fixed top-3 sm:top-4 inset-x-0 z-50 px-3 sm:px-6 lg:px-8 transition-all duration-300">
+        <div
+          className={`max-w-7xl mx-auto rounded-2xl px-3.5 sm:px-6 py-2 sm:py-2.5 transition-all duration-300 navbar-floating-gradient ${
+            scrolled
+              ? 'shadow-xl shadow-emerald-950/20 border border-emerald-900/30 ring-1 ring-emerald-900/10'
+              : 'shadow-lg shadow-emerald-950/10 border border-slate-200/90'
+          }`}
+        >
           <div className="flex items-center justify-between">
-            {/* Horizontal Brand Logo */}
-            <Link to="/" className="flex items-center group">
+            {/* Horizontal Corporate Brand Logo */}
+            <Link to="/" className="flex items-center group shrink-0 pl-1">
               <img
                 src="/images/laxmi_horizontal_logo.jpg"
                 alt="Laxmi Group Agro Traders & Feeds"
-                className="h-9 sm:h-11 w-auto object-contain transition-transform group-hover:scale-102"
+                className="h-10 sm:h-12 w-auto object-contain rounded-md transition-transform group-hover:scale-102 drop-shadow-xs"
+                onError={(e) => {
+                  e.currentTarget.src = '/logos/laxmi_traders_transparent.png'
+                }}
               />
             </Link>
 
-            {/* Desktop Nav Links */}
+            {/* Desktop Nav Links (Clean readable typography over airy light-green gradient) */}
             <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
               {NAV_LINKS.map((item) => (
                 <NavLink
@@ -50,10 +60,10 @@ export default function Navbar({ onOpenEnquiry }) {
                   to={item.to}
                   end={item.to === '/'}
                   className={({ isActive }) =>
-                    `px-3 py-1.5 rounded-xl text-xs font-bold transition-all uppercase tracking-wider ${
+                    `px-3 py-1.5 rounded-full text-xs font-bold transition-all uppercase tracking-wider ${
                       isActive
-                        ? 'text-[#9A7B1C] bg-amber-50 border border-amber-200/80 shadow-2xs font-extrabold'
-                        : 'text-slate-700 hover:text-[#071426] hover:bg-slate-100/60'
+                        ? 'text-[#02492a] bg-white border border-emerald-300/80 shadow-xs font-black'
+                        : 'text-slate-800 hover:text-[#02492a] hover:bg-white/70'
                     }`
                   }
                 >
@@ -66,33 +76,33 @@ export default function Navbar({ onOpenEnquiry }) {
             <div className="hidden md:flex items-center gap-2.5">
               <Link
                 to="/panel/login"
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-[11px] font-bold text-slate-700 hover:border-[#C9A227] hover:bg-white hover:text-[#071426] shadow-2xs transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200/90 bg-white text-slate-800 text-xs font-extrabold hover:border-[#C9A227] hover:text-[#0B1A2D] shadow-2xs transition-all"
                 title="Management App Portal"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-[#C9A227]" />
-                <span className="font-extrabold">Staff Portal</span>
+                <span>Staff Portal</span>
               </Link>
 
               <button
                 onClick={onOpenEnquiry}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#071426] text-[11px] font-black text-white uppercase tracking-wider shadow-xs hover:bg-[#C9A227] hover:text-slate-950 transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#C9A227] to-[#E0BD55] hover:from-[#E0BD55] hover:to-[#C9A227] text-slate-950 text-xs font-black uppercase tracking-wider shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
               >
                 <span className="font-extrabold">Enquire</span>
-                <ChevronRight className="w-3.5 h-3.5 text-[#C9A227]" />
+                <ChevronRight className="w-3.5 h-3.5 text-slate-950" />
               </button>
             </div>
 
-            {/* Mobile Button */}
-            <div className="flex items-center gap-1.5 lg:hidden">
+            {/* Mobile Button & Hamburger Toggle */}
+            <div className="flex items-center gap-2 lg:hidden">
               <button
                 onClick={onOpenEnquiry}
-                className="px-2.5 py-1 rounded-lg bg-[#071426] text-[11px] font-black text-[#E0BD55] uppercase tracking-wider shadow-2xs"
+                className="px-3 py-1.5 rounded-full bg-gradient-to-r from-[#C9A227] to-[#E0BD55] text-[11px] font-black text-slate-950 uppercase tracking-wider shadow-xs hover:scale-105 active:scale-95 transition-all"
               >
                 Enquire
               </button>
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-black shadow-2xs"
+                className="p-1.5 rounded-full bg-white/20 hover:bg-white/30 border border-white/30 text-white shadow-2xs transition-colors"
                 aria-label="Toggle menu"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -104,7 +114,7 @@ export default function Navbar({ onOpenEnquiry }) {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
+        <div className="fixed inset-0 z-50 lg:hidden">
           <div
             className="fixed inset-0 bg-black/60 backdrop-blur-xs"
             onClick={() => setMobileMenuOpen(false)}
@@ -115,9 +125,15 @@ export default function Navbar({ onOpenEnquiry }) {
                 <img
                   src="/images/laxmi_horizontal_logo.jpg"
                   alt="Laxmi Group Logo"
-                  className="h-9 w-auto object-contain"
+                  className="h-10 w-auto object-contain rounded-md"
+                  onError={(e) => {
+                    e.currentTarget.src = '/logos/laxmi_traders_transparent.png'
+                  }}
                 />
-                <button onClick={() => setMobileMenuOpen(false)} className="p-1.5 text-slate-500 hover:text-black">
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-black hover:bg-slate-100"
+                >
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -131,13 +147,13 @@ export default function Navbar({ onOpenEnquiry }) {
                     className={({ isActive }) =>
                       `flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-colors ${
                         isActive
-                          ? 'bg-amber-50 text-[#9A7B1C] border border-amber-200'
+                          ? 'bg-emerald-50 text-[#02492a] border border-emerald-200 font-black'
                           : 'text-slate-700 hover:bg-slate-50'
                       }`
                     }
                   >
                     <span>{item.label}</span>
-                    <ChevronRight className="w-4 h-4 text-[#C9A227]" />
+                    <ChevronRight className="w-4 h-4 text-[#02492a]" />
                   </NavLink>
                 ))}
               </nav>
@@ -149,7 +165,7 @@ export default function Navbar({ onOpenEnquiry }) {
                   setMobileMenuOpen(false)
                   onOpenEnquiry()
                 }}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-[#071426] to-[#0B1F3A] text-white font-extrabold text-sm uppercase tracking-wider shadow-md"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-[#02492a] to-[#046e3d] text-white font-extrabold text-sm uppercase tracking-wider shadow-md hover:scale-102 transition-all cursor-pointer"
               >
                 <span>Enquire Now</span>
                 <ChevronRight className="w-4 h-4 text-[#E0BD55]" />
@@ -157,7 +173,8 @@ export default function Navbar({ onOpenEnquiry }) {
 
               <Link
                 to="/panel/login"
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-bold text-xs"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 font-extrabold text-xs hover:border-[#C9A227] hover:text-[#0B1A2D] transition-colors"
               >
                 <ShieldCheck className="w-4 h-4 text-[#C9A227]" />
                 <span>Staff Portal Access</span>
@@ -169,3 +186,4 @@ export default function Navbar({ onOpenEnquiry }) {
     </>
   )
 }
+

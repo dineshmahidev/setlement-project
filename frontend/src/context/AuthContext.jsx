@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import api, { getToken, setCompanyId, setToken } from '../services/api'
+import { extractList } from '../utils/helpers'
 
 const AuthContext = createContext(null)
 
@@ -64,12 +65,12 @@ export function AuthProvider({ children }) {
       const fetchedCompanies = Array.isArray(userData?.companies) ? userData.companies : []
       setCompanies(fetchedCompanies)
 
-      const fetchedBranches =
-        branchRes.data?.data?.branches ||
-        (Array.isArray(branchRes.data?.data) ? branchRes.data.data : Array.isArray(branchRes.data) ? branchRes.data : [])
+      const fetchedBranches = extractList(branchRes)
       setAllBranches(fetchedBranches)
 
+      const storedCompId = readStoredCompanyId()
       const currentCompany =
+        (storedCompId ? fetchedCompanies.find((c) => Number(c.id) === Number(storedCompId)) : null) ||
         fetchedCompanies.find((c) => Number(c.id) === Number(userData?.active_company?.id)) ||
         userData?.active_company ||
         fetchedCompanies[0] ||
@@ -184,11 +185,39 @@ export function AuthProvider({ children }) {
     [companies, companyId, applyCompany, refresh],
   )
 
+  const isSuperAdmin = useMemo(() => {
+    if (!user) return false
+    const roleName = (user.role?.name || user.role?.label || '').toUpperCase()
+    return Boolean(
+      user.is_super_admin ||
+      roleName.includes('SUPER') ||
+      roleName.includes('MASTER') ||
+      user.role?.name === 'super_admin' ||
+      user.email === 'admin@laxmitraders.com'
+    )
+  }, [user])
+
   const can = useCallback(
     (permission) => {
       if (!user) return false
+      if (isSuperAdmin) return true
+
+      // Confidential modules restricted ONLY to Super Admin / Master Admin
+      if (
+        permission &&
+        (permission === 'super_admin' ||
+          permission.startsWith('branches.') ||
+          permission.startsWith('companies.') ||
+          permission.startsWith('settings.') ||
+          permission.startsWith('users.') ||
+          permission.startsWith('audit.') ||
+          permission.startsWith('cms.'))
+      ) {
+        return false
+      }
+
       const roleName = (user.role?.name || '').toUpperCase()
-      if (user.is_super_admin || roleName.includes('ADMIN') || roleName.includes('MANAGER')) return true
+      if (roleName.includes('ADMIN') || roleName.includes('MANAGER')) return true
       const perms = user.permissions || []
       if (perms.includes('*')) return true
       if (!permission) return true
@@ -198,31 +227,54 @@ export function AuthProvider({ children }) {
       if (permission.startsWith('inventory') && perms.some((p) => p.startsWith('inventory'))) return true
       return false
     },
-    [user],
+    [user, isSuperAdmin],
   )
 
   const branches = useMemo(() => {
     if (!user) return []
+    const activeId = activeCompany?.id ? Number(activeCompany.id) : null
+
+    // Super Admin: always show all godowns belonging to the active company
+    if (isSuperAdmin) {
+      const companyBranches = allBranches.filter(
+        (b) => !activeId || Number(b.company_id ?? b.company?.id ?? 0) === activeId,
+      )
+      if (companyBranches.length > 0) return companyBranches
+      if (Array.isArray(activeCompany?.branches) && activeCompany.branches.length > 0) {
+        return activeCompany.branches
+      }
+      if (allBranches.length > 0) return allBranches
+      return user.branches || []
+    }
+
+    // Standard user: assigned branches for this company
     const scoped = (user.branches || []).filter(
-      (b) => !activeCompany?.id || Number(b.company_id ?? b.company?.id ?? 0) === Number(activeCompany.id) || !b.company_id,
+      (b) => !activeId || Number(b.company_id ?? b.company?.id ?? 0) === activeId,
     )
     if (scoped.length > 0) return scoped
-    if (user.is_super_admin || user.role?.name === 'SUPER ADMIN') return allBranches
-    const userBranchIds = (user.branches || []).map((b) => Number(b.id))
-    if (user.default_branch_id) userBranchIds.push(Number(user.default_branch_id))
-    if (userBranchIds.length === 0) return allBranches
-    return allBranches.filter((b) => userBranchIds.includes(Number(b.id)))
-  }, [user, allBranches, activeCompany])
+
+    if (Array.isArray(activeCompany?.branches) && activeCompany.branches.length > 0) {
+      return activeCompany.branches
+    }
+
+    const companyBranches = allBranches.filter(
+      (b) => !activeId || Number(b.company_id ?? b.company?.id ?? 0) === activeId,
+    )
+    if (companyBranches.length > 0) return companyBranches
+
+    return allBranches
+  }, [user, isSuperAdmin, allBranches, activeCompany])
 
   const showBranchFilter = useMemo(() => {
-    return user?.is_super_admin || user?.role?.name === 'SUPER ADMIN' || branches.length > 1
-  }, [user, branches])
+    return isSuperAdmin || branches.length > 1
+  }, [isSuperAdmin, branches])
 
-  const showCompanySwitcher = useMemo(() => companies.length > 1, [companies])
+  const showCompanySwitcher = useMemo(() => isSuperAdmin || companies.length > 1, [isSuperAdmin, companies])
 
   const value = useMemo(
     () => ({
       user,
+      isSuperAdmin,
       loading,
       login,
       logout,
@@ -242,6 +294,7 @@ export function AuthProvider({ children }) {
     }),
     [
       user,
+      isSuperAdmin,
       loading,
       login,
       logout,

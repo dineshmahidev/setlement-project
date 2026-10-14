@@ -129,3 +129,14 @@ export function pick(obj, keys) {
   })
   return out
 }
+
+export function resolveCompanyLogo(company) {
+  if (!company) return '/logos/laxmi_traders_transparent.png'
+  if (company.logo_transparent_path) return company.logo_transparent_path
+  if (company.logo_path) return company.logo_path
+  const idStr = `${company.slug || ''} ${company.code || ''} ${company.company_name || ''} ${company.short_name || ''}`.toLowerCase()
+  if (idStr.includes('sm') || idStr.includes('s m')) return '/logos/sm_traders_transparent.png'
+  if (idStr.includes('feed') || idStr.includes('shriee') || idStr.includes('shree')) return '/logos/shree_feeds_transparent.png'
+  return '/logos/laxmi_traders_transparent.png'
+}
+

@@ -8,7 +8,6 @@ import {
   Edit2,
   Trash2,
   BookOpen,
-  Sparkles,
   Phone,
   Mail,
   Building,
@@ -363,7 +362,7 @@ export default function Vendors() {
           <div className="rounded-xl border border-[#b37d14]/30 bg-[#fdfbf7] p-3.5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <label className="text-xs font-bold text-[#0b3558] uppercase tracking-wide flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-[#b37d14]" />
+                <Search className="w-4 h-4 text-[#b37d14]" />
                 GSTIN Quick Lookup & Auto-fill
               </label>
               <div className="flex items-center gap-2">

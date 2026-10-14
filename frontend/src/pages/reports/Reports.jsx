@@ -267,63 +267,64 @@ export default function Reports() {
             <h3 className="text-lg font-bold text-slate-900">GST Input / Output Tax Reconciliation</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Settlement Bills GST */}
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-5 space-y-3">
+              {/* Settlements GST (Purchases) - Solid Colors */}
+              <div className="rounded-xl bg-teal-800 text-white p-5 space-y-3 shadow-sm">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-emerald-900">Settlement Purchases GST</h4>
-                  <span className="rounded bg-emerald-200/80 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                  <h4 className="font-bold text-white">Settlement Purchases GST</h4>
+                  <span className="rounded bg-teal-900/80 px-2 py-0.5 text-xs font-semibold text-teal-100">
                     Input Tax Credit
                   </span>
                 </div>
-                <div className="space-y-2 text-sm text-slate-700">
-                  <div className="flex justify-between border-b border-emerald-100 pb-1">
+                <div className="space-y-2 text-sm text-teal-50">
+                  <div className="flex justify-between border-b border-teal-700/60 pb-1">
                     <span>Taxable Purchases Value:</span>
-                    <span className="font-semibold">{formatCurrency(gstSummary?.settlements_gst?.taxable_value)}</span>
+                    <span className="font-semibold text-white">{formatCurrency(gstSummary?.settlements_gst?.taxable_value)}</span>
                   </div>
-                  <div className="flex justify-between border-b border-emerald-100 pb-1">
+                  <div className="flex justify-between border-b border-teal-700/60 pb-1">
                     <span>CGST (2.5%):</span>
-                    <span className="font-semibold">{formatCurrency(gstSummary?.settlements_gst?.total_cgst)}</span>
+                    <span className="font-semibold text-white">{formatCurrency(gstSummary?.settlements_gst?.total_cgst)}</span>
                   </div>
-                  <div className="flex justify-between border-b border-emerald-100 pb-1">
+                  <div className="flex justify-between border-b border-teal-700/60 pb-1">
                     <span>SGST (2.5%):</span>
-                    <span className="font-semibold">{formatCurrency(gstSummary?.settlements_gst?.total_sgst)}</span>
+                    <span className="font-semibold text-white">{formatCurrency(gstSummary?.settlements_gst?.total_sgst)}</span>
                   </div>
-                  <div className="flex justify-between border-b border-emerald-100 pb-1">
+                  <div className="flex justify-between border-b border-teal-700/60 pb-1">
                     <span>IGST (5% Interstate):</span>
-                    <span className="font-semibold">{formatCurrency(gstSummary?.settlements_gst?.total_igst)}</span>
+                    <span className="font-semibold text-white">{formatCurrency(gstSummary?.settlements_gst?.total_igst)}</span>
                   </div>
-                  <div className="flex justify-between pt-1 font-bold text-emerald-950 text-base">
+                  <div className="flex justify-between pt-1 font-bold text-white text-base">
                     <span>Total GST on Settlements:</span>
                     <span>{formatCurrency(gstSummary?.settlements_gst?.total_gst)}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Debit Notes GST (Rebates) */}
-              <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-5 space-y-3">
+              {/* Debit Notes GST (Rebates) - Solid Colors */}
+              <div className="rounded-xl bg-[#0b3558] text-white p-5 space-y-3 shadow-sm">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-blue-900">Debit Notes (Rebates) GST</h4>
-                  <span className="rounded bg-blue-200/80 px-2 py-0.5 text-xs font-semibold text-blue-800">
+                  <h4 className="font-bold text-white">Debit Notes (Rebates) GST</h4>
+                  <span className="rounded bg-[#07233b] px-2 py-0.5 text-xs font-semibold text-[#faedcd]">
                     Tax Reversal
                   </span>
                 </div>
-                <div className="space-y-2 text-sm text-slate-700">
-                  <div className="flex justify-between border-b border-blue-100 pb-1">
+                <div className="space-y-2 text-sm text-slate-100">
+                  <div className="flex justify-between border-b border-blue-900/60 pb-1">
                     <span>Taxable Rebate Amount:</span>
-                    <span className="font-semibold">{formatCurrency(gstSummary?.debit_notes_gst?.taxable_value)}</span>
+                    <span className="font-semibold text-white">{formatCurrency(gstSummary?.debit_notes_gst?.taxable_value)}</span>
                   </div>
-                  <div className="flex justify-between border-b border-blue-100 pb-1">
+                  <div className="flex justify-between border-b border-blue-900/60 pb-1">
                     <span>CGST Reversal (2.5%):</span>
-                    <span className="font-semibold">{formatCurrency(gstSummary?.debit_notes_gst?.total_cgst)}</span>
+                    <span className="font-semibold text-white">{formatCurrency(gstSummary?.debit_notes_gst?.total_cgst)}</span>
                   </div>
-                  <div className="flex justify-between border-b border-blue-100 pb-1">
+                  <div className="flex justify-between border-b border-blue-900/60 pb-1">
                     <span>SGST Reversal (2.5%):</span>
-                    <span className="font-semibold">{formatCurrency(gstSummary?.debit_notes_gst?.total_sgst)}</span>
+                    <span className="font-semibold text-white">{formatCurrency(gstSummary?.debit_notes_gst?.total_sgst)}</span>
                   </div>
-                  <div className="flex justify-between border-b border-blue-100 pb-1">
+                  <div className="flex justify-between border-b border-blue-900/60 pb-1">
                     <span>IGST Reversal (5%):</span>
-                    <span className="font-semibold">{formatCurrency(gstSummary?.debit_notes_gst?.total_igst)}</span>
+                    <span className="font-semibold text-white">{formatCurrency(gstSummary?.debit_notes_gst?.total_igst)}</span>
                   </div>
-                  <div className="flex justify-between pt-1 font-bold text-blue-950 text-base">
+                  <div className="flex justify-between pt-1 font-bold text-white text-base">
                     <span>Total GST on Debit Notes:</span>
                     <span>{formatCurrency(gstSummary?.debit_notes_gst?.total_gst)}</span>
                   </div>

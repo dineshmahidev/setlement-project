@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { resolveCompanyLogo } from '../utils/helpers'
 import {
   LayoutDashboard,
   Building2,
@@ -8,56 +9,55 @@ import {
   Package,
   Receipt,
   Scale,
-  FileText,
   BookOpen,
-  BarChart3,
   UserCheck,
   Settings,
-  History,
   LogOut,
   Menu,
   X,
   ChevronDown,
-  ChevronRight,
-  Building,
-  Sparkles,
   Boxes,
   PlusCircle,
   MinusCircle,
   ArrowRightLeft,
-  Crown,
   Globe,
   Search,
   Check,
   Briefcase,
+  Trash2,
+  ShieldCheck,
 } from 'lucide-react'
 
-const NAVIGATION = [
+const SETTLEMENT_NAVIGATION = [
   { label: 'Dashboard', to: '/panel', icon: LayoutDashboard, perm: null, end: true },
-  { label: 'Godowns', to: '/panel/branches', icon: Building2, perm: 'branches.view' },
   { label: 'Vendors', to: '/panel/vendors', icon: Users2, perm: 'vendors.view' },
   { label: 'Products', to: '/panel/products', icon: Package, perm: 'products.view' },
+  { label: 'Invoices', to: '/panel/invoices', icon: Receipt, perm: null },
   { label: 'Settlements', to: '/panel/settlements', icon: Scale, perm: 'settlements.view' },
-  { label: 'Debit Notes', to: '/panel/debit-notes', icon: FileText, perm: 'debit_notes.view' },
-  { label: 'Inventory', to: '/panel/inventory', icon: Package, perm: 'inventory.view', isGold: true },
-  { label: 'Reports', to: '/panel/reports', icon: BarChart3, perm: 'reports.view' },
-  { label: 'Users', to: '/panel/users', icon: UserCheck, perm: 'users.view' },
-  { label: 'Companies', to: '/panel/companies', icon: Briefcase, perm: 'companies.view' },
-  { label: 'Settings', to: '/panel/settings', icon: Settings, perm: 'settings.view' },
-  { label: 'Audit Logs', to: '/panel/audit-logs', icon: History, perm: 'audit.view' },
+  { label: 'Vendor Ledger', to: '/panel/vendor-ledger', icon: BookOpen, perm: 'vendors.view' },
 ]
 
-const INVENTORY_SUBTABS = [
-  { id: 'inward', label: 'Inward (Receipt)', icon: PlusCircle, to: '/panel/inventory/inward' },
-  { id: 'outward', label: 'Outward / Dispatch', icon: MinusCircle, to: '/panel/inventory/outward' },
-  { id: 'production', label: 'Mixing / Production', icon: ArrowRightLeft, to: '/panel/inventory/production' },
-  { id: 'transfer', label: 'Stock Transfer', icon: ArrowRightLeft, to: '/panel/inventory/transfer' },
-  { id: 'lots', label: 'Lots / Stock', icon: Boxes, to: '/panel/inventory/lots' },
-  { id: 'materials', label: 'Materials', icon: Package, to: '/panel/inventory/materials' },
-  { id: 'grades', label: 'Grades', icon: BookOpen, to: '/panel/inventory/grades' },
-  { id: 'gold-dashboard', label: 'Gold Party Dashboard', icon: Package, to: '/panel/inventory?tab=gold-dashboard' },
-  { id: 'current-stock', label: 'Current Items Stock', icon: Boxes, to: '/panel/inventory?tab=current-stock' },
-  { id: 'ledger', label: 'Stock Ledger', icon: BookOpen, to: '/panel/inventory?tab=ledger' },
+const MASTER_ADMIN_NAVIGATION = [
+  { label: 'Godowns', to: '/panel/branches', icon: Building2 },
+  { label: 'Companies', to: '/panel/companies', icon: Briefcase },
+  { label: 'Website CMS', to: '/panel/cms', icon: Globe },
+  { label: 'Users', to: '/panel/users', icon: UserCheck },
+  { label: 'Settings', to: '/panel/settings', icon: Settings },
+  { label: 'Audit Logs', to: '/panel/audit-logs', icon: ShieldCheck },
+]
+
+const INVENTORY_NAVIGATION = [
+  { id: 'inventory-overview', label: 'Inventory Dashboard', to: '/panel/inventory', icon: Package, perm: 'inventory.view', end: true },
+  { id: 'inward', label: 'Inward (Receipt)', to: '/panel/inventory/inward', icon: PlusCircle, perm: 'inventory.view' },
+  { id: 'outward', label: 'Outward / Dispatch', to: '/panel/inventory/outward', icon: MinusCircle, perm: 'inventory.view' },
+  { id: 'production', label: 'Mixing / Production', to: '/panel/inventory/production', icon: ArrowRightLeft, perm: 'inventory.view' },
+  { id: 'transfer', label: 'Stock Transfer', to: '/panel/inventory/transfer', icon: ArrowRightLeft, perm: 'inventory.view' },
+  { id: 'lots', label: 'Lots / Stock', to: '/panel/inventory/lots', icon: Boxes, perm: 'inventory.view' },
+  { id: 'items', label: 'Items', to: '/panel/inventory/items', icon: Package, perm: 'inventory.view' },
+  { id: 'units', label: 'Units', to: '/panel/inventory/units', icon: Scale, perm: 'inventory.view' },
+  { id: 'grades', label: 'Grades', to: '/panel/inventory/grades', icon: BookOpen, perm: 'inventory.view' },
+  { id: 'current-stock', label: 'Current Items Stock', to: '/panel/inventory?tab=current-stock', icon: Boxes, perm: 'inventory.view' },
+  { id: 'ledger', label: 'Stock Ledger', to: '/panel/inventory?tab=ledger', icon: BookOpen, perm: 'inventory.view' },
 ]
 
 function SuperAdminBranchSelector({ branches, branchId, setBranchId, user, companyName = 'LAXMI GROUP' }) {
@@ -236,7 +236,7 @@ function SuperAdminBranchSelector({ branches, branchId, setBranchId, user, compa
   )
 }
 
-function CompanySwitcher({ companies, activeCompany, onSelect }) {
+function CompanySwitcher({ companies = [], activeCompany, onSelect }) {
   const [open, setOpen] = useState(false)
   const dropdownRef = useRef(null)
 
@@ -250,25 +250,46 @@ function CompanySwitcher({ companies, activeCompany, onSelect }) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  if (!companies || companies.length === 0) return null
-
-  const isMulti = companies.length > 1
-  const label = activeCompany?.company_name || activeCompany?.short_name || 'Select Company'
+  const isMulti = Boolean(companies && companies.length > 1)
+  const label = activeCompany?.company_name || activeCompany?.short_name || 'LAXMI TRADERS'
+  const activeLogo = resolveCompanyLogo(activeCompany)
+  const resolvedLogoUrl = (activeLogo || '/logos/laxmi_traders_transparent.png').startsWith('/')
+    ? (activeLogo || '/logos/laxmi_traders_transparent.png')
+    : `/${activeLogo}`
 
   return (
     <div className="relative" ref={dropdownRef}>
       <button
         type="button"
         onClick={() => isMulti && setOpen(!open)}
-        className={`flex items-center gap-2 rounded-lg px-2 py-1 text-xs font-bold text-[#0B1A2D] transition-colors sm:text-sm ${
-          isMulti ? 'cursor-pointer hover:bg-slate-100/80 hover:text-amber-700' : 'cursor-default'
+        className={`flex items-center gap-2.5 rounded-xl px-2.5 py-1 text-xs font-bold text-[#0B1A2D] transition-all sm:text-sm border border-slate-200/90 bg-white shadow-2xs ${
+          isMulti ? 'cursor-pointer hover:border-amber-400 hover:bg-amber-50/40' : 'cursor-default'
         }`}
+        title={isMulti ? 'Switch active company' : label}
       >
-        <Briefcase className="w-4 h-4 shrink-0 text-[#C9A227]" />
-        <span className="max-w-[180px] truncate tracking-tight sm:max-w-[260px]">{label}</span>
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-50 border border-slate-200 p-0.5 shadow-2xs">
+          <img
+            src={resolvedLogoUrl}
+            alt={label}
+            className="h-full w-full object-contain"
+            onError={(e) => {
+              e.currentTarget.src = '/logos/laxmi_traders_transparent.png'
+            }}
+          />
+        </div>
+        <div className="flex flex-col text-left min-w-0">
+          <span className="max-w-[150px] truncate tracking-tight sm:max-w-[220px] font-extrabold text-xs text-[#0B1A2D] leading-tight">
+            {label}
+          </span>
+          <span className="text-[9px] font-bold text-amber-700 uppercase tracking-wider leading-none mt-0.5">
+            {activeCompany?.short_name || 'Active Company'}
+          </span>
+        </div>
         {isMulti && (
           <ChevronDown
-            className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-200 ${open ? 'rotate-180 text-amber-700' : ''}`}
+            className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-200 ${
+              open ? 'rotate-180 text-amber-700' : ''
+            }`}
           />
         )}
       </button>
@@ -290,6 +311,7 @@ function CompanySwitcher({ companies, activeCompany, onSelect }) {
           <div className="mt-3 space-y-1.5 max-h-72 overflow-y-auto pr-1">
             {companies.map((c) => {
               const isSelected = Number(activeCompany?.id) === Number(c.id)
+              const cLogo = resolveCompanyLogo(c)
               return (
                 <div
                   key={c.id}
@@ -304,8 +326,15 @@ function CompanySwitcher({ companies, activeCompany, onSelect }) {
                   }`}
                 >
                   <div className="flex min-w-0 items-center gap-2.5">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 font-bold text-slate-800">
-                      <Building className="w-3.5 h-3.5 text-[#C9A227]" />
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white border border-slate-200 p-0.5 shadow-2xs">
+                      <img
+                        src={cLogo.startsWith('/') ? cLogo : `/${cLogo}`}
+                        alt={c.company_name}
+                        className="h-full w-full object-contain"
+                        onError={(e) => {
+                          e.currentTarget.src = '/logos/laxmi_traders_transparent.png'
+                        }}
+                      />
                     </div>
                     <div className="min-w-0">
                       <div className="truncate text-xs font-extrabold text-[#0B1A2D]">{c.company_name}</div>
@@ -331,7 +360,7 @@ function CompanySwitcher({ companies, activeCompany, onSelect }) {
 }
 
 export default function AppLayout() {
-  const { user, can, logout, branchId, setBranchId, showBranchFilter, branches, companies, activeCompany, setCompanyById } =
+  const { user, isSuperAdmin, can, logout, branchId, setBranchId, branches, companies, activeCompany, setCompanyById } =
     useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
@@ -342,11 +371,11 @@ export default function AppLayout() {
   const navTo = (to) => (to === '/panel' ? panelBase : `${panelBase}${to.slice('/panel'.length)}`)
 
   const currentTab = searchParams.get('tab') || 'gold-dashboard'
-  const isInventoryActive = location.pathname.includes('/inventory')
 
   const displayName = user?.name || 'Administrator'
   const displayEmail = user?.email || ''
-  const companyShort = activeCompany?.short_name || activeCompany?.company_name || 'LAXMI GROUP'
+  const companyShort = activeCompany?.short_name || activeCompany?.company_name || 'LAXMI TRADERS'
+  const currentCompanyLogo = resolveCompanyLogo(activeCompany)
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-br from-[#FFF5F7] via-[#F8FAFC] to-[#F0F7FF] font-sans text-slate-800">
@@ -364,95 +393,164 @@ export default function AppLayout() {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        {/* Brand Header */}
-        <div className="flex h-14 items-center gap-2.5 border-b border-slate-200/80 px-4 bg-gradient-to-r from-[#0B1A2D] to-[#162A45] text-white">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-[#C9A227] text-slate-950 font-black shadow-xs">
-            <Scale className="w-4 h-4 text-slate-950" />
+        {/* Brand Header (Clean White Background with Prominent Company Logo) */}
+        <div className="flex h-16 items-center gap-2.5 border-b border-slate-200/90 px-3.5 bg-white text-slate-900 shadow-2xs">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-50 border border-slate-200/90 p-1 shadow-2xs">
+            <img
+              src={currentCompanyLogo.startsWith('/') ? currentCompanyLogo : `/${currentCompanyLogo}`}
+              alt={companyShort}
+              className="h-full w-full object-contain"
+              onError={(e) => {
+                e.currentTarget.src = '/logos/laxmi_traders_transparent.png'
+              }}
+            />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xs font-extrabold tracking-tight text-white flex items-center gap-1 truncate">
-              {companyShort} <span className="rounded bg-[#C9A227]/20 border border-[#C9A227]/40 px-1 py-0.2 text-[8px] font-bold text-[#E0BD55] uppercase">PANEL</span>
+            <h1 className="text-xs font-black tracking-tight text-slate-900 flex items-center gap-1 truncate">
+              {companyShort}
+              <span className="rounded bg-emerald-50 border border-emerald-300/80 px-1.5 py-0.2 text-[8px] font-black text-[#02492a] uppercase">PANEL</span>
             </h1>
-            <p className="text-[9px] text-slate-300 truncate">Settlement & Management</p>
+            <p className="text-[9.5px] font-medium text-slate-500 truncate">
+              {activeCompany?.city ? `${activeCompany.city} • Godowns` : 'Settlement & Godowns'}
+            </p>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="rounded-lg p-1 text-slate-300 hover:bg-white/10 hover:text-white lg:hidden"
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 lg:hidden cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-1 bg-slate-50/40">
-          {NAVIGATION.filter((item) => !item.perm || can(item.perm)).map((item) => {
-            const Icon = item.icon
-            const isGoldItem = item.isGold
-            const isInventory = item.to === '/panel/inventory'
+        <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-3 bg-slate-50/40">
+          {/* SECTION 1: SETTLEMENT */}
+          <div className="space-y-1">
+            <div className="px-3 pt-1 pb-1.5 flex items-center justify-between select-none pointer-events-none">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                Settlement
+              </span>
+              <div className="h-px w-10 bg-slate-200" />
+            </div>
 
-            return (
-              <div key={item.to} className="space-y-1">
+            {SETTLEMENT_NAVIGATION.filter((item) => !item.perm || can(item.perm)).map((item) => {
+              const Icon = item.icon
+              return (
                 <NavLink
+                  key={item.to}
                   to={navTo(item.to)}
                   end={item.end || item.to === '/panel'}
                   onClick={() => setSidebarOpen(false)}
                   className={({ isActive }) =>
-                    `flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all ${
-                      isGoldItem && isActive
-                        ? 'bg-gradient-to-r from-amber-400 via-amber-500 to-[#C9A227] text-slate-950 font-extrabold shadow-sm border-l-4 border-amber-300'
-                        : isGoldItem
-                        ? 'bg-amber-100/70 text-amber-900 border border-amber-300/80 font-bold hover:bg-amber-200/80'
-                        : isActive
+                    `flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                      isActive
                         ? 'bg-[#0B1A2D] text-white shadow-xs border-l-3 border-[#C9A227]'
                         : 'text-slate-600 hover:bg-slate-200/60 hover:text-slate-900'
                     }`
                   }
                 >
-                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isGoldItem ? 'text-amber-600' : 'text-[#C9A227]'}`} />
+                  <Icon className="w-3.5 h-3.5 shrink-0 text-[#C9A227]" />
                   <span className="truncate text-xs flex-1">{item.label}</span>
-                  {isInventory && (
-                    <ChevronDown
-                      className={`w-3 h-3 transition-transform duration-200 ${
-                        isInventoryActive ? 'rotate-180 text-amber-900' : 'text-slate-400'
-                      }`}
-                    />
-                  )}
-                  {isGoldItem && !isInventory && (
-                    <span className="rounded-full bg-amber-400/30 px-1.5 py-0.2 text-[9px] font-bold text-amber-900">
-                      GOLD
-                    </span>
-                  )}
                 </NavLink>
+              )
+            })}
+          </div>
 
-                {/* Nested Inventory Sub-Menu in Sidebar */}
-                {isInventory && isInventoryActive && (
-                  <div className="ml-3 pl-3 border-l-2 border-amber-300/60 space-y-1 py-1">
-                    {INVENTORY_SUBTABS.map((sub) => {
-                      const SubIcon = sub.icon
-                      const subHref = navTo(sub.to.split('?')[0]) + (sub.to.includes('?') ? `?${sub.to.split('?')[1]}` : '')
-                      const isSubActive =
-                        sub.to.includes('?tab=') ? currentTab === sub.id : location.pathname === subHref.split('?')[0]
-                      return (
-                        <NavLink
-                          key={sub.id}
-                          to={subHref}
-                          onClick={() => setSidebarOpen(false)}
-                          className={`flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition-all ${
-                            isSubActive
-                              ? 'bg-[#0B1A2D] text-amber-300 font-extrabold shadow-2xs'
-                              : 'text-slate-600 hover:bg-amber-100/60 hover:text-amber-900'
-                          }`}
-                        >
-                          <SubIcon className={`w-3 h-3 ${isSubActive ? 'text-amber-400' : 'text-slate-400'}`} />
-                          <span className="truncate">{sub.label}</span>
-                        </NavLink>
-                      )
-                    })}
-                  </div>
-                )}
+          {/* SECTION 2: INVENTORY */}
+          <div className="space-y-1 pt-2 border-t border-slate-200/60">
+            <div className="px-3 pt-1 pb-1.5 flex items-center justify-between select-none pointer-events-none">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#B78A16] flex items-center gap-1.5">
+                Inventory
+              </span>
+              <div className="h-px w-12 bg-amber-200/80" />
+            </div>
+
+            {INVENTORY_NAVIGATION.filter((item) => !item.perm || can(item.perm)).map((item) => {
+              const Icon = item.icon
+              const targetPath = item.to.split('?')[0]
+              const targetSearch = item.to.includes('?') ? `?${item.to.split('?')[1]}` : ''
+              const fullHref = navTo(targetPath) + targetSearch
+
+              const isQueryItem = item.to.includes('?tab=')
+              const isItemActive = isQueryItem
+                ? location.pathname.endsWith('/inventory') && currentTab === item.id
+                : item.end
+                ? location.pathname === navTo(targetPath) && !location.search
+                : location.pathname.startsWith(navTo(targetPath))
+
+              return (
+                <NavLink
+                  key={item.id || item.to}
+                  to={fullHref}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                    isItemActive
+                      ? 'bg-gradient-to-r from-amber-400 via-amber-500 to-[#C9A227] text-slate-950 font-extrabold shadow-xs border-l-3 border-amber-300'
+                      : 'text-slate-600 hover:bg-amber-100/60 hover:text-amber-950'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isItemActive ? 'text-slate-950' : 'text-[#C9A227]'}`} />
+                  <span className="truncate text-xs flex-1">{item.label}</span>
+                </NavLink>
+              )
+            })}
+          </div>
+
+          {/* SECTION 3: MASTER ADMIN ONLY (Confidential: Godowns, Companies, CMS, Users, Settings, Audit Logs) */}
+          {isSuperAdmin && (
+            <div className="space-y-1 pt-2 border-t border-slate-200/60">
+              <div className="px-3 pt-1 pb-1.5 flex items-center justify-between select-none pointer-events-none">
+                <span className="text-[10px] font-black uppercase tracking-widest text-amber-700 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                  Master Admin
+                </span>
+                <span className="rounded bg-amber-100 border border-amber-300 px-1 py-0.2 text-[8px] font-black text-amber-900 uppercase">
+                  CONFIDENTIAL
+                </span>
               </div>
-            )
-          })}
+
+              {MASTER_ADMIN_NAVIGATION.map((item) => {
+                const Icon = item.icon
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={navTo(item.to)}
+                    onClick={() => setSidebarOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                        isActive
+                          ? 'bg-[#0B1A2D] text-white shadow-xs border-l-3 border-[#C9A227]'
+                          : 'text-slate-600 hover:bg-amber-100/50 hover:text-amber-950'
+                      }`
+                    }
+                  >
+                    <Icon className="w-3.5 h-3.5 shrink-0 text-[#C9A227]" />
+                    <span className="truncate text-xs flex-1">{item.label}</span>
+                  </NavLink>
+                )
+              })}
+            </div>
+          )}
+
+          {/* VERY LAST ITEM: TRASH (SUPER ADMIN ONLY) */}
+          {isSuperAdmin && (
+            <div className="pt-2 border-t border-slate-200/80">
+              <NavLink
+                to={navTo('/panel/trash')}
+                onClick={() => setSidebarOpen(false)}
+                className={({ isActive }) =>
+                  `flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                    isActive
+                      ? 'bg-rose-900 text-white shadow-xs border-l-3 border-rose-400'
+                      : 'text-slate-600 hover:bg-rose-50 hover:text-rose-700'
+                  }`
+                }
+              >
+                <Trash2 className="w-3.5 h-3.5 shrink-0 text-rose-500" />
+                <span className="truncate text-xs flex-1">Trash</span>
+              </NavLink>
+            </div>
+          )}
         </nav>
 
         {/* User Card Footer */}

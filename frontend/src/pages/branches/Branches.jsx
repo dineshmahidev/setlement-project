@@ -13,6 +13,7 @@ export default function Branches() {
   const [editingBranch, setEditingBranch] = useState(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [branchToDelete, setBranchToDelete] = useState(null)
+  const [deleting, setDeleting] = useState(false)
   const [formErrors, setFormErrors] = useState({})
   const [saving, setSaving] = useState(false)
 
@@ -116,13 +117,16 @@ export default function Branches() {
 
   const handleDelete = async () => {
     if (!branchToDelete) return
+    setDeleting(true)
     try {
-      await api.delete(`/branches/${branchToDelete.id}`)
+      const res = await api.delete(`/branches/${branchToDelete.id}`)
       setDeleteConfirmOpen(false)
       setBranchToDelete(null)
       fetchBranches()
     } catch (err) {
-      alert(apiErrorMessage(err, 'Failed to delete branch'))
+      alert(apiErrorMessage(err, 'Failed to delete godown and associated records'))
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -225,8 +229,8 @@ export default function Branches() {
                             setBranchToDelete(b)
                             setDeleteConfirmOpen(true)
                           }}
-                          className="rounded-lg p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors"
-                          title="Delete godown"
+                          className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                          title="Delete godown & all data"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -395,10 +399,17 @@ export default function Branches() {
 
       <ConfirmDialog
         open={deleteConfirmOpen}
-        onClose={() => setDeleteConfirmOpen(false)}
+        onClose={() => {
+          if (!deleting) {
+            setDeleteConfirmOpen(false)
+            setBranchToDelete(null)
+          }
+        }}
         onConfirm={handleDelete}
-        title="Delete Godown"
-        message={`Are you sure you want to delete godown "${branchToDelete?.branch_name}" (${branchToDelete?.branch_code})? This action cannot be undone if there are no linked records.`}
+        title="Delete Godown & All Associated Data"
+        message={`Are you sure you want to delete godown "${branchToDelete?.branch_name}" (${branchToDelete?.branch_code})? WARNING: This will permanently delete ALL related inward receipts, outward dispatches, stock ledger, lots, mixing batches, invoices, and settlements! This action CANNOT be undone.`}
+        confirmText={deleting ? 'Deleting...' : 'Delete Godown & All Data'}
+        danger
       />
     </div>
   )
