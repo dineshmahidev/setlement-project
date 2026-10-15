@@ -405,6 +405,12 @@ export default function Branches() {
             setBranchToDelete(null)
           }
         }}
+        onCancel={() => {
+          if (!deleting) {
+            setDeleteConfirmOpen(false)
+            setBranchToDelete(null)
+          }
+        }}
         onConfirm={handleDelete}
         title="Delete Godown & All Associated Data"
         message={`Are you sure you want to delete godown "${branchToDelete?.branch_name}" (${branchToDelete?.branch_code})? WARNING: This will permanently delete ALL related inward receipts, outward dispatches, stock ledger, lots, mixing batches, invoices, and settlements! This action CANNOT be undone.`}

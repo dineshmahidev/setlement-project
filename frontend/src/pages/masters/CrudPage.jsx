@@ -34,6 +34,11 @@ export default function CrudPage({
   canCreate = true,
   canEdit = true,
   canDelete = false,
+  deleteButtonLabel,
+  deleteConfirmTitle,
+  deleteConfirmMessage,
+  deleteConfirmButton,
+  deleteSuccessMessage,
   transformOut = (v) => v,
   transformIn = (v) => v,
   emptyTitle,
@@ -144,8 +149,8 @@ export default function CrudPage({
     if (!deleting) return
     setDeleteLoading(true)
     try {
-      await api.delete(`${endpoint}/${deleting.id}`)
-      toast.success(`${title} archived`)
+      const res = await api.delete(`${endpoint}/${deleting.id}`)
+      toast.success(res?.data?.message || deleteSuccessMessage || `${title} deleted successfully`)
       setDeleting(null)
       load()
     } catch (err) {
@@ -316,9 +321,14 @@ export default function CrudPage({
 
       <ConfirmDialog
         open={Boolean(deleting)}
-        title={`Delete ${title}`}
-        message={`Archive this ${title.toLowerCase()}? This marks it inactive.`}
-        confirmText="Archive"
+        title={deleteConfirmTitle || `Delete ${title}`}
+        message={
+          typeof deleteConfirmMessage === 'function'
+            ? deleteConfirmMessage(deleting)
+            : deleteConfirmMessage ||
+              `Are you sure you want to delete this ${title.toLowerCase()}? This action cannot be undone.`
+        }
+        confirmText={deleteConfirmButton || 'Delete'}
         danger
         loading={deleteLoading}
         onConfirm={confirmDelete}

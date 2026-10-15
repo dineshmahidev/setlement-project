@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api, { apiErrorMessage, openPdf, downloadPdf } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
-import { Plus, Search, Scale, FileDown, Eye, Edit3, Ban, Calendar, Building, Printer, ChevronRight } from 'lucide-react'
-import { PageSpinner, StatusBadge, Modal, SettlementBillModal } from '../../components'
+import { Plus, Search, Scale, FileDown, Eye, Edit3, Ban, Calendar, Building, Printer, ChevronRight, Trash2 } from 'lucide-react'
+import { PageSpinner, StatusBadge, Modal, SettlementBillModal, ConfirmDialog } from '../../components'
 import { extractList, formatDate } from '../../utils/helpers'
 
 export default function Settlements() {
@@ -23,6 +23,26 @@ export default function Settlements() {
   const [settlementToCancel, setSettlementToCancel] = useState(null)
   const [cancelReason, setCancelReason] = useState('')
   const [cancelling, setCancelling] = useState(false)
+
+  // Delete Confirmation
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [settlementToDelete, setSettlementToDelete] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDeleteSettlement = async () => {
+    if (!settlementToDelete) return
+    setDeleting(true)
+    try {
+      await api.delete(`/settlements/${settlementToDelete.id}`)
+      setSettlements((prev) => prev.filter((s) => s.id !== settlementToDelete.id))
+      setDeleteConfirmOpen(false)
+      setSettlementToDelete(null)
+    } catch (err) {
+      alert(apiErrorMessage(err, 'Failed to delete settlement'))
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const fetchSettlements = async () => {
     setLoading(true)
@@ -263,12 +283,24 @@ export default function Settlements() {
                               setCancelReason('')
                               setCancelModalOpen(true)
                             }}
-                            className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                            className="rounded-lg p-1.5 text-slate-400 hover:bg-amber-50 hover:text-amber-600 transition-colors cursor-pointer"
                             title="Cancel settlement"
                           >
                             <Ban className="w-3.5 h-3.5" />
                           </button>
                         )}
+
+                        <button
+                          onClick={() => {
+                            setSettlementToDelete(s)
+                            setDeleteConfirmOpen(true)
+                          }}
+                          className="flex items-center gap-1 rounded-lg border border-red-200 bg-red-50/60 px-2 py-1 text-[11px] font-semibold text-red-600 shadow-xs hover:bg-red-100 hover:border-red-300 transition-colors cursor-pointer"
+                          title="Delete Settlement Bill"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                          <span>Delete</span>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -328,6 +360,19 @@ export default function Settlements() {
         settlement={previewSettlement}
         isOpen={Boolean(previewSettlement)}
         onClose={() => setPreviewSettlement(null)}
+      />
+
+      {/* Delete Confirmation Alert Box */}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onCancel={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleDeleteSettlement}
+        loading={deleting}
+        danger
+        confirmText={deleting ? 'Deleting...' : 'Yes, Delete'}
+        title="Delete Settlement Bill"
+        message={`Are you sure you want to delete Settlement Bill "${settlementToDelete?.settlement_number}"? This will permanently delete the settlement bill and remove all linked debit notes and vendor ledger postings.`}
       />
     </div>
   )

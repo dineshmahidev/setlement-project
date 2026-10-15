@@ -6,7 +6,6 @@ import {
   Button,
   ConfirmDialog,
   DataTable,
-  FormField,
   Input,
   Modal,
   PageHeader,
@@ -16,6 +15,19 @@ import {
 } from '../../components'
 import { formatMoney, formatNumber, formatDate, today, extractList, qs } from '../../utils/helpers'
 import { Plus, Trash2, Eye, RefreshCw, Truck, Printer } from 'lucide-react'
+
+function FormField({ label, required, className, children }) {
+  return (
+    <div className={className || ''}>
+      {label && (
+        <label className="mb-2 block text-base font-black text-slate-900 tracking-wide">
+          {label} {required && <span className="text-red-600 text-lg">*</span>}
+        </label>
+      )}
+      {children}
+    </div>
+  )
+}
 
 function useMasterData() {
   const [vendors, setVendors] = useState([])
@@ -76,7 +88,17 @@ function useMasterData() {
   return { vendors, items, branches, lots, units }
 }
 
-const emptyItem = () => ({ item_id: '', lot_id: '', quantity: '', unit_id: '', rate: '', amount: '' })
+const emptyItem = () => ({
+  item_id: '',
+  lot_id: '',
+  quantity: '',
+  unit_id: '',
+  rate: '',
+  amount: '',
+  oil_pct: '',
+  grade_id: '',
+  available_qty: null,
+})
 
 export default function Outward() {
   const toast = useToast()
@@ -93,6 +115,7 @@ export default function Outward() {
     date: today(),
     branch_id: branchId || '',
     party_id: '',
+    bill_no: '',
     destination: '',
     vehicle_number: '',
     remarks: '',
@@ -125,6 +148,7 @@ export default function Outward() {
       date: today(),
       branch_id: branchId || '',
       party_id: '',
+      bill_no: '',
       destination: '',
       vehicle_number: '',
       remarks: '',
@@ -139,33 +163,91 @@ export default function Outward() {
         if (i !== idx) return it
         const cur = { ...it, [key]: value }
 
-        if (key === 'lot_id' && value) {
-          const matchedLot = lots.find((l) => String(l.id) === String(value))
-          if (matchedLot) {
-            cur.item_id = matchedLot.item_id
-            if (!cur.rate && matchedLot.purchase_rate) {
-              cur.rate = matchedLot.purchase_rate
+        if (key === 'lot_id') {
+          if (value) {
+            const matchedLot = lots.find((l) => String(l.id) === String(value))
+            if (matchedLot) {
+              // 1. Auto-pick Item / Commodity
+              cur.item_id = String(matchedLot.item_id)
+
+              // 2. Auto-pick Unit (fixed during Inward)
+              const lotUnitId =
+                matchedLot.unit_id ||
+                matchedLot.unit?.id ||
+                matchedLot.item?.unit_id ||
+                matchedLot.item?.unit?.id ||
+                ''
+              cur.unit_id = lotUnitId ? String(lotUnitId) : ''
+
+              // 3. Auto-pick Rate from Inward unit_cost
+              const lotRate = matchedLot.unit_cost ?? matchedLot.purchase_rate
+              if (lotRate != null && lotRate !== '') {
+                cur.rate = String(lotRate)
+              }
+
+              // 4. Auto-pick Available Qty & specs
+              cur.available_qty = matchedLot.available_qty
+              if (matchedLot.oil_pct != null) cur.oil_pct = matchedLot.oil_pct
+              if (matchedLot.grade_id != null) cur.grade_id = matchedLot.grade_id
+
+              // 5. Auto-pick Godown if not set yet
+              if (matchedLot.branch_id) {
+                setForm((prev) => (prev.branch_id ? prev : { ...prev, branch_id: String(matchedLot.branch_id) }))
+              }
+
+              // 6. Recalculate amount if quantity is entered
+              if (cur.quantity && cur.rate) {
+                cur.amount = Number(cur.quantity || 0) * Number(cur.rate || 0)
+              }
             }
+          } else {
+            cur.available_qty = null
           }
         }
 
-        if (key === 'item_id' && value) {
+        if (key === 'item_id') {
           const curLot = lots.find((l) => String(l.id) === String(cur.lot_id))
           if (curLot && String(curLot.item_id) !== String(value)) {
             cur.lot_id = ''
+            cur.available_qty = null
           }
           const matchedItem = items.find((it) => String(it.id) === String(value))
-          if (matchedItem) {
-            cur.unit_id = matchedItem.unit_id || matchedItem.unit?.id || ''
-          }
+
           const matchingLots = lots.filter(
-            (l) => String(l.item_id) === String(value) && Number(l.available_qty) > 0
+            (l) =>
+              String(l.item_id) === String(value) &&
+              (!form.branch_id || String(l.branch_id) === String(form.branch_id)) &&
+              Number(l.available_qty) > 0
           )
+
           if (matchingLots.length === 1) {
-            cur.lot_id = matchingLots[0].id
-            if (!cur.rate && matchingLots[0].purchase_rate) {
-              cur.rate = matchingLots[0].purchase_rate
+            // Auto-select single lot
+            const singleLot = matchingLots[0]
+            cur.lot_id = String(singleLot.id)
+            const lotUnitId =
+              singleLot.unit_id ||
+              singleLot.unit?.id ||
+              matchedItem?.unit_id ||
+              matchedItem?.unit?.id ||
+              ''
+            cur.unit_id = lotUnitId ? String(lotUnitId) : ''
+            const lotRate = singleLot.unit_cost ?? singleLot.purchase_rate
+            if (lotRate != null && lotRate !== '') {
+              cur.rate = String(lotRate)
             }
+            cur.available_qty = singleLot.available_qty
+            if (singleLot.oil_pct != null) cur.oil_pct = singleLot.oil_pct
+            if (singleLot.grade_id != null) cur.grade_id = singleLot.grade_id
+            if (singleLot.branch_id) {
+              setForm((prev) => (prev.branch_id ? prev : { ...prev, branch_id: String(singleLot.branch_id) }))
+            }
+          } else if (matchedItem) {
+            const defUnitId = matchedItem.unit_id || matchedItem.unit?.id || ''
+            cur.unit_id = defUnitId ? String(defUnitId) : ''
+          }
+
+          if (cur.quantity && cur.rate) {
+            cur.amount = Number(cur.quantity || 0) * Number(cur.rate || 0)
           }
         }
 
@@ -178,9 +260,14 @@ export default function Outward() {
     })
   }
 
-  // Show available lots for selected item with available qty
+  // Show available lots for selected item with available qty (scoped to chosen godown if selected)
   const availableLotsFor = (itemId) =>
-    lots.filter((l) => (!itemId || String(l.item_id) === String(itemId)) && Number(l.available_qty) > 0)
+    lots.filter(
+      (l) =>
+        (!itemId || String(l.item_id) === String(itemId)) &&
+        (!form.branch_id || String(l.branch_id) === String(form.branch_id)) &&
+        Number(l.available_qty) > 0
+    )
 
   const grandTotal = useMemo(
     () => formItems.reduce((s, it) => s + Number(it.amount || 0), 0),
@@ -191,11 +278,29 @@ export default function Outward() {
     e.preventDefault()
     const preparedItems = formItems.map((it) => {
       let itemId = it.item_id
-      if (!itemId && it.lot_id) {
+      let unitId = it.unit_id
+      let rate = it.rate
+      let oilPct = it.oil_pct
+      let gradeId = it.grade_id
+
+      if (it.lot_id) {
         const foundLot = lots.find((l) => String(l.id) === String(it.lot_id))
-        if (foundLot) itemId = foundLot.item_id
+        if (foundLot) {
+          if (!itemId) itemId = foundLot.item_id
+          if (!unitId) unitId = foundLot.unit_id || foundLot.unit?.id
+          if (rate === '' || rate == null) rate = foundLot.unit_cost ?? foundLot.purchase_rate
+          if (oilPct === '' || oilPct == null) oilPct = foundLot.oil_pct
+          if (gradeId === '' || gradeId == null) gradeId = foundLot.grade_id
+        }
       }
-      return { ...it, item_id: itemId }
+      return {
+        ...it,
+        item_id: itemId,
+        unit_id: unitId,
+        rate,
+        oil_pct: oilPct,
+        grade_id: gradeId,
+      }
     })
 
     const validItems = preparedItems.filter((it) => it.item_id && Number(it.quantity) > 0)
@@ -210,6 +315,7 @@ export default function Outward() {
         date: form.date,
         branch_id: Number(form.branch_id),
         party_id: form.party_id ? Number(form.party_id) : null,
+        bill_no: form.bill_no || null,
         dispatch_type: 'DIRECT',
         destination: form.destination || null,
         vehicle_number: form.vehicle_number || null,
@@ -219,6 +325,8 @@ export default function Outward() {
           lot_id: it.lot_id ? Number(it.lot_id) : null,
           quantity: Number(it.quantity),
           unit_id: it.unit_id ? Number(it.unit_id) : null,
+          oil_pct: it.oil_pct === '' || it.oil_pct == null ? null : Number(it.oil_pct),
+          grade_id: it.grade_id ? Number(it.grade_id) : null,
           rate: it.rate === '' || it.rate == null ? null : Number(it.rate),
           amount: it.amount === '' || it.amount == null ? null : Number(it.amount),
         })),
@@ -312,9 +420,16 @@ export default function Outward() {
             key: 'entry_number',
             label: 'Entry No',
             render: (r) => (
-              <span className="font-mono text-[11px] font-bold text-[#0B1A2D]">
-                {r.entry_number}
-              </span>
+              <div>
+                <span className="font-mono text-[11px] font-bold text-[#0B1A2D]">
+                  {r.entry_number}
+                </span>
+                {r.bill_no && (
+                  <span className="block font-mono text-[10px] text-slate-500">
+                    Bill: {r.bill_no}
+                  </span>
+                )}
+              </div>
             ),
           },
           { key: 'date', label: 'Date', render: (r) => formatDate(r.date) },
@@ -383,31 +498,52 @@ export default function Outward() {
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title="New Dispatch"
-        size="lg"
+        title={<span className="text-xl font-black text-[#0b3558]">New Outward / Dispatch</span>}
+        size="xl"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setModalOpen(false)}>
+            <Button variant="secondary" onClick={() => setModalOpen(false)} className="text-sm font-bold">
               Cancel
             </Button>
-            <Button onClick={save} loading={saving} form="outward-form">
+            <Button onClick={save} loading={saving} form="outward-form" className="text-base font-black px-6 py-2.5">
               Save & Dispatch
             </Button>
           </>
         }
       >
-        <form id="outward-form" onSubmit={save} className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-3">
+        <form id="outward-form" onSubmit={save} className="space-y-5 outward-form-2x">
+          <style>{`
+            .outward-form-2x label { font-size: 15px !important; font-weight: 900 !important; color: #0f172a !important; }
+            .outward-form-2x input, .outward-form-2x select, .outward-form-2x textarea { font-size: 15px !important; font-weight: 700 !important; color: #0f172a !important; }
+            .outward-form-2x table th { font-size: 13px !important; font-weight: 900 !important; }
+            .outward-form-2x table td { font-size: 14px !important; font-weight: 700 !important; }
+            .outward-form-2x input::placeholder { font-weight: 500 !important; font-size: 14px !important; }
+          `}</style>
+
+          <div className="grid gap-4 sm:grid-cols-3">
             <FormField label="Party / Customer" required>
               <Select
                 value={form.party_id}
-                onChange={(e) => setForm({ ...form, party_id: e.target.value })}
+                onChange={(e) => {
+                  const val = e.target.value
+                  const matchedVendor = vendors.find((v) => String(v.id) === String(val))
+                  setForm((prev) => ({
+                    ...prev,
+                    party_id: val,
+                    destination:
+                      prev.destination ||
+                      [matchedVendor?.city, matchedVendor?.district, matchedVendor?.state].filter(Boolean).join(', ') ||
+                      matchedVendor?.address ||
+                      '',
+                  }))
+                }}
                 required
+                className="!text-base !font-bold !py-2.5"
               >
                 <option value="">Select party…</option>
                 {vendors.map((v) => (
                   <option key={v.id} value={v.id}>
-                    {v.vendor_name}
+                    {v.vendor_name} {v.city ? `(${v.city})` : ''}
                   </option>
                 ))}
               </Select>
@@ -419,6 +555,7 @@ export default function Outward() {
                 value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
                 required
+                className="!text-base !font-bold !py-2.5"
               />
             </FormField>
 
@@ -427,6 +564,7 @@ export default function Outward() {
                 value={form.branch_id}
                 onChange={(e) => setForm({ ...form, branch_id: e.target.value })}
                 required
+                className="!text-base !font-bold !py-2.5"
               >
                 <option value="">Select godown…</option>
                 {branches.map((b) => (
@@ -437,11 +575,21 @@ export default function Outward() {
               </Select>
             </FormField>
 
+            <FormField label="Bill No / Inv Ref">
+              <Input
+                value={form.bill_no}
+                onChange={(e) => setForm({ ...form, bill_no: e.target.value })}
+                placeholder="e.g. BILL-2026-001"
+                className="!text-base !font-bold !py-2.5 font-mono"
+              />
+            </FormField>
+
             <FormField label="Destination">
               <Input
                 value={form.destination}
                 onChange={(e) => setForm({ ...form, destination: e.target.value })}
                 placeholder="Destination / customer location"
+                className="!text-base !font-bold !py-2.5"
               />
             </FormField>
 
@@ -450,44 +598,55 @@ export default function Outward() {
                 value={form.vehicle_number}
                 onChange={(e) => setForm({ ...form, vehicle_number: e.target.value })}
                 placeholder="TN 01 AB 1234"
+                className="!text-base !font-bold !py-2.5 font-mono"
               />
             </FormField>
           </div>
 
-          <div className="rounded-xl border border-slate-200">
-            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-3 py-2">
-              <span className="text-xs font-bold text-slate-700">Items Dispatched</span>
+          <div className="rounded-xl border border-slate-300 shadow-2xs overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-100/90 px-4 py-3">
+              <span className="text-sm font-black text-slate-900 uppercase tracking-wide">Items Dispatched</span>
               <Button
                 size="sm"
                 type="button"
                 variant="secondary"
                 onClick={() => setFormItems((f) => [...f, emptyItem()])}
+                className="text-xs font-bold"
               >
-                <Plus className="h-3 w-3" /> Add Item
+                <Plus className="h-4 w-4" /> Add Item
               </Button>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead className="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider">
+              <table className="w-full text-sm">
+                <thead className="bg-[#0b3558] text-white uppercase text-xs font-black tracking-wider">
                   <tr>
-                    <th className="px-2 py-2 text-left">Item</th>
-                    <th className="px-2 py-2 text-left">Lot</th>
-                    <th className="px-2 py-2 text-right">Qty</th>
-                    <th className="px-2 py-2 text-left w-24">Unit</th>
-                    <th className="px-2 py-2 text-right">Rate</th>
-                    <th className="px-2 py-2 text-right">Amount</th>
-                    <th className="px-2 py-2" />
+                    <th className="px-3 py-3 text-left min-w-[170px]">Item / Commodity</th>
+                    <th className="px-3 py-3 text-left min-w-[210px]">Lot No</th>
+                    <th className="px-3 py-3 text-right w-28">Qty</th>
+                    <th className="px-3 py-3 text-left w-32">Unit</th>
+                    <th className="px-3 py-3 text-right w-24">Oil %</th>
+                    <th className="px-3 py-3 text-right w-28">Rate (₹)</th>
+                    <th className="px-3 py-3 text-right w-32">Amount</th>
+                    <th className="px-3 py-3 w-10" />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 bg-white">
                   {formItems.map((it, idx) => {
                     const matchedItem = items.find((x) => String(x.id) === String(it.item_id))
+                    const matchedLot = lots.find((x) => String(x.id) === String(it.lot_id))
+                    const lotUnit = matchedLot?.unit || units.find((u) => String(u.id) === String(matchedLot?.unit_id))
+                    const itemUnit = matchedItem?.unit || units.find((u) => String(u.id) === String(matchedItem?.unit_id))
+                    const displayUnit = lotUnit || itemUnit
+                    const availLots = availableLotsFor(it.item_id)
+                    const isUnitFromLot = Boolean(matchedLot && String(it.unit_id) === String(matchedLot.unit_id))
+
                     return (
-                      <tr key={idx}>
-                        <td className="px-2 py-1.5 min-w-[160px]">
+                      <tr key={idx} className="align-top">
+                        <td className="px-2 py-2 min-w-[170px]">
                           <Select
                             value={it.item_id}
                             onChange={(e) => setItemField(idx, 'item_id', e.target.value)}
+                            className="!text-sm !font-bold"
                           >
                             <option value="">Select item…</option>
                             {items.map((i) => (
@@ -496,37 +655,59 @@ export default function Outward() {
                               </option>
                             ))}
                           </Select>
+                          {matchedItem?.material_type && (
+                            <span className="text-[11px] text-slate-400 block mt-0.5">
+                              {matchedItem.material_type}
+                            </span>
+                          )}
                         </td>
-                        <td className="px-2 py-1.5 min-w-[140px]">
+                        <td className="px-2 py-2 min-w-[210px]">
                           <Select
                             value={it.lot_id}
                             onChange={(e) => setItemField(idx, 'lot_id', e.target.value)}
+                            className="!text-sm !font-bold"
                           >
                             <option value="">Select lot…</option>
-                            {availableLotsFor(it.item_id).map((l) => (
-                              <option key={l.id} value={l.id}>
-                                {l.lot_number} (avail {formatNumber(l.available_qty)})
-                              </option>
-                            ))}
+                            {availLots.map((l) => {
+                              const uCode = l.unit?.code || l.unit?.name || l.item?.unit?.code || ''
+                              return (
+                                <option key={l.id} value={l.id}>
+                                  {l.lot_number} (Avail: {formatNumber(l.available_qty)} {uCode}{l.unit_cost ? ` @ ₹${formatNumber(l.unit_cost)}` : ''})
+                                </option>
+                              )
+                            })}
                           </Select>
+                          {matchedLot && (
+                            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
+                              <span className="font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                Avail: {formatNumber(matchedLot.available_qty)} {lotUnit?.code || itemUnit?.code || ''}
+                              </span>
+                              {Number(it.quantity) > Number(matchedLot.available_qty) && (
+                                <span className="font-bold text-rose-600 bg-rose-50 px-1 py-0.5 rounded border border-rose-200">
+                                  Exceeds stock!
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </td>
-                        <td className="px-2 py-1.5 w-24">
+                        <td className="px-2 py-2 w-28">
                           <Input
                             type="number"
                             step="0.001"
                             value={it.quantity}
                             onChange={(e) => setItemField(idx, 'quantity', e.target.value)}
-                            className="text-right"
+                            className="text-right !text-sm !font-bold"
                             placeholder="0.000"
                           />
                         </td>
-                        <td className="px-2 py-1.5 w-24">
+                        <td className="px-2 py-2 w-32">
                           <Select
-                            value={it.unit_id || matchedItem?.unit_id || ''}
+                            value={it.unit_id || ''}
                             onChange={(e) => setItemField(idx, 'unit_id', e.target.value)}
+                            className={`!text-sm !font-bold ${isUnitFromLot ? 'border-emerald-500 bg-emerald-50/40 text-emerald-900 font-semibold' : ''}`}
                           >
                             <option value="">
-                              {matchedItem?.unit?.code || matchedItem?.unit?.name || 'Unit…'}
+                              {displayUnit?.code || displayUnit?.name || 'Unit…'}
                             </option>
                             {units.map((u) => (
                               <option key={u.id} value={u.id}>
@@ -534,28 +715,54 @@ export default function Outward() {
                               </option>
                             ))}
                           </Select>
+                          {isUnitFromLot && (
+                            <span className="text-[10px] text-emerald-600 font-bold block mt-0.5" title="Auto-picked from Inward Lot">
+                              ✓ Auto from Lot
+                            </span>
+                          )}
                         </td>
-                        <td className="px-2 py-1.5 w-24">
+                        <td className="px-2 py-2 w-24">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={it.oil_pct ?? ''}
+                            onChange={(e) => setItemField(idx, 'oil_pct', e.target.value)}
+                            className="text-right !text-sm !font-bold"
+                            placeholder="0.00"
+                          />
+                          {matchedLot?.oil_pct != null && String(it.oil_pct) === String(matchedLot.oil_pct) && (
+                            <span className="text-[10px] text-amber-700 font-semibold block mt-0.5 text-right" title="Auto-picked from Inward Lot">
+                              ✓ {matchedLot.oil_pct}%
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-2 py-2 w-28">
                           <Input
                             type="number"
                             step="0.01"
                             value={it.rate}
                             onChange={(e) => setItemField(idx, 'rate', e.target.value)}
-                            className="text-right"
+                            className="text-right !text-sm !font-bold"
                             placeholder="0.00"
                           />
+                          {matchedLot?.unit_cost != null && (
+                            <span className="text-[10px] text-slate-500 block mt-0.5 text-right font-mono" title="Unit cost from inward lot">
+                              Lot: ₹{formatNumber(matchedLot.unit_cost)}
+                            </span>
+                          )}
                         </td>
-                        <td className="px-2 py-1.5 text-right font-bold text-slate-800">
+                        <td className="px-3 py-2 text-right font-black text-sm text-slate-900">
                           {formatNumber(it.amount)}
                         </td>
-                        <td className="px-2 py-1.5 text-center">
+                        <td className="px-2 py-2 text-center">
                           {formItems.length > 1 && (
                             <button
                               type="button"
                               onClick={() => setFormItems((f) => f.filter((_, i) => i !== idx))}
-                              className="text-rose-500 hover:text-rose-700 cursor-pointer"
+                              className="text-rose-500 hover:text-rose-700 cursor-pointer p-1"
+                              title="Remove item"
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
+                              <Trash2 className="h-4 w-4" />
                             </button>
                           )}
                         </td>
@@ -563,12 +770,12 @@ export default function Outward() {
                     )
                   })}
                 </tbody>
-                <tfoot className="bg-slate-50 font-bold">
+                <tfoot className="bg-slate-100 font-black">
                   <tr>
-                    <td colSpan={5} className="px-2 py-2 text-right text-slate-600">
+                    <td colSpan={6} className="px-4 py-3 text-right font-black text-slate-700 text-sm">
                       Grand Total
                     </td>
-                    <td className="px-2 py-2 text-right text-[#0B1A2D]">
+                    <td className="px-4 py-3 text-right font-black text-[#0B1A2D] text-base">
                       {formatMoney(grandTotal)}
                     </td>
                     <td />
@@ -584,6 +791,7 @@ export default function Outward() {
               value={form.remarks}
               onChange={(e) => setForm({ ...form, remarks: e.target.value })}
               placeholder="Narration / notes"
+              className="!text-base !font-bold"
             />
           </FormField>
         </form>
@@ -660,6 +868,11 @@ export default function Outward() {
                   <div className="text-sm font-bold font-mono text-slate-800">
                     {viewing.entry_number}
                   </div>
+                  {viewing.bill_no && (
+                    <div className="text-xs text-[#0b3558] font-mono font-bold">
+                      Bill No: {viewing.bill_no}
+                    </div>
+                  )}
                   <div className="text-xs text-slate-600">
                     Date: <span className="font-semibold">{formatDate(viewing.date)}</span>
                   </div>
@@ -702,6 +915,12 @@ export default function Outward() {
                     Dispatch & Transport Details
                   </div>
                   <div className="flex justify-between">
+                    <span className="text-slate-500">Bill / Inv No:</span>
+                    <span className="font-mono font-bold text-[#0b3558]">
+                      {viewing.bill_no || '—'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-slate-500">Dispatch Godown:</span>
                     <span className="font-bold text-slate-800">
                       {viewing.branch?.branch_name || viewing.branch?.name || '—'}
@@ -733,6 +952,7 @@ export default function Outward() {
                       <th className="px-3 py-2 text-left font-semibold">Item Description</th>
                       <th className="px-3 py-2 text-left font-semibold">Lot Number</th>
                       <th className="px-3 py-2 text-right font-semibold">Quantity</th>
+                      <th className="px-3 py-2 text-right font-semibold">Oil %</th>
                       <th className="px-3 py-2 text-right font-semibold">Rate (₹)</th>
                       <th className="px-3 py-2 text-right font-semibold">Amount (₹)</th>
                     </tr>
@@ -753,6 +973,9 @@ export default function Outward() {
                             {it.unit?.code || it.item?.unit?.code || 'MT'}
                           </span>
                         </td>
+                        <td className="px-3 py-2 text-right font-semibold text-amber-900">
+                          {it.oil_pct != null ? `${formatNumber(it.oil_pct)}%` : '—'}
+                        </td>
                         <td className="px-3 py-2 text-right text-slate-700">
                           {it.rate != null ? formatMoney(it.rate) : '—'}
                         </td>
@@ -764,7 +987,7 @@ export default function Outward() {
                   </tbody>
                   <tfoot className="bg-slate-100 font-bold border-t-2 border-slate-300">
                     <tr>
-                      <td colSpan={3} className="px-3 py-2 text-right text-slate-700 uppercase tracking-wider">
+                      <td colSpan={4} className="px-3 py-2 text-right text-slate-700 uppercase tracking-wider">
                         Grand Total
                       </td>
                       <td className="px-3 py-2 text-right text-[#0b3558]">

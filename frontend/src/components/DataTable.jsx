@@ -52,7 +52,9 @@ export function Td({ children, className = '', align = 'left' }) {
   )
 }
 
-export function DataTable({ columns, rows, loading, emptyTitle, emptyMessage, onRowClick, rowKey = 'id', actions }) {
+export function DataTable({ columns, rows, data, loading, emptyTitle, emptyMessage, onRowClick, rowKey = 'id', actions, footer }) {
+  const tableRows = rows ?? data ?? []
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
@@ -62,7 +64,7 @@ export function DataTable({ columns, rows, loading, emptyTitle, emptyMessage, on
     )
   }
 
-  if (!rows || rows.length === 0) {
+  if (!tableRows || tableRows.length === 0) {
     return (
       <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-2xs">
         <EmptyState title={emptyTitle} message={emptyMessage} />
@@ -76,7 +78,7 @@ export function DataTable({ columns, rows, loading, emptyTitle, emptyMessage, on
     <Table>
       <THead columns={cols} />
       <TBody>
-        {rows.map((row, idx) => (
+        {tableRows.map((row, idx) => (
           <Tr key={row[rowKey] ?? idx} onClick={onRowClick ? () => onRowClick(row) : undefined}>
             {columns.map((c, i) => (
               <Td key={c.key || i} align={c.align} className={c.cellClassName}>
@@ -91,6 +93,7 @@ export function DataTable({ columns, rows, loading, emptyTitle, emptyMessage, on
           </Tr>
         ))}
       </TBody>
+      {footer && <tfoot className="border-t-2 border-slate-700 bg-slate-100/90 font-bold">{footer}</tfoot>}
     </Table>
   )
 }

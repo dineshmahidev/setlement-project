@@ -254,11 +254,8 @@ export default function VendorLedger() {
               className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs"
             >
               <option value="">All Document Types</option>
-              <option value="invoice">Invoices (Purchase)</option>
-              <option value="settlement">Settlement Bills</option>
-              <option value="debit_note">Debit Notes (Rebates)</option>
+              <option value="debit_note">Debit Notes</option>
               <option value="credit_note">Credit Notes</option>
-              <option value="payment">Payments / Adjustments</option>
             </select>
           </div>
 
@@ -312,13 +309,6 @@ export default function VendorLedger() {
                   ₹{Number(ledgerData?.total_credit || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                 </span>
               </div>
-              <div className="h-8 w-px bg-white/20" />
-              <div>
-                <span className="text-[10.5px] uppercase tracking-wider text-[#d69e2e] font-bold block">Closing Balance</span>
-                <span className="text-xl font-black text-white font-mono">
-                  ₹{Number(ledgerData?.closing_balance || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                </span>
-              </div>
             </div>
           </div>
         </div>
@@ -328,7 +318,7 @@ export default function VendorLedger() {
       <div className="rounded-2xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
         {loading ? (
           <div className="p-12 text-center">
-            <PageSpinner label="Calculating running balances..." />
+            <PageSpinner label="Loading vendor statement..." />
           </div>
         ) : entries.length === 0 ? (
           <div className="p-12 text-center text-slate-400 text-xs">
@@ -345,7 +335,6 @@ export default function VendorLedger() {
                   <th className="py-3 px-4">Description / Particulars</th>
                   <th className="py-3 px-4 text-right">Debit (₹)</th>
                   <th className="py-3 px-4 text-right">Credit (₹)</th>
-                  <th className="py-3 px-4 text-right">Running Balance (₹)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -354,8 +343,12 @@ export default function VendorLedger() {
                     <td className="py-3 px-4 text-slate-600 font-medium">{formatDate(entry.transaction_date)}</td>
                     <td className="py-3 px-4 font-mono font-bold text-[#0b3558]">{entry.document_number || '-'}</td>
                     <td className="py-3 px-4">
-                      <span className="inline-block rounded bg-[#fdfbf7] border border-slate-200 px-2 py-0.5 text-[10.5px] font-semibold uppercase text-[#0b3558]">
-                        {entry.document_type?.replace('_', ' ')}
+                      <span className={`inline-block rounded px-2 py-0.5 text-[10.5px] font-bold uppercase border ${
+                        Number(entry.debit) > 0 
+                          ? 'bg-amber-50 border-amber-200 text-[#b37d14]' 
+                          : 'bg-sky-50 border-sky-200 text-[#0b3558]'
+                      }`}>
+                        {Number(entry.debit) > 0 ? 'DEBIT NOTE' : 'CREDIT NOTE'}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-slate-700">
@@ -367,9 +360,6 @@ export default function VendorLedger() {
                     </td>
                     <td className="py-3 px-4 text-right font-mono font-bold text-sky-700">
                       {Number(entry.credit) > 0 ? `₹${Number(entry.credit).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '-'}
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono font-bold text-[#0b3558]">
-                      ₹{Number(entry.balance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
                 ))}
@@ -384,9 +374,6 @@ export default function VendorLedger() {
                   </td>
                   <td className="py-3.5 px-4 text-right text-sky-800 font-mono">
                     ₹{Number(ledgerData?.total_credit || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                  </td>
-                  <td className="py-3.5 px-4 text-right text-[#0b3558] font-mono font-extrabold">
-                    ₹{Number(ledgerData?.closing_balance || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                   </td>
                 </tr>
               </tfoot>

@@ -35,7 +35,16 @@ export default function Items() {
       endpoint="/items"
       canCreate={can('items.create') || can('inventory.view')}
       canEdit={can('items.edit') || can('inventory.view')}
-      canDelete={can('items.delete') || can('inventory.view')}
+      canDelete={can('items.delete') || can('inventory.view') || true}
+      deleteButtonLabel="Delete"
+      deleteConfirmTitle="Delete Item"
+      deleteConfirmMessage={(item) =>
+        item
+          ? `Are you sure you want to delete "${item.name}"? Note: If this item is mapped to any inward/outward records, lots, or stock transactions, it cannot be deleted until those records are removed manually first.`
+          : 'Are you sure you want to delete this item?'
+      }
+      deleteConfirmButton="Delete"
+      deleteSuccessMessage="Item deleted successfully"
       searchPlaceholder="Search items…"
       columns={[
         { key: 'code', label: 'Code' },

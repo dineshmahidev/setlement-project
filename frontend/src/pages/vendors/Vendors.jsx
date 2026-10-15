@@ -266,14 +266,12 @@ export default function Vendors() {
                   <th className="py-3.5 px-4">Location</th>
                   <th className="py-3.5 px-4">Tax IDs (GST / PAN)</th>
                   <th className="py-3.5 px-4">Contact</th>
-                  <th className="py-3.5 px-4 text-right">Current Balance</th>
                   <th className="py-3.5 px-4 text-center">Status</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {(Array.isArray(vendors) ? vendors : []).map((v) => {
-                  const bal = Number(v.current_balance ?? v.opening_balance ?? 0)
                   return (
                     <tr key={v.id} className="hover:bg-[#fbf5ea]/60 transition-colors">
                       <td className="py-3 px-4 font-mono font-bold text-[#0b3558]">{v.vendor_code}</td>
@@ -297,18 +295,6 @@ export default function Vendors() {
                       <td className="py-3 px-4 text-slate-600">
                         {v.phone && <div className="flex items-center gap-1 font-medium">{v.phone}</div>}
                         {v.email && <div className="text-[10.5px] text-slate-400 truncate max-w-[140px]">{v.email}</div>}
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <span
-                          className={`font-bold ${
-                            bal > 0 ? 'text-emerald-700' : bal < 0 ? 'text-red-600' : 'text-slate-600'
-                          }`}
-                        >
-                          ₹{Math.abs(bal).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                        </span>
-                        <span className="block text-[10px] text-slate-400">
-                          {bal >= 0 ? 'Payable' : 'Receivable'}
-                        </span>
                       </td>
                       <td className="py-3 px-4 text-center">
                         <StatusBadge status={v.status} />
@@ -621,6 +607,7 @@ export default function Vendors() {
       <ConfirmDialog
         open={deleteConfirmOpen}
         onClose={() => setDeleteConfirmOpen(false)}
+        onCancel={() => setDeleteConfirmOpen(false)}
         onConfirm={handleDelete}
         title="Delete Vendor"
         message={`Are you sure you want to delete vendor "${vendorToDelete?.vendor_name}" (${vendorToDelete?.vendor_code})? If this vendor has existing invoices or settlements, consider deactivating them instead.`}

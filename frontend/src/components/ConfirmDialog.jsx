@@ -9,21 +9,26 @@ export default function ConfirmDialog({
   cancelText = 'Cancel',
   loading = false,
   danger = false,
+  variant,
   onConfirm,
   onCancel,
+  onClose,
 }) {
+  const handleCancel = onCancel || onClose
+  const isDanger = danger || variant === 'danger'
+
   return (
     <Modal
       open={open}
-      onClose={loading ? undefined : onCancel}
+      onClose={loading ? undefined : handleCancel}
       title={title}
       size="sm"
       footer={
         <>
-          <Button variant="secondary" onClick={onCancel} disabled={loading}>
+          <Button variant="secondary" onClick={handleCancel} disabled={loading}>
             {cancelText}
           </Button>
-          <Button variant={danger ? 'danger' : 'primary'} onClick={onConfirm} loading={loading}>
+          <Button variant={isDanger ? 'danger' : 'primary'} onClick={onConfirm} loading={loading}>
             {confirmText}
           </Button>
         </>

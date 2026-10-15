@@ -6,6 +6,16 @@ import { formatDate } from '../utils/helpers'
 
 export default function SettlementBillModal({ settlement, isOpen, onClose }) {
   const { activeCompany } = useAuth()
+
+  React.useEffect(() => {
+    if (!isOpen) return undefined
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose?.()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
+
   if (!isOpen || !settlement) return null
 
   const co = settlement.branch?.company || activeCompany || {}
@@ -108,8 +118,18 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
   const billDate = settlement.bill_date || settlement.invoice?.invoice_date || settlement.settlement_date
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
-      <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[95vh]">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose?.()
+        }
+      }}
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[95vh]"
+      >
         
         {/* Top Control Bar */}
         <div className="flex items-center justify-between px-5 py-3.5 bg-[#0b3558] text-white">

@@ -386,6 +386,7 @@ export default function Products() {
       <ConfirmDialog
         open={deleteConfirmOpen}
         onClose={() => setDeleteConfirmOpen(false)}
+        onCancel={() => setDeleteConfirmOpen(false)}
         onConfirm={handleDelete}
         title="Delete Product"
         message={`Are you sure you want to delete "${productToDelete?.product_name}"?`}

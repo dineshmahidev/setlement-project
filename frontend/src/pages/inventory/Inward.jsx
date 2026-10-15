@@ -6,7 +6,6 @@ import {
   Button,
   ConfirmDialog,
   DataTable,
-  FormField,
   Input,
   Modal,
   PageHeader,
@@ -16,6 +15,19 @@ import {
 } from '../../components'
 import { formatMoney, formatNumber, formatDate, today, extractList, qs } from '../../utils/helpers'
 import { Plus, Trash2, Eye, RefreshCw, Package, Printer } from 'lucide-react'
+
+function FormField({ label, required, className, children }) {
+  return (
+    <div className={className || ''}>
+      {label && (
+        <label className="mb-2 block text-base font-black text-slate-900 tracking-wide">
+          {label} {required && <span className="text-red-600 text-lg">*</span>}
+        </label>
+      )}
+      {children}
+    </div>
+  )
+}
 
 function useMasterData() {
   const [vendors, setVendors] = useState([])
@@ -300,61 +312,97 @@ export default function Inward() {
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title="New Inward Entry"
-        size="lg"
+        title={<span className="text-xl font-black text-[#0b3558]">New Inward Entry</span>}
+        size="xl"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button onClick={save} loading={saving} form="inward-form">Save & Add Stock</Button>
+            <Button variant="secondary" onClick={() => setModalOpen(false)} className="text-sm font-bold">Cancel</Button>
+            <Button onClick={save} loading={saving} form="inward-form" className="text-base font-black px-6 py-2.5">Save & Add Stock</Button>
           </>
         }
       >
-        <form id="inward-form" onSubmit={save} className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-4">
-            <FormField label="Date" required><Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required /></FormField>
+        <form id="inward-form" onSubmit={save} className="space-y-5 inward-form-2x">
+          <style>{`
+            .inward-form-2x label { font-size: 15px !important; font-weight: 900 !important; color: #0f172a !important; }
+            .inward-form-2x input, .inward-form-2x select, .inward-form-2x textarea { font-size: 15px !important; font-weight: 700 !important; color: #0f172a !important; }
+            .inward-form-2x table th { font-size: 13px !important; font-weight: 900 !important; }
+            .inward-form-2x table td { font-size: 14px !important; font-weight: 700 !important; }
+            .inward-form-2x input::placeholder { font-weight: 500 !important; font-size: 14px !important; }
+          `}</style>
+
+          <div className="grid gap-4 sm:grid-cols-4">
+            <FormField label="Date" required>
+              <Input
+                type="date"
+                value={form.date}
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
+                required
+                className="!text-base !font-bold !py-2.5"
+              />
+            </FormField>
             <FormField label="Godown" required>
-              <Select value={form.branch_id} onChange={(e) => setForm({ ...form, branch_id: e.target.value })} required>
+              <Select
+                value={form.branch_id}
+                onChange={(e) => setForm({ ...form, branch_id: e.target.value })}
+                required
+                className="!text-base !font-bold !py-2.5"
+              >
                 <option value="">Select…</option>
                 {branches.map((b) => <option key={b.id} value={b.id}>{b.branch_name || b.name}</option>)}
               </Select>
             </FormField>
             <FormField label="Party / Supplier">
-              <Select value={form.party_id} onChange={(e) => setForm({ ...form, party_id: e.target.value })}>
+              <Select
+                value={form.party_id}
+                onChange={(e) => setForm({ ...form, party_id: e.target.value })}
+                className="!text-base !font-bold !py-2.5"
+              >
                 <option value="">Select…</option>
                 {vendors.map((v) => <option key={v.id} value={v.id}>{v.vendor_name}</option>)}
               </Select>
             </FormField>
-            <FormField label="Bill No"><Input value={form.load_reference} onChange={(e) => setForm({ ...form, load_reference: e.target.value })} placeholder="BILL-001" /></FormField>
+            <FormField label="Bill No">
+              <Input
+                value={form.load_reference}
+                onChange={(e) => setForm({ ...form, load_reference: e.target.value })}
+                placeholder="BILL-001"
+                className="!text-base !font-bold !py-2.5 font-mono"
+              />
+            </FormField>
           </div>
 
-          <div className="rounded-xl border border-slate-200">
-            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-3 py-2">
-              <span className="text-xs font-bold text-slate-700">Items in this load</span>
-              <Button size="sm" type="button" variant="secondary" onClick={() => setFormItems((f) => [...f, emptyItem()])}>
-                <Plus className="h-3 w-3" /> Add Item
+          <div className="rounded-xl border border-slate-300 shadow-2xs overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-100/90 px-4 py-3">
+              <span className="text-sm font-black text-slate-900 uppercase tracking-wide">Items in this load</span>
+              <Button size="sm" type="button" variant="secondary" onClick={() => setFormItems((f) => [...f, emptyItem()])} className="text-xs font-bold">
+                <Plus className="h-4 w-4" /> Add Item
               </Button>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead className="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider">
+              <table className="w-full text-sm">
+                <thead className="bg-[#0b3558] text-white uppercase text-xs font-black tracking-wider">
                   <tr>
-                    <th className="px-2 py-2 text-left">Item</th>
-                    <th className="px-2 py-2 text-left">Lot No</th>
-                    <th className="px-2 py-2 text-right">Qty</th>
-                    <th className="px-2 py-2 text-left w-24">Unit</th>
-                    <th className="px-2 py-2 text-right">Oil %</th>
-                    <th className="px-2 py-2 text-right">Rate</th>
-                    <th className="px-2 py-2 text-right">Amount</th>
-                    <th className="px-2 py-2" />
+                    <th className="px-3 py-3 text-left min-w-[170px]">Item</th>
+                    <th className="px-3 py-3 text-left min-w-[120px]">Lot No</th>
+                    <th className="px-3 py-3 text-right w-28">Qty</th>
+                    <th className="px-3 py-3 text-left w-28">Unit</th>
+                    <th className="px-3 py-3 text-right w-24">Oil %</th>
+                    <th className="px-3 py-3 text-right w-28">Rate</th>
+                    <th className="px-3 py-3 text-right w-32">Amount</th>
+                    <th className="px-3 py-3 w-10" />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 bg-white">
                   {formItems.map((it, idx) => {
                     const matchedItem = items.find((x) => String(x.id) === String(it.item_id))
                     return (
                       <tr key={idx}>
-                        <td className="px-2 py-1.5 min-w-[160px]">
-                          <Select value={it.item_id} onChange={(e) => setItemField(idx, 'item_id', e.target.value)}>
+                        <td className="px-2 py-2 min-w-[170px]">
+                          <Select
+                            value={it.item_id}
+                            onChange={(e) => setItemField(idx, 'item_id', e.target.value)}
+                            className="!text-sm !font-bold"
+                          >
                             <option value="">Select item…</option>
                             {items.map((i) => (
                               <option key={i.id} value={i.id}>
@@ -363,12 +411,28 @@ export default function Inward() {
                             ))}
                           </Select>
                         </td>
-                        <td className="px-2 py-1.5 min-w-[110px]"><Input value={it.lot_number} onChange={(e) => setItemField(idx, 'lot_number', e.target.value)} placeholder="LOT-1" /></td>
-                        <td className="px-2 py-1.5 w-24"><Input type="number" step="0.001" value={it.quantity} onChange={(e) => setItemField(idx, 'quantity', e.target.value)} className="text-right" /></td>
-                        <td className="px-2 py-1.5 w-24">
+                        <td className="px-2 py-2 min-w-[120px]">
+                          <Input
+                            value={it.lot_number}
+                            onChange={(e) => setItemField(idx, 'lot_number', e.target.value)}
+                            placeholder="LOT-1"
+                            className="!text-sm !font-bold font-mono"
+                          />
+                        </td>
+                        <td className="px-2 py-2 w-28">
+                          <Input
+                            type="number"
+                            step="0.001"
+                            value={it.quantity}
+                            onChange={(e) => setItemField(idx, 'quantity', e.target.value)}
+                            className="text-right !text-sm !font-bold"
+                          />
+                        </td>
+                        <td className="px-2 py-2 w-28">
                           <Select
                             value={it.unit_id || matchedItem?.unit_id || ''}
                             onChange={(e) => setItemField(idx, 'unit_id', e.target.value)}
+                            className="!text-sm !font-bold"
                           >
                             <option value="">
                               {matchedItem?.unit?.code || matchedItem?.unit?.name || 'Unit…'}
@@ -380,13 +444,35 @@ export default function Inward() {
                             ))}
                           </Select>
                         </td>
-                        <td className="px-2 py-1.5 w-20"><Input type="number" step="0.01" value={it.oil_pct} onChange={(e) => setItemField(idx, 'oil_pct', e.target.value)} className="text-right" /></td>
-                        <td className="px-2 py-1.5 w-24"><Input type="number" step="0.01" value={it.rate} onChange={(e) => setItemField(idx, 'rate', e.target.value)} className="text-right" /></td>
-                        <td className="px-2 py-1.5 text-right font-bold text-slate-800">{formatNumber(it.amount)}</td>
-                        <td className="px-2 py-1.5 text-center">
+                        <td className="px-2 py-2 w-24">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={it.oil_pct}
+                            onChange={(e) => setItemField(idx, 'oil_pct', e.target.value)}
+                            className="text-right !text-sm !font-bold"
+                          />
+                        </td>
+                        <td className="px-2 py-2 w-28">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={it.rate}
+                            onChange={(e) => setItemField(idx, 'rate', e.target.value)}
+                            className="text-right !text-sm !font-bold"
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-right font-black text-sm text-slate-900">
+                          {formatNumber(it.amount)}
+                        </td>
+                        <td className="px-2 py-2 text-center">
                           {formItems.length > 1 && (
-                            <button type="button" onClick={() => setFormItems((f) => f.filter((_, i) => i !== idx))} className="text-rose-500 hover:text-rose-700 cursor-pointer">
-                              <Trash2 className="h-3.5 w-3.5" />
+                            <button
+                              type="button"
+                              onClick={() => setFormItems((f) => f.filter((_, i) => i !== idx))}
+                              className="text-rose-500 hover:text-rose-700 cursor-pointer p-1"
+                            >
+                              <Trash2 className="h-4 w-4" />
                             </button>
                           )}
                         </td>
@@ -394,10 +480,10 @@ export default function Inward() {
                     )
                   })}
                 </tbody>
-                <tfoot className="bg-slate-50 font-bold">
+                <tfoot className="bg-slate-100 font-black">
                   <tr>
-                    <td colSpan={6} className="px-2 py-2 text-right text-slate-600">Grand Total</td>
-                    <td className="px-2 py-2 text-right text-[#0B1A2D]">{formatMoney(grandTotal)}</td>
+                    <td colSpan={6} className="px-4 py-3 text-right font-black text-slate-700 text-sm">Grand Total</td>
+                    <td className="px-4 py-3 text-right font-black text-[#0B1A2D] text-base">{formatMoney(grandTotal)}</td>
                     <td />
                   </tr>
                 </tfoot>
@@ -405,7 +491,15 @@ export default function Inward() {
             </div>
           </div>
 
-          <FormField label="Narration"><Textarea rows={2} value={form.remarks} onChange={(e) => setForm({ ...form, remarks: e.target.value })} placeholder="Enter narration notes..." /></FormField>
+          <FormField label="Narration">
+            <Textarea
+              rows={2}
+              value={form.remarks}
+              onChange={(e) => setForm({ ...form, remarks: e.target.value })}
+              placeholder="Enter narration notes..."
+              className="!text-base !font-bold"
+            />
+          </FormField>
         </form>
       </Modal>
 

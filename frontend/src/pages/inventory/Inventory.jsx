@@ -19,6 +19,9 @@ import {
   CheckCircle2,
   Printer,
   Calendar,
+  Plus,
+  ArrowRightLeft,
+  Filter,
 } from 'lucide-react'
 import api, { apiErrorMessage, openPdf } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
@@ -27,11 +30,12 @@ import {
   Button,
   DataTable,
   Input,
+  Modal,
   PageHeader,
   Select,
   StatusBadge,
 } from '../../components'
-import { formatNumber, today } from '../../utils/helpers'
+import { formatDate, formatNumber, today } from '../../utils/helpers'
 
 function FormField({ label, required, className, children }) {
   return (
@@ -51,6 +55,7 @@ function useMasters() {
   const [vehicles, setVehicles] = useState([])
   const [items, setItems] = useState([])
   const [branches, setBranches] = useState([])
+  const [units, setUnits] = useState([])
 
   useEffect(() => {
     const list = (d) => (Array.isArray(d) ? d : d.data?.data || d.data || [])
@@ -60,7 +65,8 @@ function useMasters() {
       api.get('/items?per_page=100').catch(() => ({ data: [] })),
       api.get('/products?all=1').catch(() => ({ data: [] })),
       api.get('/branches?per_page=100').catch(() => ({ data: [] })),
-    ]).then(([v, veh, it, pr, br]) => {
+      api.get('/units?all=1').catch(() => ({ data: [] })),
+    ]).then(([v, veh, it, pr, br, u]) => {
       setVendors(list(v.data))
       setVehicles(list(veh.data))
       const rawItems = list(it.data)
@@ -74,17 +80,18 @@ function useMasters() {
       const unique = Array.from(new Map(combined.map((i) => [i.id || i.name, i])).values())
       setItems(unique)
       setBranches(list(br.data))
+      setUnits(list(u.data))
     })
   }, [])
 
-  return { vendors, vehicles, items, branches }
+  return { vendors, vehicles, items, branches, units }
 }
 
 /* ---------------- GOLD PARTY INVENTORY DASHBOARD ---------------- */
 export function PartyStockDashboard() {
   const toast = useToast()
   const { branchId } = useAuth()
-  const { branches, vendors: masterVendors } = useMasters()
+  const { branches, items: masterItems } = useMasters()
   const [loading, setLoading] = useState(true)
   const [summaryData, setSummaryData] = useState({
     summary: {
@@ -103,7 +110,7 @@ export function PartyStockDashboard() {
   })
   const [search, setSearch] = useState('')
   const [filterGodown, setFilterGodown] = useState('')
-  const [filterParty, setFilterParty] = useState('')
+  const [filterItem, setFilterItem] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [selectedMovementParty, setSelectedMovementParty] = useState(null)
@@ -115,7 +122,7 @@ export function PartyStockDashboard() {
       const res = await api.get('/inventory/party-summary', {
         params: {
           branch_id: filterGodown || branchId || undefined,
-          vendor_id: filterParty || undefined,
+          item_id: filterItem || undefined,
           date_from: dateFrom || undefined,
           date_to: dateTo || undefined,
         },
@@ -133,13 +140,13 @@ export function PartyStockDashboard() {
     } finally {
       setLoading(false)
     }
-  }, [branchId, filterGodown, filterParty, dateFrom, dateTo, toast])
+  }, [branchId, filterGodown, filterItem, dateFrom, dateTo, toast])
 
   useEffect(() => {
     loadData()
   }, [loadData])
 
-  // Filter parties by search
+  // Filter parties by search, godown, and item
   const filteredParties = (summaryData.parties || []).filter((p) => {
     const matchesSearch =
       !search ||
@@ -148,15 +155,15 @@ export function PartyStockDashboard() {
       (p.vendor_code || '').toLowerCase().includes(search.toLowerCase()) ||
       (p.branch_name || '').toLowerCase().includes(search.toLowerCase())
     const matchesGodown = !filterGodown || String(p.branch_id) === String(filterGodown)
-    const matchesParty = !filterParty || String(p.vendor_id) === String(filterParty)
-    return matchesSearch && matchesGodown && matchesParty
+    const matchesItem = !filterItem || String(p.product_id) === String(filterItem)
+    return matchesSearch && matchesGodown && matchesItem
   })
 
   // Filter godowns
   const filteredGodowns = (summaryData.godowns || []).filter((g) => {
     if (filterGodown && String(g.branch_id) !== String(filterGodown)) return false
-    if (!filterParty) return true
-    return (g.vendors || []).some((v) => String(v.vendor_id) === String(filterParty))
+    if (!filterItem) return true
+    return (g.vendors || []).some((v) => String(v.product_id) === String(filterItem))
   })
 
   return (
@@ -171,14 +178,14 @@ export function PartyStockDashboard() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-sm font-extrabold text-[#0B1A2D] uppercase tracking-wide">
-                  Godown & Vendor Inventory Dashboard
+                  Inventory Dashboard
                 </h1>
                 <span className="rounded-full bg-amber-100 border border-amber-300 px-2 py-0.2 text-[9px] font-bold text-amber-900">
                   LIVE CONSOLIDATED
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-                Godown-Wise Vendors • Import (Inlet) & Export (Outlet) Counts • Remaining Holding Balance & Movement Flow
+                Godown-Wise Vendors • Stock In & Stock Out Counts • Remaining Stock Balance
               </p>
             </div>
           </div>
@@ -192,11 +199,11 @@ export function PartyStockDashboard() {
           </button>
         </div>
 
-        {/* Compact Metric Summary Cards - Solid Colors */}
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Compact Metric Summary Cards - Solid Colors (3 Cards) */}
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="rounded-xl bg-teal-700 p-3.5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
             <div className="flex items-center justify-between text-[11px] text-teal-100 font-bold uppercase tracking-wider">
-              <span>Total Import (Stock In)</span>
+              <span>Stock In</span>
               <ArrowUpRight className="h-4 w-4 text-white" />
             </div>
             <div className="mt-1 flex items-baseline gap-1.5">
@@ -212,7 +219,7 @@ export function PartyStockDashboard() {
 
           <div className="rounded-xl bg-rose-600 p-3.5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
             <div className="flex items-center justify-between text-[11px] text-rose-100 font-bold uppercase tracking-wider">
-              <span>Total Export (Stock Out)</span>
+              <span>Stock Out</span>
               <ArrowDownRight className="h-4 w-4 text-white" />
             </div>
             <div className="mt-1 flex items-baseline gap-1.5">
@@ -228,7 +235,7 @@ export function PartyStockDashboard() {
 
           <div className="rounded-xl bg-[#b37d14] p-3.5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
             <div className="flex items-center justify-between text-[11px] text-amber-100 font-bold uppercase tracking-wider">
-              <span>Remaining Stock Balance</span>
+              <span>Stock Balance</span>
               <Layers className="h-4 w-4 text-white" />
             </div>
             <div className="mt-1 flex items-baseline gap-1.5">
@@ -240,25 +247,6 @@ export function PartyStockDashboard() {
             <p className="text-[11px] text-amber-100 font-bold mt-0.5">
               {formatNumber(summaryData.summary.net_holding_bags || 0)} Bags Remaining
             </p>
-          </div>
-
-          <div className="rounded-xl bg-[#0b3558] p-3.5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
-            <div className="flex items-center justify-between text-[11px] text-[#faedcd] font-bold uppercase tracking-wider">
-              <span>Godowns & Vendors</span>
-              <Users className="h-4 w-4 text-[#d69e2e]" />
-            </div>
-            <div className="mt-1 flex items-baseline gap-2">
-              <div>
-                <span className="text-xl font-extrabold text-white">{summaryData.summary.active_godowns || 0}</span>
-                <span className="text-[10px] font-bold text-slate-300 ml-0.5">Godowns</span>
-              </div>
-              <span className="text-slate-400">•</span>
-              <div>
-                <span className="text-xl font-extrabold text-white">{summaryData.summary.active_parties || 0}</span>
-                <span className="text-[10px] font-bold text-slate-300 ml-0.5">Vendors</span>
-              </div>
-            </div>
-            <p className="text-[11px] text-slate-300 font-medium mt-0.5">Active Stock Accounts</p>
           </div>
         </div>
       </div>
@@ -286,17 +274,17 @@ export function PartyStockDashboard() {
             </div>
 
             <div className="flex items-center gap-1.5">
-              <Users className="h-3.5 w-3.5 text-[#C9A227]" />
-              <label className="text-xs font-semibold text-slate-700">Vendor:</label>
+              <Package className="h-3.5 w-3.5 text-[#C9A227]" />
+              <label className="text-xs font-semibold text-slate-700">Item:</label>
               <select
-                value={filterParty}
-                onChange={(e) => setFilterParty(e.target.value)}
+                value={filterItem}
+                onChange={(e) => setFilterItem(e.target.value)}
                 className="rounded-lg border border-slate-300 bg-slate-50/80 px-2.5 py-1 text-xs font-semibold text-[#0B1A2D] focus:border-[#C9A227] focus:bg-white focus:outline-none"
               >
-                <option value="">All Vendors ({masterVendors.length})</option>
-                {masterVendors.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.vendor_name || v.name || v.business_name} ({v.vendor_code || v.code || `V-${v.id}`})
+                <option value="">All Items ({masterItems.length})</option>
+                {masterItems.map((it) => (
+                  <option key={it.id} value={it.id}>
+                    {it.name || it.product_name} {it.code ? `(${it.code})` : ''}
                   </option>
                 ))}
               </select>
@@ -346,7 +334,7 @@ export function PartyStockDashboard() {
               onClick={() => {
                 const params = new URLSearchParams({
                   ...(filterGodown && { branch_id: filterGodown }),
-                  ...(filterParty && { vendor_id: filterParty }),
+                  ...(filterItem && { item_id: filterItem }),
                   ...(dateFrom && { date_from: dateFrom }),
                   ...(dateTo && { date_to: dateTo }),
                 })
@@ -463,7 +451,7 @@ export function PartyStockDashboard() {
                     </div>
                   </div>
 
-                  {/* Vendor Stock Matrix for this Godown */}
+                    {/* Vendor Stock Matrix for this Godown */}
                   <div className="p-4 space-y-3">
                     <div className="text-xs font-bold text-slate-700 flex items-center justify-between border-b border-slate-100 pb-2">
                       <span className="flex items-center gap-1.5 text-[#0b3558]">
@@ -471,7 +459,7 @@ export function PartyStockDashboard() {
                         Vendor Stock Accounts in {g.branch_name}
                       </span>
                       <span className="text-[11px] font-normal text-slate-500">
-                        Import (Inlet), Export (Outlet), Balance & Stock Flow Destination
+                        Stock In, Stock Out & Stock Balance
                       </span>
                     </div>
 
@@ -486,11 +474,9 @@ export function PartyStockDashboard() {
                             <tr>
                               <th className="px-3 py-2.5 rounded-l-lg">Vendor / Party</th>
                               <th className="px-3 py-2.5">Commodity / Item</th>
-                              <th className="px-3 py-2.5 text-right">Import (Stock In)</th>
-                              <th className="px-3 py-2.5 text-right">Export (Stock Out)</th>
-                              <th className="px-3 py-2.5 text-right">Remaining Stock</th>
-                              <th className="px-3 py-2.5">Source & Destination Flow</th>
-                              <th className="px-3 py-2.5 text-center rounded-r-lg">Action</th>
+                              <th className="px-3 py-2.5 text-right">Stock In</th>
+                              <th className="px-3 py-2.5 text-right">Stock Out</th>
+                              <th className="px-3 py-2.5 text-right rounded-r-lg">Stock Balance</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100">
@@ -527,29 +513,6 @@ export function PartyStockDashboard() {
                                     <div className="text-[10px] font-bold text-amber-800">{v.holding_bags} Bags</div>
                                   </div>
                                 </td>
-                                <td className="px-3 py-3">
-                                  <div className="space-y-1 text-[11px]">
-                                    <div className="flex items-center gap-1 text-emerald-800 font-semibold">
-                                      <span className="font-black text-[10px] bg-emerald-100 text-emerald-900 px-1.5 py-0.2 rounded">FROM</span>
-                                      <span className="truncate max-w-[140px]">{v.vendor_name}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1 text-rose-800 font-semibold">
-                                      <span className="font-black text-[10px] bg-rose-100 text-rose-900 px-1.5 py-0.2 rounded">TO</span>
-                                      <span className="truncate max-w-[140px]">
-                                        {v.movements && v.movements.find((m) => m.type === 'EXPORT_OUTLET')?.destination || 'Godown Holding / Dispatch'}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-3 py-3 text-center">
-                                  <button
-                                    onClick={() => setSelectedMovementParty(v)}
-                                    className="inline-flex items-center gap-1 rounded-xl border border-amber-400/80 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-900 hover:bg-amber-400 hover:text-white transition-all shadow-2xs"
-                                  >
-                                    <Eye className="h-3.5 w-3.5" />
-                                    Movements
-                                  </button>
-                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -574,7 +537,7 @@ export function PartyStockDashboard() {
                 All Vendors Master Inventory Stock Table
               </h2>
               <p className="text-xs text-slate-500">
-                Consolidated Stock In (Import) vs Stock Out (Export) and Holding Balance across all Godowns
+                Consolidated Stock In vs Stock Out and Stock Balance across all Godowns
               </p>
             </div>
           </div>
@@ -596,10 +559,9 @@ export function PartyStockDashboard() {
                     <th className="px-4 py-3 rounded-tl-xl">Godown Location</th>
                     <th className="px-4 py-3">Party (Vendor)</th>
                     <th className="px-4 py-3">Item / Commodity</th>
-                    <th className="px-4 py-3 text-right">Import (Stock In)</th>
-                    <th className="px-4 py-3 text-right">Export (Stock Out)</th>
-                    <th className="px-4 py-3 text-right">Remaining Stock</th>
-                    <th className="px-4 py-3 text-center rounded-tr-xl">Movement Flow</th>
+                    <th className="px-4 py-3 text-right">Stock In</th>
+                    <th className="px-4 py-3 text-right">Stock Out</th>
+                    <th className="px-4 py-3 text-right rounded-tr-xl">Stock Balance</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -635,15 +597,6 @@ export function PartyStockDashboard() {
                             ({row.holding_bags} Bags)
                           </span>
                         </div>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={() => setSelectedMovementParty(row)}
-                          className="inline-flex items-center gap-1 rounded-xl border border-amber-400/80 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-400 hover:text-white transition-all shadow-xs"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          Movement Trace
-                        </button>
                       </td>
                     </tr>
                   ))}
@@ -872,12 +825,25 @@ export function CurrentStock() {
   const { branches, items } = useMasters()
   const [selBranch, setSelBranch] = useState('')
   const [selItem, setSelItem] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [exportModalOpen, setExportModalOpen] = useState(false)
+  const [exportFilters, setExportFilters] = useState({
+    branch_id: '',
+    item_id: '',
+    date_from: '',
+    date_to: '',
+  })
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const res = await api.get('/inventory/stock', {
-        params: { branch_id: selBranch || branchId || undefined },
+        params: {
+          branch_id: selBranch || branchId || undefined,
+          date_from: dateFrom || undefined,
+          date_to: dateTo || undefined,
+        },
       })
       let data = Array.isArray(res.data) ? res.data : res.data.data || []
       if (selItem) data = data.filter((r) => String(r.item_id) === String(selItem))
@@ -896,15 +862,45 @@ export function CurrentStock() {
     } finally {
       setLoading(false)
     }
-  }, [branchId, selBranch, selItem, search, toast])
+  }, [branchId, selBranch, selItem, search, dateFrom, dateTo, toast])
 
   useEffect(() => {
     load()
   }, [load])
 
+  function openExportModal() {
+    setExportFilters({
+      branch_id: selBranch || branchId || '',
+      item_id: selItem || '',
+      date_from: dateFrom || '',
+      date_to: dateTo || '',
+    })
+    setExportModalOpen(true)
+  }
+
+  function handleExportPdf(p) {
+    const params = new URLSearchParams({
+      ...(p.branch_id && { branch_id: p.branch_id }),
+      ...(p.item_id && { item_id: p.item_id }),
+      ...(p.date_from && { date_from: p.date_from }),
+      ...(p.date_to && { date_to: p.date_to }),
+      ...(search && { search: search }),
+    })
+    const filename = p.date_from && p.date_to
+      ? `Current_Stock_${p.date_from}_to_${p.date_to}.pdf`
+      : p.date_from
+      ? `Current_Stock_from_${p.date_from}.pdf`
+      : `Current_Stock_Report.pdf`
+    openPdf(`/inventory/stock/pdf?${params.toString()}`, filename)
+  }
+
   const totalItemsCount = rows.length
   const availableCount = rows.filter((r) => (r.available || 0) > 0).length
   const outOfStockCount = rows.filter((r) => (r.available || 0) <= 0).length
+
+  const totIn = rows.reduce((s, r) => s + Number(r.total_in || 0), 0)
+  const totOut = rows.reduce((s, r) => s + Number(r.total_out || 0), 0)
+  const totAvail = rows.reduce((s, r) => s + Number(r.available || 0), 0)
 
   return (
     <div className="space-y-4">
@@ -913,16 +909,59 @@ export function CurrentStock() {
         subtitle="Available inventory quantity by commodity & godown"
         icon={Boxes}
         actions={
-          <button
-            onClick={load}
-            disabled={loading}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:border-[#C9A227] hover:bg-slate-50 transition-all cursor-pointer"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 text-[#C9A227] ${loading ? 'animate-spin' : ''}`} />
-            <span>Refresh Stock</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={load}
+              disabled={loading}
+              className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:border-[#C9A227] hover:bg-slate-50 transition-all cursor-pointer"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 text-[#C9A227] ${loading ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
+            </button>
+            <Button
+              variant="secondary"
+              onClick={openExportModal}
+              className="border-[#C9A227]/50 text-[#0b3558] font-bold hover:bg-amber-50"
+            >
+              <Printer className="h-4 w-4 text-[#C9A227]" /> Export PDF
+            </Button>
+          </div>
         }
       />
+
+      {/* Duration Presets Quick Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[11px] font-bold uppercase text-slate-500 mr-1 flex items-center gap-1">
+            <Calendar className="h-3.5 w-3.5 text-[#C9A227]" /> Duration:
+          </span>
+          {[
+            { label: 'All Dates', key: 'all' },
+            { label: 'Today', key: 'today' },
+            { label: 'This Month', key: 'this_month' },
+            { label: 'Last Month', key: 'last_month' },
+            { label: 'This FY (Apr-Mar)', key: 'this_fy' },
+          ].map((p) => (
+            <button
+              key={p.key}
+              type="button"
+              onClick={() => {
+                const dates = getDurationDates(p.key)
+                setDateFrom(dates.from)
+                setDateTo(dates.to)
+              }}
+              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#C9A227] hover:bg-amber-50 transition-all cursor-pointer"
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        {Boolean(dateFrom || dateTo) && (
+          <span className="text-xs font-bold text-blue-900 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
+            {dateFrom ? formatDate(dateFrom) : 'Start'} → {dateTo ? formatDate(dateTo) : 'Present'}
+          </span>
+        )}
+      </div>
 
       {/* KPI Mini-Metrics Ribbon - Solid Colors */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -957,9 +996,9 @@ export function CurrentStock() {
         </div>
       </div>
 
-      {/* Filters Row in 1 Line */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="relative">
+      {/* Filters Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+        <div className="relative sm:col-span-1">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
           <Input
             placeholder="Search item name or code..."
@@ -984,6 +1023,24 @@ export function CurrentStock() {
             ))}
           </Select>
         </div>
+        <div>
+          <Input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            title="Duration From"
+            placeholder="Duration From"
+          />
+        </div>
+        <div>
+          <Input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            title="Duration To"
+            placeholder="Duration To"
+          />
+        </div>
       </div>
 
       <DataTable
@@ -994,36 +1051,167 @@ export function CurrentStock() {
         emptyMessage="Stock appears after stock-in or approved settlement bills."
         columns={[
           {
-            key: 'item_code',
-            label: 'Code',
+            key: 'item_name',
+            label: 'Item',
+            render: (r) => <span className="font-extrabold text-slate-900 text-sm">{r.item_name}</span>,
+          },
+          {
+            key: 'total_in',
+            label: 'In',
+            align: 'right',
             render: (r) => (
-              <span className="font-mono text-[11px] font-bold text-[#071426] bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
-                {r.item_code}
+              <span className="text-emerald-700 font-black text-sm">
+                {formatNumber(r.total_in ?? 0)}
               </span>
             ),
           },
           {
-            key: 'item_name',
-            label: 'Item',
-            render: (r) => <span className="font-extrabold text-slate-900">{r.item_name}</span>,
+            key: 'total_out',
+            label: 'Out',
+            align: 'right',
+            render: (r) => (
+              <span className="text-rose-700 font-black text-sm">
+                {formatNumber(r.total_out ?? 0)}
+              </span>
+            ),
+          },
+          {
+            key: 'available',
+            label: 'Available',
+            align: 'right',
+            render: (r) => (
+              <span className="text-emerald-950 font-black text-base bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                {formatNumber(r.available ?? 0)}
+              </span>
+            ),
           },
           {
             key: 'unit',
             label: 'Unit',
+            align: 'center',
             render: (r) => (
-              <span className="text-[10px] font-bold uppercase text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
-                {r.unit}
+              <span className="text-xs font-bold uppercase text-slate-700 bg-slate-100 px-2.5 py-1 rounded border border-slate-200">
+                {r.unit || '—'}
               </span>
             ),
           },
-          { key: 'opening', label: 'Opening', align: 'right', render: (r) => formatNumber(r.opening ?? 0) },
-          { key: 'total_in', label: 'In', align: 'right', render: (r) => <span className="text-emerald-700 font-bold">{formatNumber(r.total_in ?? 0)}</span> },
-          { key: 'total_out', label: 'Out', align: 'right', render: (r) => <span className="text-rose-700 font-bold">{formatNumber(r.total_out ?? 0)}</span> },
-          { key: 'available', label: 'Available', align: 'right', render: (r) => <span className="text-emerald-950 font-black text-sm">{formatNumber(r.available ?? 0)}</span> },
-          { key: 'min_stock_level', label: 'Min', align: 'right', render: (r) => formatNumber(r.min_stock_level ?? 0) },
-          { key: 'status', label: 'Status', render: (r) => <StatusBadge status={r.status} /> },
         ]}
+        footer={
+          rows.length > 0 ? (
+            <tr>
+              <td className="px-4 py-3 text-right text-xs font-black text-slate-700 uppercase">
+                TOTAL / POSITION:
+              </td>
+              <td className="px-4 py-3 text-right text-xs font-black text-emerald-700">
+                {formatNumber(totIn)}
+              </td>
+              <td className="px-4 py-3 text-right text-xs font-black text-rose-700">
+                {formatNumber(totOut)}
+              </td>
+              <td className="px-4 py-3 text-right text-xs font-black text-[#0b3558] bg-blue-50/70">
+                {formatNumber(totAvail)}
+              </td>
+              <td className="px-4 py-3 text-center text-xs font-bold text-slate-400">
+                —
+              </td>
+            </tr>
+          ) : null
+        }
       />
+
+      {/* Export Current Stock PDF with Duration Modal */}
+      <Modal
+        open={exportModalOpen}
+        onClose={() => setExportModalOpen(false)}
+        title="Export Current Items Stock PDF"
+        size="md"
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <Button variant="secondary" onClick={() => setExportModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                handleExportPdf(exportFilters)
+                setExportModalOpen(false)
+              }}
+              className="bg-[#0b3558] text-white hover:bg-[#07233b]"
+            >
+              <Printer className="h-4 w-4 mr-1.5 text-[#C9A227]" /> Download / Print PDF
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4 py-1">
+          <div>
+            <label className="mb-1.5 block text-xs font-bold text-slate-700">Quick Duration Presets</label>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { label: 'All Dates', key: 'all' },
+                { label: 'Today', key: 'today' },
+                { label: 'This Month', key: 'this_month' },
+                { label: 'Last Month', key: 'last_month' },
+                { label: 'This FY (Apr-Mar)', key: 'this_fy' },
+              ].map((p) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => {
+                    const dates = getDurationDates(p.key)
+                    setExportFilters((f) => ({ ...f, date_from: dates.from, date_to: dates.to }))
+                  }}
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-[#0b3558] hover:text-white transition-colors cursor-pointer"
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <FormField label="Duration From">
+              <Input
+                type="date"
+                value={exportFilters.date_from}
+                onChange={(e) => setExportFilters((f) => ({ ...f, date_from: e.target.value }))}
+              />
+            </FormField>
+            <FormField label="Duration To">
+              <Input
+                type="date"
+                value={exportFilters.date_to}
+                onChange={(e) => setExportFilters((f) => ({ ...f, date_to: e.target.value }))}
+              />
+            </FormField>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <FormField label="Godown / Branch">
+              <Select
+                value={exportFilters.branch_id}
+                onChange={(e) => setExportFilters((f) => ({ ...f, branch_id: e.target.value }))}
+              >
+                <option value="">All Godowns</option>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name || b.branch_name}</option>
+                ))}
+              </Select>
+            </FormField>
+
+            <FormField label="Item / Commodity">
+              <Select
+                value={exportFilters.item_id}
+                onChange={(e) => setExportFilters((f) => ({ ...f, item_id: e.target.value }))}
+              >
+                <option value="">All Items</option>
+                {items.map((i) => (
+                  <option key={i.id} value={i.id}>{i.name}</option>
+                ))}
+              </Select>
+            </FormField>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }
@@ -1265,21 +1453,91 @@ export function StockOut() {
 export function StockTransfer() {
   const toast = useToast()
   const { user, branchId } = useAuth()
-  const { vehicles, items, branches } = useMasters()
+  const { items, branches, units } = useMasters()
+
+  // New Transfer Form State
+  const [formOpen, setFormOpen] = useState(false)
   const [form, setForm] = useState({
     date: today(),
     from_branch_id: branchId || user?.default_branch_id || '',
     to_branch_id: '',
     item_id: '',
+    unit_id: '',
     quantity: '',
-    vehicle_id: '',
-    driver_name: '',
-    driver_mobile: '',
+    vehicle_number: '',
     lot_number: '',
     remarks: '',
   })
   const [saving, setSaving] = useState(false)
   const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+
+  // Posted Transfers Table State
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [activeDuration, setActiveDuration] = useState('all')
+  const [filters, setFilters] = useState({
+    branch_id: '',
+    item_id: '',
+    date_from: '',
+    date_to: '',
+    search: '',
+  })
+
+  // Export PDF State
+  const [exportModalOpen, setExportModalOpen] = useState(false)
+  const [exportDuration, setExportDuration] = useState('all')
+  const [exportFilters, setExportFilters] = useState({
+    branch_id: '',
+    item_id: '',
+    date_from: '',
+    date_to: '',
+  })
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await api.get('/inventory/transfers', {
+        params: {
+          branch_id: filters.branch_id || undefined,
+          item_id: filters.item_id || undefined,
+          date_from: filters.date_from || undefined,
+          date_to: filters.date_to || undefined,
+          search: filters.search || undefined,
+          all: 1,
+        },
+      })
+      setRows(Array.isArray(res.data) ? res.data : res.data.data || [])
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Failed to load stock transfers'))
+      setRows([])
+    } finally {
+      setLoading(false)
+    }
+  }, [filters, toast])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  function applyDuration(type) {
+    setActiveDuration(type)
+    if (type === 'all') {
+      setFilters((f) => ({ ...f, date_from: '', date_to: '' }))
+      return
+    }
+    const { from, to } = getDurationDates(type)
+    setFilters((f) => ({ ...f, date_from: from, date_to: to }))
+  }
+
+  function applyExportDuration(type) {
+    setExportDuration(type)
+    if (type === 'all') {
+      setExportFilters((f) => ({ ...f, date_from: '', date_to: '' }))
+      return
+    }
+    const { from, to } = getDurationDates(type)
+    setExportFilters((f) => ({ ...f, date_from: from, date_to: to }))
+  }
 
   async function submit(e) {
     e.preventDefault()
@@ -1295,10 +1553,13 @@ export function StockTransfer() {
         to_branch_id: Number(form.to_branch_id),
         item_id: Number(form.item_id),
         quantity: Number(form.quantity),
-        vehicle_id: form.vehicle_id ? Number(form.vehicle_id) : undefined,
+        unit_id: form.unit_id ? Number(form.unit_id) : undefined,
+        vehicle_number: form.vehicle_number ? form.vehicle_number.trim() : undefined,
+        vehicle: form.vehicle_number ? form.vehicle_number.trim() : undefined,
       })
-      toast.success('Transfer posted')
-      setForm((f) => ({ ...f, quantity: '', remarks: '' }))
+      toast.success('Stock transfer posted successfully')
+      setForm((f) => ({ ...f, quantity: '', vehicle_number: '', lot_number: '', remarks: '' }))
+      load()
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Transfer failed'))
     } finally {
@@ -1306,66 +1567,564 @@ export function StockTransfer() {
     }
   }
 
+  function openExportModal() {
+    setExportDuration(activeDuration)
+    setExportFilters({
+      branch_id: filters.branch_id || '',
+      item_id: filters.item_id || '',
+      date_from: filters.date_from || '',
+      date_to: filters.date_to || '',
+    })
+    setExportModalOpen(true)
+  }
+
+  function handleExportPdf(p) {
+    const params = new URLSearchParams({
+      ...(p.branch_id && { branch_id: p.branch_id }),
+      ...(p.item_id && { item_id: p.item_id }),
+      ...(p.date_from && { date_from: p.date_from }),
+      ...(p.date_to && { date_to: p.date_to }),
+      ...(filters.search && { search: filters.search }),
+    })
+    const filename = p.date_from && p.date_to
+      ? `Stock_Transfers_${p.date_from}_to_${p.date_to}.pdf`
+      : p.date_from
+      ? `Stock_Transfers_from_${p.date_from}.pdf`
+      : `Stock_Transfers_Report.pdf`
+    openPdf(`/inventory/transfers/pdf?${params.toString()}`, filename)
+  }
+
+  const totalQtyTransferred = rows.reduce((s, r) => s + Number(r.quantity || 0), 0)
+  const uniqueItemsCount = new Set(rows.map((r) => r.item_id)).size
+  const involvedBranchesCount = new Set([
+    ...rows.map((r) => r.from_branch_id),
+    ...rows.map((r) => r.to_branch_id),
+  ].filter(Boolean)).size
+
+  const columns = [
+    {
+      key: 'idx',
+      label: '#',
+      render: (_, idx) => <span className="text-xs text-slate-500 font-semibold">{idx + 1}</span>,
+    },
+    {
+      key: 'date',
+      label: 'Date',
+      render: (r) => <span className="whitespace-nowrap font-medium text-slate-800">{formatDate(r.date)}</span>,
+    },
+    {
+      key: 'transfer_number',
+      label: 'Transfer No',
+      render: (r) => <span className="font-bold text-sky-700">{r.transfer_number}</span>,
+    },
+    {
+      key: 'from_branch',
+      label: 'From Godown',
+      render: (r) => (
+        <span className="font-medium text-slate-700">
+          {r.from_branch?.name || r.from_branch?.branch_name || `#${r.from_branch_id}`}
+        </span>
+      ),
+    },
+    {
+      key: 'to_branch',
+      label: 'To Godown',
+      render: (r) => (
+        <span className="font-medium text-slate-700">
+          {r.to_branch?.name || r.to_branch?.branch_name || `#${r.to_branch_id}`}
+        </span>
+      ),
+    },
+    {
+      key: 'item',
+      label: 'Item / Product',
+      render: (r) => <span className="font-semibold text-slate-900">{r.item?.name || `#${r.item_id}`}</span>,
+    },
+    {
+      key: 'quantity',
+      label: 'Quantity',
+      align: 'right',
+      render: (r) => <span className="font-bold text-blue-700 text-sm">{formatNumber(r.quantity)}</span>,
+    },
+    {
+      key: 'unit',
+      label: 'Unit',
+      render: (r) => (
+        <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+          {r.unit?.code || r.unit?.name || r.item?.unit?.code || r.item?.unit?.name || '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'vehicle',
+      label: 'Vehicle',
+      render: (r) => (
+        <span className="text-xs text-slate-800 font-medium">
+          {r.vehicle?.vehicle_number || r.vehicle?.number || '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'lot_number',
+      label: 'Lot No',
+      render: (r) => <span className="text-xs text-slate-600 font-mono">{r.lot_number || '—'}</span>,
+    },
+    {
+      key: 'remarks',
+      label: 'Remarks',
+      render: (r) => (
+        <span className="text-xs text-slate-500 truncate max-w-[150px] block" title={r.remarks}>
+          {r.remarks || '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (r) => <StatusBadge status={r.status || 'POSTED'} />,
+    },
+  ]
+
   return (
-    <div className="max-w-3xl">
-      <PageHeader title="Stock Transfer" subtitle="Godown A → Godown B" />
-      <form onSubmit={submit} className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2">
-        <FormField label="Date" required>
-          <Input type="date" value={form.date} onChange={(e) => setF('date', e.target.value)} required />
-        </FormField>
-        <FormField label="Vehicle">
-          <Select value={form.vehicle_id} onChange={(e) => setF('vehicle_id', e.target.value)}>
-            <option value="">Select…</option>
-            {vehicles.map((v) => (
-              <option key={v.id} value={v.id}>{v.number}</option>
-            ))}
-          </Select>
-        </FormField>
-        <FormField label="From Godown" required>
-          <Select value={form.from_branch_id} onChange={(e) => setF('from_branch_id', e.target.value)} required>
-            <option value="">Select…</option>
-            {branches.map((b) => (
-              <option key={b.id} value={b.id}>{b.name || b.branch_name}</option>
-            ))}
-          </Select>
-        </FormField>
-        <FormField label="To Godown" required>
-          <Select value={form.to_branch_id} onChange={(e) => setF('to_branch_id', e.target.value)} required>
-            <option value="">Select…</option>
-            {branches.filter((b) => String(b.id) !== String(form.from_branch_id)).map((b) => (
-              <option key={b.id} value={b.id}>{b.name || b.branch_name}</option>
-            ))}
-          </Select>
-        </FormField>
-        <FormField label="Item / Product" required>
-          <Select value={form.item_id} onChange={(e) => setF('item_id', e.target.value)} required>
-            <option value="">Select…</option>
-            {items.map((i) => (
-              <option key={i.id} value={i.id}>{i.name}</option>
-            ))}
-          </Select>
-        </FormField>
-        <FormField label="Quantity" required>
-          <Input type="number" step="0.001" min="0" value={form.quantity} onChange={(e) => setF('quantity', e.target.value)} required />
-        </FormField>
-        <FormField label="Driver Name">
-          <Input value={form.driver_name} onChange={(e) => setF('driver_name', e.target.value)} />
-        </FormField>
-        <FormField label="Driver Mobile">
-          <Input value={form.driver_mobile} onChange={(e) => setF('driver_mobile', e.target.value)} />
-        </FormField>
-        <FormField label="Lot Number">
-          <Input value={form.lot_number} onChange={(e) => setF('lot_number', e.target.value)} />
-        </FormField>
-        <FormField label="Remarks">
-          <Input value={form.remarks} onChange={(e) => setF('remarks', e.target.value)} />
-        </FormField>
-        <div className="sm:col-span-2">
-          <Button type="submit" loading={saving}>Post Transfer</Button>
+    <div className="space-y-4">
+      {/* Page Header */}
+      <PageHeader
+        title="Stock Transfer"
+        subtitle="Inter-godown stock movement and posted transfer logs"
+        icon={ArrowRightLeft}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant={formOpen ? 'secondary' : 'primary'}
+              onClick={() => setFormOpen((o) => !o)}
+            >
+              {formOpen ? 'Hide Entry Form' : '+ New Transfer'}
+            </Button>
+            <Button variant="secondary" onClick={openExportModal}>
+              <Printer className="h-4 w-4" />
+              Export PDF
+            </Button>
+            <Button variant="secondary" onClick={load} loading={loading}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
+        }
+      />
+
+      {/* Collapsible New Stock Transfer Form */}
+      {formOpen && (
+        <div className="rounded-xl border border-sky-200 bg-gradient-to-b from-sky-50/50 to-white p-4 shadow-sm">
+          <div className="mb-3 flex items-center justify-between border-b border-sky-100 pb-2">
+            <div>
+              <h3 className="text-sm font-bold text-slate-800">New Inter-Godown Stock Transfer</h3>
+              <p className="text-xs text-slate-500">Post stock transfer from Godown A to Godown B</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFormOpen(false)}
+              className="text-xs font-medium text-slate-400 hover:text-slate-600"
+            >
+              Close
+            </button>
+          </div>
+
+          <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+            <FormField label="Date" required>
+              <Input type="date" value={form.date} onChange={(e) => setF('date', e.target.value)} required />
+            </FormField>
+
+            <FormField label="Vehicle">
+              <Input
+                value={form.vehicle_number}
+                onChange={(e) => setF('vehicle_number', e.target.value)}
+                placeholder="Vehicle number"
+              />
+            </FormField>
+
+            <FormField label="From Godown" required>
+              <Select value={form.from_branch_id} onChange={(e) => setF('from_branch_id', e.target.value)} required>
+                <option value="">Select From Godown…</option>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name || b.branch_name}</option>
+                ))}
+              </Select>
+            </FormField>
+
+            <FormField label="To Godown" required>
+              <Select value={form.to_branch_id} onChange={(e) => setF('to_branch_id', e.target.value)} required>
+                <option value="">Select To Godown…</option>
+                {branches.filter((b) => String(b.id) !== String(form.from_branch_id)).map((b) => (
+                  <option key={b.id} value={b.id}>{b.name || b.branch_name}</option>
+                ))}
+              </Select>
+            </FormField>
+
+            <FormField label="Item / Product" required>
+              <Select
+                value={form.item_id}
+                onChange={(e) => {
+                  const itId = e.target.value
+                  const selectedItem = items.find((i) => String(i.id) === String(itId))
+                  setForm((f) => ({
+                    ...f,
+                    item_id: itId,
+                    unit_id: selectedItem?.unit_id || selectedItem?.unit?.id || f.unit_id || '',
+                  }))
+                }}
+                required
+              >
+                <option value="">Select Item…</option>
+                {items.map((i) => (
+                  <option key={i.id} value={i.id}>{i.name}</option>
+                ))}
+              </Select>
+            </FormField>
+
+            <FormField label="Unit">
+              <Select value={form.unit_id} onChange={(e) => setF('unit_id', e.target.value)}>
+                <option value="">Select Unit…</option>
+                {units.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name} {u.code ? `(${u.code})` : ''}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+
+            <FormField label="Quantity" required>
+              <Input
+                type="number"
+                step="0.001"
+                min="0"
+                value={form.quantity}
+                onChange={(e) => setF('quantity', e.target.value)}
+                placeholder="0.000"
+                required
+              />
+            </FormField>
+
+            <FormField label="Lot Number">
+              <Input
+                value={form.lot_number}
+                onChange={(e) => setF('lot_number', e.target.value)}
+                placeholder="Optional lot no"
+              />
+            </FormField>
+
+            <FormField label="Remarks">
+              <Input
+                value={form.remarks}
+                onChange={(e) => setF('remarks', e.target.value)}
+                placeholder="Reference / remarks"
+              />
+            </FormField>
+
+            <div className="sm:col-span-2 md:col-span-3 flex justify-end gap-2 pt-1 border-t border-slate-100">
+              <Button type="button" variant="secondary" onClick={() => setFormOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" loading={saving}>
+                Post Transfer
+              </Button>
+            </div>
+          </form>
         </div>
-      </form>
+      )}
+
+      {/* KPI Summary Cards */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-xs">
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Transfers</p>
+          <p className="mt-1 text-2xl font-bold text-slate-800">{rows.length}</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Posted inter-godown records</p>
+        </div>
+        <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-3 shadow-xs">
+          <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider">Total Qty Transferred</p>
+          <p className="mt-1 text-2xl font-black text-blue-800">{formatNumber(totalQtyTransferred)}</p>
+          <p className="text-[11px] text-blue-500 mt-0.5">Cumulative stock moved</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-xs">
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Commodities</p>
+          <p className="mt-1 text-2xl font-bold text-slate-800">{uniqueItemsCount}</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Unique items transferred</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-xs">
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Active Godowns</p>
+          <p className="mt-1 text-2xl font-bold text-slate-800">{involvedBranchesCount}</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Origin & destination points</p>
+        </div>
+      </div>
+
+      {/* Filter Toolbar */}
+      <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-xs space-y-3">
+        {/* Duration Quick Presets */}
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-100 pb-2">
+          <span className="text-xs font-semibold text-slate-500 mr-1 flex items-center gap-1">
+            <Calendar className="h-3.5 w-3.5" /> Duration:
+          </span>
+          {[
+            { id: 'all', label: 'All Time' },
+            { id: 'today', label: 'Today' },
+            { id: 'this_month', label: 'This Month' },
+            { id: 'last_month', label: 'Last Month' },
+            { id: 'this_fy', label: 'This FY' },
+          ].map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              onClick={() => applyDuration(preset.id)}
+              className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                activeDuration === preset.id
+                  ? 'bg-slate-800 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {preset.label}
+            </button>
+          ))}
+          {(filters.date_from || filters.date_to || filters.branch_id || filters.item_id || filters.search) && (
+            <button
+              type="button"
+              onClick={() => {
+                setActiveDuration('all')
+                setFilters({ branch_id: '', item_id: '', date_from: '', date_to: '', search: '' })
+              }}
+              className="ml-auto text-xs text-rose-600 hover:underline"
+            >
+              Clear Filters
+            </button>
+          )}
+        </div>
+
+        {/* Inputs Filter Row */}
+        <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-5">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600">From Date</label>
+            <Input
+              type="date"
+              value={filters.date_from}
+              onChange={(e) => {
+                setActiveDuration('custom')
+                setFilters((f) => ({ ...f, date_from: e.target.value }))
+              }}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600">To Date</label>
+            <Input
+              type="date"
+              value={filters.date_to}
+              onChange={(e) => {
+                setActiveDuration('custom')
+                setFilters((f) => ({ ...f, date_to: e.target.value }))
+              }}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600">Godown</label>
+            <Select
+              value={filters.branch_id}
+              onChange={(e) => setFilters((f) => ({ ...f, branch_id: e.target.value }))}
+            >
+              <option value="">All Godowns</option>
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>{b.name || b.branch_name}</option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600">Item / Commodity</label>
+            <Select
+              value={filters.item_id}
+              onChange={(e) => setFilters((f) => ({ ...f, item_id: e.target.value }))}
+            >
+              <option value="">All Items</option>
+              {items.map((i) => (
+                <option key={i.id} value={i.id}>{i.name}</option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600">Search</label>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+              <Input
+                className="pl-8"
+                value={filters.search}
+                onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
+                placeholder="Transfer #, vehicle, lot..."
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Posted Stock Transfers DataTable */}
+      <DataTable
+        columns={columns}
+        rows={rows}
+        data={rows}
+        loading={loading}
+        emptyMessage="No stock transfers found matching the filter criteria."
+        footer={
+          rows.length > 0 ? (
+            <tr>
+              <td colSpan={6} className="py-2.5 px-3 text-right uppercase text-xs font-bold text-slate-700">
+                TOTAL TRANSFERS: {rows.length} | TOTAL TRANSFERRED:
+              </td>
+              <td className="py-2.5 px-3 text-right font-black text-blue-900 bg-blue-100/80 text-sm">
+                {formatNumber(totalQtyTransferred)}
+              </td>
+              <td colSpan={5}></td>
+            </tr>
+          ) : null
+        }
+      />
+
+      {/* Export PDF Modal */}
+      <Modal
+        open={exportModalOpen}
+        onClose={() => setExportModalOpen(false)}
+        title="Export Stock Transfers Report (PDF)"
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-slate-500">
+            Select the date period, godown, and commodity filters to generate the official printable PDF report.
+          </p>
+
+          {/* Modal Duration Presets */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-slate-700">Quick Duration</label>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { id: 'all', label: 'All Time' },
+                { id: 'today', label: 'Today' },
+                { id: 'this_month', label: 'This Month' },
+                { id: 'last_month', label: 'Last Month' },
+                { id: 'this_fy', label: 'This FY' },
+              ].map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => applyExportDuration(preset.id)}
+                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                    exportDuration === preset.id
+                      ? 'bg-slate-800 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-600">From Date</label>
+              <Input
+                type="date"
+                value={exportFilters.date_from}
+                onChange={(e) => {
+                  setExportDuration('custom')
+                  setExportFilters((f) => ({ ...f, date_from: e.target.value }))
+                }}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-600">To Date</label>
+              <Input
+                type="date"
+                value={exportFilters.date_to}
+                onChange={(e) => {
+                  setExportDuration('custom')
+                  setExportFilters((f) => ({ ...f, date_to: e.target.value }))
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-600">Godown</label>
+              <Select
+                value={exportFilters.branch_id}
+                onChange={(e) => setExportFilters((f) => ({ ...f, branch_id: e.target.value }))}
+              >
+                <option value="">All Godowns</option>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name || b.branch_name}</option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-600">Item / Commodity</label>
+              <Select
+                value={exportFilters.item_id}
+                onChange={(e) => setExportFilters((f) => ({ ...f, item_id: e.target.value }))}
+              >
+                <option value="">All Items</option>
+                {items.map((i) => (
+                  <option key={i.id} value={i.id}>{i.name}</option>
+                ))}
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+            <Button variant="secondary" onClick={() => setExportModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                handleExportPdf(exportFilters)
+                setExportModalOpen(false)
+              }}
+            >
+              <Printer className="h-4 w-4" />
+              Generate PDF
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
+}
+
+function getDurationDates(type) {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = now.getMonth()
+  const d = now.getDate()
+  const pad = (n) => String(n).padStart(2, '0')
+
+  if (type === 'today') {
+    const todayStr = `${y}-${pad(m + 1)}-${pad(d)}`
+    return { from: todayStr, to: todayStr }
+  }
+  if (type === 'this_month') {
+    const from = `${y}-${pad(m + 1)}-01`
+    const to = `${y}-${pad(m + 1)}-${pad(d)}`
+    return { from, to }
+  }
+  if (type === 'last_month') {
+    const lastMonthDate = new Date(y, m - 1, 1)
+    const ly = lastMonthDate.getFullYear()
+    const lm = lastMonthDate.getMonth()
+    const lastDay = new Date(ly, lm + 1, 0).getDate()
+    return {
+      from: `${ly}-${pad(lm + 1)}-01`,
+      to: `${ly}-${pad(lm + 1)}-${pad(lastDay)}`,
+    }
+  }
+  if (type === 'this_fy') {
+    const fyStartYear = m >= 3 ? y : y - 1
+    return {
+      from: `${fyStartYear}-04-01`,
+      to: `${y}-${pad(m + 1)}-${pad(d)}`,
+    }
+  }
+  return { from: '', to: '' }
 }
 
 /* ---------------- LEDGER ---------------- */
@@ -1376,6 +2135,13 @@ export function StockLedger() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({ item_id: '', branch_id: '', date_from: '', date_to: '' })
+  const [exportModalOpen, setExportModalOpen] = useState(false)
+  const [exportFilters, setExportFilters] = useState({
+    branch_id: '',
+    item_id: '',
+    date_from: '',
+    date_to: '',
+  })
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -1401,8 +2167,42 @@ export function StockLedger() {
     load()
   }, [load])
 
+  function openExportModal() {
+    setExportFilters({
+      branch_id: filters.branch_id || branchId || '',
+      item_id: filters.item_id || '',
+      date_from: filters.date_from || '',
+      date_to: filters.date_to || '',
+    })
+    setExportModalOpen(true)
+  }
+
+  function handleExportPdf(p) {
+    const params = new URLSearchParams({
+      ...(p.branch_id && { branch_id: p.branch_id }),
+      ...(p.item_id && { item_id: p.item_id }),
+      ...(p.date_from && { date_from: p.date_from }),
+      ...(p.date_to && { date_to: p.date_to }),
+    })
+    const filename = p.date_from && p.date_to
+      ? `Stock_Ledger_${p.date_from}_to_${p.date_to}.pdf`
+      : p.date_from
+      ? `Stock_Ledger_from_${p.date_from}.pdf`
+      : `Stock_Ledger.pdf`
+    openPdf(`/inventory/ledger/pdf?${params.toString()}`, filename)
+  }
+
+  const ledgerTotIn = rows.reduce((s, r) => s + Number(r.in ?? r.stock_in ?? 0), 0)
+  const ledgerTotOut = rows.reduce((s, r) => s + Number(r.out ?? r.stock_out ?? 0), 0)
+  const latestByKey = {}
+  rows.forEach((r) => {
+    const k = `${r.branch_id || ''}_${r.item_id || r.item || ''}`
+    latestByKey[k] = Number(r.closing_balance ?? 0)
+  })
+  const ledgerTotClosing = Object.values(latestByKey).reduce((s, v) => s + v, 0)
+
   return (
-    <div>
+    <div className="space-y-4">
       <PageHeader
         title="Stock Ledger"
         subtitle="Traceable movements with opening/closing"
@@ -1411,22 +2211,82 @@ export function StockLedger() {
             <Button variant="secondary" onClick={load}>Refresh</Button>
             <Button
               variant="secondary"
-              onClick={() => {
-                const params = new URLSearchParams({
-                  ...(filters.branch_id && { branch_id: filters.branch_id }),
-                  ...(filters.item_id && { item_id: filters.item_id }),
-                  ...(filters.date_from && { date_from: filters.date_from }),
-                  ...(filters.date_to && { date_to: filters.date_to }),
-                })
-                openPdf(`/inventory/ledger/pdf?${params.toString()}`, `Stock_Ledger.pdf`)
-              }}
+              onClick={openExportModal}
+              className="border-[#C9A227]/50 text-[#0b3558] font-bold hover:bg-amber-50"
             >
-              <Printer className="h-4 w-4" /> Export PDF
+              <Printer className="h-4 w-4 text-[#C9A227]" /> Export PDF
             </Button>
           </div>
         }
       />
-      <div className="mb-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+
+      {/* KPI Mini-Metrics Ribbon for Stock Ledger */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="rounded-2xl bg-emerald-600 p-4 text-white shadow-sm flex items-center gap-3 transition-transform hover:-translate-y-0.5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-700 text-white shrink-0">
+            <CheckCircle2 className="h-5 w-5" />
+          </div>
+          <div>
+            <span className="text-[10px] font-black uppercase text-emerald-100 tracking-wider">Total Stock In</span>
+            <div className="text-xl font-black text-white">{formatNumber(ledgerTotIn)} <span className="text-xs font-semibold text-emerald-100">Received</span></div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-rose-600 p-4 text-white shadow-sm flex items-center gap-3 transition-transform hover:-translate-y-0.5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-700 text-white shrink-0">
+            <TrendingDown className="h-5 w-5" />
+          </div>
+          <div>
+            <span className="text-[10px] font-black uppercase text-rose-100 tracking-wider">Total Stock Out</span>
+            <div className="text-xl font-black text-white">{formatNumber(ledgerTotOut)} <span className="text-xs font-semibold text-rose-100">Dispatched</span></div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-[#0b3558] p-4 text-white shadow-sm flex items-center gap-3 transition-transform hover:-translate-y-0.5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#07233b] text-[#d69e2e] shrink-0">
+            <Boxes className="h-5 w-5 text-[#C9A227]" />
+          </div>
+          <div>
+            <span className="text-[10px] font-black uppercase text-[#faedcd] tracking-wider">Net Closing Total</span>
+            <div className="text-xl font-black text-white">{formatNumber(ledgerTotClosing)} <span className="text-xs font-semibold text-slate-300">Balance</span></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Duration Presets Quick Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[11px] font-bold uppercase text-slate-500 mr-1 flex items-center gap-1">
+            <Calendar className="h-3.5 w-3.5 text-[#C9A227]" /> Duration:
+          </span>
+          {[
+            { label: 'All Dates', key: 'all' },
+            { label: 'Today', key: 'today' },
+            { label: 'This Month', key: 'this_month' },
+            { label: 'Last Month', key: 'last_month' },
+            { label: 'This FY (Apr-Mar)', key: 'this_fy' },
+          ].map((p) => (
+            <button
+              key={p.key}
+              type="button"
+              onClick={() => {
+                const dates = getDurationDates(p.key)
+                setFilters((f) => ({ ...f, date_from: dates.from, date_to: dates.to }))
+              }}
+              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#C9A227] hover:bg-amber-50 transition-all cursor-pointer"
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        {Boolean(filters.date_from || filters.date_to) && (
+          <span className="text-xs font-bold text-blue-900 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
+            {filters.date_from ? formatDate(filters.date_from) : 'Start'} → {filters.date_to ? formatDate(filters.date_to) : 'Present'}
+          </span>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div>
           <label className="mb-1 block text-xs font-semibold text-slate-700">Godown</label>
           <Select value={filters.branch_id} onChange={(e) => setFilters((f) => ({ ...f, branch_id: e.target.value }))}>
@@ -1454,27 +2314,219 @@ export function StockLedger() {
           <Input type="date" value={filters.date_to} onChange={(e) => setFilters((f) => ({ ...f, date_to: e.target.value }))} />
         </div>
       </div>
+
       <DataTable
         loading={loading}
         rows={rows}
         emptyTitle="No ledger entries"
         columns={[
-          { key: 'date', label: 'Date' },
-          { key: 'transaction_number', label: 'Txn #' },
-          { key: 'branch', label: 'Godown' },
-          { key: 'item', label: 'Item' },
-          { key: 'type', label: 'Type' },
-          { key: 'opening_balance', label: 'Opening', align: 'right', render: (r) => formatNumber(r.opening_balance) },
-          { key: 'stock_in', label: 'In', align: 'right', render: (r) => formatNumber(r.stock_in) },
-          { key: 'stock_out', label: 'Out', align: 'right', render: (r) => formatNumber(r.stock_out) },
-          { key: 'transfer_in', label: 'T.In', align: 'right', render: (r) => formatNumber(r.transfer_in) },
-          { key: 'transfer_out', label: 'T.Out', align: 'right', render: (r) => formatNumber(r.transfer_out) },
-          { key: 'adjustment', label: 'Adj', align: 'right', render: (r) => formatNumber(r.adjustment) },
-          { key: 'closing_balance', label: 'Closing', align: 'right', render: (r) => formatNumber(r.closing_balance) },
-          { key: 'vehicle', label: 'Vehicle' },
-          { key: 'lot', label: 'Lot' },
+          {
+            key: 'date',
+            label: 'Date',
+            render: (r) => (
+              <span className="font-bold text-slate-900 text-xs">
+                {formatDate(r.date)}
+              </span>
+            ),
+          },
+          {
+            key: 'lot',
+            label: 'Lot',
+            render: (r) => (
+              <span className="font-mono text-xs font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                {r.lot || '—'}
+              </span>
+            ),
+          },
+          {
+            key: 'party',
+            label: 'Party',
+            render: (r) => (
+              <span className="font-bold text-slate-900 text-xs">
+                {r.party || r.vendor_customer || '—'}
+              </span>
+            ),
+          },
+          {
+            key: 'item',
+            label: 'Item',
+            render: (r) => (
+              <span className="font-extrabold text-slate-900 text-xs">
+                {r.item || '—'}
+              </span>
+            ),
+          },
+          {
+            key: 'type',
+            label: 'Type',
+            render: (r) => {
+              const isIn = ['STOCK_IN', 'TRANSFER_IN', 'ADJUSTMENT_IN', 'OPENING'].includes(r.type)
+              return (
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                    isIn
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : 'bg-rose-50 text-rose-700 border border-rose-200'
+                  }`}
+                >
+                  {r.type?.replace(/_/g, ' ') || '—'}
+                </span>
+              )
+            },
+          },
+          {
+            key: 'in',
+            label: 'In',
+            align: 'right',
+            render: (r) => {
+              const val = Number(r.in ?? r.stock_in ?? 0)
+              return (
+                <span className={`font-bold text-xs ${val > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                  {val > 0 ? formatNumber(val) : '—'}
+                </span>
+              )
+            },
+          },
+          {
+            key: 'out',
+            label: 'Out',
+            align: 'right',
+            render: (r) => {
+              const val = Number(r.out ?? r.stock_out ?? 0)
+              return (
+                <span className={`font-bold text-xs ${val > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
+                  {val > 0 ? formatNumber(val) : '—'}
+                </span>
+              )
+            },
+          },
+          {
+            key: 'closing_balance',
+            label: 'Closing',
+            align: 'right',
+            render: (r) => {
+              const val = Number(r.closing_balance ?? 0)
+              return (
+                <span className="font-black text-xs text-[#0b3558]">
+                  {formatNumber(val)}
+                </span>
+              )
+            },
+          },
         ]}
+        footer={
+          rows.length > 0 ? (
+            <tr>
+              <td colSpan={5} className="px-4 py-3 text-right text-xs font-black text-slate-700 uppercase">
+                TOTAL / NET CLOSING:
+              </td>
+              <td className="px-4 py-3 text-right text-xs font-black text-emerald-700">
+                {formatNumber(ledgerTotIn)}
+              </td>
+              <td className="px-4 py-3 text-right text-xs font-black text-rose-700">
+                {formatNumber(ledgerTotOut)}
+              </td>
+              <td className="px-4 py-3 text-right text-xs font-black text-[#0b3558] bg-blue-50/70">
+                {formatNumber(ledgerTotClosing)}
+              </td>
+            </tr>
+          ) : null
+        }
       />
+
+      {/* Export PDF with Duration Modal */}
+      <Modal
+        open={exportModalOpen}
+        onClose={() => setExportModalOpen(false)}
+        title="Export Stock Ledger PDF with Duration"
+        size="md"
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <Button variant="secondary" onClick={() => setExportModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                handleExportPdf(exportFilters)
+                setExportModalOpen(false)
+              }}
+              className="bg-[#0b3558] text-white hover:bg-[#07233b]"
+            >
+              <Printer className="h-4 w-4 mr-1.5 text-[#C9A227]" /> Download / Print PDF
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4 py-1">
+          <div>
+            <label className="mb-1.5 block text-xs font-bold text-slate-700">Quick Duration Presets</label>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { label: 'Today', key: 'today' },
+                { label: 'This Month', key: 'this_month' },
+                { label: 'Last Month', key: 'last_month' },
+                { label: 'This FY (Apr-Mar)', key: 'this_fy' },
+                { label: 'All History', key: 'all' },
+              ].map((p) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => {
+                    const dates = getDurationDates(p.key)
+                    setExportFilters((f) => ({ ...f, date_from: dates.from, date_to: dates.to }))
+                  }}
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-[#0b3558] hover:text-white transition-colors cursor-pointer"
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <FormField label="Duration From">
+              <Input
+                type="date"
+                value={exportFilters.date_from}
+                onChange={(e) => setExportFilters((f) => ({ ...f, date_from: e.target.value }))}
+              />
+            </FormField>
+            <FormField label="Duration To">
+              <Input
+                type="date"
+                value={exportFilters.date_to}
+                onChange={(e) => setExportFilters((f) => ({ ...f, date_to: e.target.value }))}
+              />
+            </FormField>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <FormField label="Godown / Branch">
+              <Select
+                value={exportFilters.branch_id}
+                onChange={(e) => setExportFilters((f) => ({ ...f, branch_id: e.target.value }))}
+              >
+                <option value="">All Godowns</option>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name || b.branch_name}</option>
+                ))}
+              </Select>
+            </FormField>
+
+            <FormField label="Item / Commodity">
+              <Select
+                value={exportFilters.item_id}
+                onChange={(e) => setExportFilters((f) => ({ ...f, item_id: e.target.value }))}
+              >
+                <option value="">All Items</option>
+                {items.map((i) => (
+                  <option key={i.id} value={i.id}>{i.name}</option>
+                ))}
+              </Select>
+            </FormField>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

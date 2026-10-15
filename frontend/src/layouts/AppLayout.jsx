@@ -7,7 +7,6 @@ import {
   Building2,
   Users2,
   Package,
-  Receipt,
   Scale,
   BookOpen,
   UserCheck,
@@ -27,14 +26,14 @@ import {
   Trash2,
   ShieldCheck,
   TrendingUp,
+  Crown,
 } from 'lucide-react'
 
 const SETTLEMENT_NAVIGATION = [
   { label: 'Dashboard', to: '/panel', icon: LayoutDashboard, perm: null, end: true },
   { label: 'Leads & Traffic', to: '/panel/leads-traffic', icon: TrendingUp, perm: null },
   { label: 'Vendors', to: '/panel/vendors', icon: Users2, perm: 'vendors.view' },
-  { label: 'Products', to: '/panel/products', icon: Package, perm: 'products.view' },
-  { label: 'Invoices', to: '/panel/invoices', icon: Receipt, perm: null },
+  { label: 'Items', to: '/panel/products', icon: Package, perm: 'products.view' },
   { label: 'Settlements', to: '/panel/settlements', icon: Scale, perm: 'settlements.view' },
   { label: 'Vendor Ledger', to: '/panel/vendor-ledger', icon: BookOpen, perm: 'vendors.view' },
 ]
@@ -46,20 +45,17 @@ const MASTER_ADMIN_NAVIGATION = [
   { label: 'Leads & Traffic', to: '/panel/leads-traffic', icon: TrendingUp },
   { label: 'Users', to: '/panel/users', icon: UserCheck },
   { label: 'Settings', to: '/panel/settings', icon: Settings },
-  { label: 'Audit Logs', to: '/panel/audit-logs', icon: ShieldCheck },
 ]
 
 const INVENTORY_NAVIGATION = [
   { id: 'inventory-overview', label: 'Inventory Dashboard', to: '/panel/inventory', icon: Package, perm: 'inventory.view', end: true },
   { id: 'inward', label: 'Inward (Receipt)', to: '/panel/inventory/inward', icon: PlusCircle, perm: 'inventory.view' },
   { id: 'outward', label: 'Outward / Dispatch', to: '/panel/inventory/outward', icon: MinusCircle, perm: 'inventory.view' },
-  { id: 'production', label: 'Mixing / Production', to: '/panel/inventory/production', icon: ArrowRightLeft, perm: 'inventory.view' },
-  { id: 'transfer', label: 'Stock Transfer', to: '/panel/inventory/transfer', icon: ArrowRightLeft, perm: 'inventory.view' },
   { id: 'lots', label: 'Lots / Stock', to: '/panel/inventory/lots', icon: Boxes, perm: 'inventory.view' },
   { id: 'items', label: 'Items', to: '/panel/inventory/items', icon: Package, perm: 'inventory.view' },
   { id: 'units', label: 'Units', to: '/panel/inventory/units', icon: Scale, perm: 'inventory.view' },
-  { id: 'grades', label: 'Grades', to: '/panel/inventory/grades', icon: BookOpen, perm: 'inventory.view' },
   { id: 'current-stock', label: 'Current Items Stock', to: '/panel/inventory?tab=current-stock', icon: Boxes, perm: 'inventory.view' },
+  { id: 'transfer', label: 'Stock Transfer', to: '/panel/inventory?tab=transfer', icon: ArrowRightLeft, perm: 'inventory.view' },
   { id: 'ledger', label: 'Stock Ledger', to: '/panel/inventory?tab=ledger', icon: BookOpen, perm: 'inventory.view' },
 ]
 
@@ -379,6 +375,7 @@ export default function AppLayout() {
   const displayEmail = user?.email || ''
   const companyShort = activeCompany?.short_name || activeCompany?.company_name || 'LAXMI TRADERS'
   const currentCompanyLogo = resolveCompanyLogo(activeCompany)
+  const isInventorySection = location.pathname.includes('/inventory')
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-br from-[#FFF5F7] via-[#F8FAFC] to-[#F0F7FF] font-sans text-slate-800">
@@ -392,7 +389,7 @@ export default function AppLayout() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-56 flex-col bg-white/90 backdrop-blur-md border-r border-slate-200/80 shadow-xs transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 lg:w-68 flex-col bg-white/95 backdrop-blur-md border-r border-slate-200/90 shadow-xs transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -409,11 +406,11 @@ export default function AppLayout() {
             />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xs font-black tracking-tight text-slate-900 flex items-center gap-1 truncate">
+            <h1 className="text-xs sm:text-sm font-black tracking-tight text-slate-900 flex items-center gap-1 truncate">
               {companyShort}
               <span className="rounded bg-emerald-50 border border-emerald-300/80 px-1.5 py-0.2 text-[8px] font-black text-[#02492a] uppercase">PANEL</span>
             </h1>
-            <p className="text-[9.5px] font-medium text-slate-500 truncate">
+            <p className="text-[10.5px] font-semibold text-slate-500 truncate">
               {activeCompany?.city ? `${activeCompany.city} • Godowns` : 'Settlement & Godowns'}
             </p>
           </div>
@@ -426,11 +423,11 @@ export default function AppLayout() {
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-3 bg-slate-50/40">
+        <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-3 bg-slate-50/50">
           {/* SECTION 1: SETTLEMENT */}
           <div className="space-y-1">
-            <div className="px-3 pt-1 pb-1.5 flex items-center justify-between select-none pointer-events-none">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <div className="px-3 pt-1 pb-1 flex items-center justify-between select-none pointer-events-none">
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
                 Settlement
               </span>
               <div className="h-px w-10 bg-slate-200" />
@@ -445,27 +442,27 @@ export default function AppLayout() {
                   end={item.end || item.to === '/panel'}
                   onClick={() => setSidebarOpen(false)}
                   className={({ isActive }) =>
-                    `flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                    `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-bold transition-all ${
                       isActive
                         ? 'bg-[#0B1A2D] text-white shadow-xs border-l-3 border-[#C9A227]'
-                        : 'text-slate-600 hover:bg-slate-200/60 hover:text-slate-900'
+                        : 'text-slate-700 hover:bg-slate-200/70 hover:text-slate-950'
                     }`
                   }
                 >
-                  <Icon className="w-3.5 h-3.5 shrink-0 text-[#C9A227]" />
-                  <span className="truncate text-xs flex-1">{item.label}</span>
+                  <Icon className="w-4.5 h-4.5 shrink-0 text-[#C9A227]" strokeWidth={2.1} />
+                  <span className="truncate flex-1">{item.label}</span>
                 </NavLink>
               )
             })}
           </div>
 
           {/* SECTION 2: INVENTORY */}
-          <div className="space-y-1 pt-2 border-t border-slate-200/60">
-            <div className="px-3 pt-1 pb-1.5 flex items-center justify-between select-none pointer-events-none">
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#B78A16] flex items-center gap-1.5">
+          <div className="space-y-1 pt-2 border-t border-slate-200/70">
+            <div className="px-3 pt-1 pb-1 flex items-center justify-between select-none pointer-events-none">
+              <span className="text-[11px] font-black uppercase tracking-wider text-[#B78A16] flex items-center gap-1.5">
                 Inventory
               </span>
-              <div className="h-px w-12 bg-amber-200/80" />
+              <div className="h-px w-12 bg-amber-300" />
             </div>
 
             {INVENTORY_NAVIGATION.filter((item) => !item.perm || can(item.perm)).map((item) => {
@@ -486,24 +483,24 @@ export default function AppLayout() {
                   key={item.id || item.to}
                   to={fullHref}
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-bold transition-all ${
                     isItemActive
                       ? 'bg-gradient-to-r from-amber-400 via-amber-500 to-[#C9A227] text-slate-950 font-extrabold shadow-xs border-l-3 border-amber-300'
-                      : 'text-slate-600 hover:bg-amber-100/60 hover:text-amber-950'
+                      : 'text-slate-700 hover:bg-amber-100/70 hover:text-amber-950'
                   }`}
                 >
-                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isItemActive ? 'text-slate-950' : 'text-[#C9A227]'}`} />
-                  <span className="truncate text-xs flex-1">{item.label}</span>
+                  <Icon className={`w-4.5 h-4.5 shrink-0 ${isItemActive ? 'text-slate-950' : 'text-[#C9A227]'}`} strokeWidth={2.1} />
+                  <span className="truncate flex-1">{item.label}</span>
                 </NavLink>
               )
             })}
           </div>
 
-          {/* SECTION 3: MASTER ADMIN ONLY (Confidential: Godowns, Companies, CMS, Users, Settings, Audit Logs) */}
+          {/* SECTION 3: MASTER ADMIN ONLY (Confidential: Godowns, Companies, CMS, Users, Settings) */}
           {isSuperAdmin && (
-            <div className="space-y-1 pt-2 border-t border-slate-200/60">
-              <div className="px-3 pt-1 pb-1.5 flex items-center justify-between select-none pointer-events-none">
-                <span className="text-[10px] font-black uppercase tracking-widest text-amber-700 flex items-center gap-1.5">
+            <div className="space-y-1 pt-2 border-t border-slate-200/70">
+              <div className="px-3 pt-1 pb-1 flex items-center justify-between select-none pointer-events-none">
+                <span className="text-[11px] font-black uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
                   Master Admin
                 </span>
@@ -520,15 +517,15 @@ export default function AppLayout() {
                     to={navTo(item.to)}
                     onClick={() => setSidebarOpen(false)}
                     className={({ isActive }) =>
-                      `flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                      `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-bold transition-all ${
                         isActive
                           ? 'bg-[#0B1A2D] text-white shadow-xs border-l-3 border-[#C9A227]'
-                          : 'text-slate-600 hover:bg-amber-100/50 hover:text-amber-950'
+                          : 'text-slate-700 hover:bg-amber-100/60 hover:text-amber-950'
                       }`
                     }
                   >
-                    <Icon className="w-3.5 h-3.5 shrink-0 text-[#C9A227]" />
-                    <span className="truncate text-xs flex-1">{item.label}</span>
+                    <Icon className="w-4.5 h-4.5 shrink-0 text-[#C9A227]" strokeWidth={2.1} />
+                    <span className="truncate flex-1">{item.label}</span>
                   </NavLink>
                 )
               })}
@@ -542,25 +539,25 @@ export default function AppLayout() {
                 to={navTo('/panel/trash')}
                 onClick={() => setSidebarOpen(false)}
                 className={({ isActive }) =>
-                  `flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                  `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-bold transition-all ${
                     isActive
                       ? 'bg-rose-900 text-white shadow-xs border-l-3 border-rose-400'
-                      : 'text-slate-600 hover:bg-rose-50 hover:text-rose-700'
+                      : 'text-slate-700 hover:bg-rose-50 hover:text-rose-700'
                   }`
                 }
               >
-                <Trash2 className="w-3.5 h-3.5 shrink-0 text-rose-500" />
-                <span className="truncate text-xs flex-1">Trash</span>
+                <Trash2 className="w-4.5 h-4.5 shrink-0 text-rose-500" strokeWidth={2.1} />
+                <span className="truncate flex-1">Trash</span>
               </NavLink>
             </div>
           )}
         </nav>
 
         {/* User Card Footer */}
-        <div className="border-t border-slate-200/80 p-3 bg-white/80">
+        <div className="border-t border-slate-200 p-3 bg-white/90">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 min-w-0">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0B1A2D] text-[11px] font-extrabold text-[#E0BD55] border border-amber-300/40">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0B1A2D] text-[11px] font-extrabold text-[#E0BD55] border border-amber-300/40">
                 {displayName ? displayName.slice(0, 2).toUpperCase() : 'LG'}
               </div>
               <div className="min-w-0">
@@ -601,14 +598,16 @@ export default function AppLayout() {
               }}
             />
 
-            {/* Custom Godown Location Selector & Indicator */}
-            <SuperAdminBranchSelector
-              branches={branches}
-              branchId={branchId}
-              setBranchId={setBranchId}
-              user={user}
-              companyName={companyShort}
-            />
+            {/* Custom Godown Location Selector & Indicator — Only in Inventory Section */}
+            {isInventorySection && (
+              <SuperAdminBranchSelector
+                branches={branches}
+                branchId={branchId}
+                setBranchId={setBranchId}
+                user={user}
+                companyName={companyShort}
+              />
+            )}
           </div>
 
           <div className="flex items-center gap-3">

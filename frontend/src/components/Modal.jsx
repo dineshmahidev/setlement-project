@@ -16,14 +16,24 @@ export default function Modal({ open, onClose, title, children, footer, size = '
     size === 'lg' ? 'max-w-4xl' : size === 'xl' ? 'max-w-6xl' : size === 'sm' ? 'max-w-md' : 'max-w-2xl'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/50 p-4 pt-10">
-      <div className={`w-full ${width} rounded-lg bg-white shadow-xl`}>
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/50 p-4 pt-10"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose?.()
+        }
+      }}
+    >
+      <div
+        className={`w-full ${width} rounded-lg bg-white shadow-xl`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3">
           <h3 className="text-base font-semibold text-slate-800">{title}</h3>
           <button
             type="button"
             onClick={onClose}
-            className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 cursor-pointer"
             aria-label="Close"
           >
             ✕

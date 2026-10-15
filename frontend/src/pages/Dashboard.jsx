@@ -83,7 +83,7 @@ export default function Dashboard() {
       {/* Header & Date Filter */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">Agro Settlement Dashboard</h1>
+          <h1 className="text-xl font-bold tracking-tight text-slate-900">Settlement Dashboard</h1>
           <p className="text-xs text-slate-500">Live operational overview, oil calculations & vendor accounting</p>
         </div>
 
@@ -117,115 +117,103 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Metric & Inventory Cards - Unified Single Row with Solid Colors */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {/* Card 1: Today Settlements (Solid Emerald) */}
-        <div className="rounded-2xl bg-emerald-600 p-5 text-white shadow-sm transition-transform hover:-translate-y-0.5 flex flex-col justify-between">
+      {/* Metric Cards - 3 Core Financial Cards (Total Settlements, Total Debit, Total Credit) with Direct Click Navigation */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {/* Card 1: Total Settlements */}
+        <Link
+          to="/panel/settlements"
+          className="group rounded-2xl bg-[#0b3558] p-5 text-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between border border-[#b37d14]/30 cursor-pointer"
+        >
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-100">Today's Settlements</span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-700/80 text-white shrink-0">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#faedcd] flex items-center gap-1.5">
+                Total Settlements
+                <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-[#d69e2e]" />
+              </span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#07233b] text-[#d69e2e] shrink-0 border border-[#b37d14]/20">
                 <Scale className="w-5 h-5" />
               </div>
             </div>
             <div className="mt-4 flex items-baseline gap-2">
-              <span className="text-3xl font-black tracking-tight text-white">{cards.today_settlements || 0}</span>
-              <span className="text-xs font-medium text-emerald-100">entries</span>
-            </div>
-          </div>
-          <div className="mt-3 inline-flex items-center rounded-md bg-emerald-700/70 px-2.5 py-1 text-[11px] font-bold text-white truncate w-fit max-w-full">
-            Valued at ₹{(cards.today_settlement_value || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-          </div>
-        </div>
-
-        {/* Card 2: Active Masters (Solid Deep Blue) */}
-        <div className="rounded-2xl bg-[#1e40af] p-5 text-white shadow-sm transition-transform hover:-translate-y-0.5 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-100">Active Masters</span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1d4ed8] text-white shrink-0">
-                <Users2 className="w-5 h-5" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-center justify-between">
-              <div>
-                <span className="text-3xl font-black text-white">{cards.total_vendors || 0}</span>
-                <span className="block text-[11px] font-bold text-blue-200 uppercase">Vendors</span>
-              </div>
-              <div className="h-8 w-px bg-white/25" />
-              <div>
-                <span className="text-3xl font-black text-white">{cards.total_branches || 0}</span>
-                <span className="block text-[11px] font-bold text-blue-200 uppercase">Godowns</span>
-              </div>
-            </div>
-          </div>
-          <div className="mt-3 text-[11px] font-medium text-blue-100">
-            Registered operational masters
-          </div>
-        </div>
-
-        {/* Card 3: Current Stock (Solid Royal Navy) */}
-        <div className="rounded-2xl bg-[#0b3558] p-5 text-white shadow-sm transition-transform hover:-translate-y-0.5 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#faedcd]">Current Stock</span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#07233b] text-[#d69e2e] shrink-0">
-                <Package className="w-5 h-5" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-baseline gap-2">
               <span className="text-3xl font-black tracking-tight text-white">
-                {Number(invKpis?.current_stock_qty || 0).toLocaleString('en-IN')}
+                {cards.total_settlements ?? cards.today_settlements ?? 0}
               </span>
-              <span className="text-xs font-medium text-slate-200">MT</span>
+              <span className="text-xs font-medium text-slate-200">bills</span>
             </div>
           </div>
-          <div className="mt-3 inline-flex items-center rounded-md bg-[#07233b]/80 px-2.5 py-1 text-[11px] font-bold text-[#faedcd] w-fit">
-            {invKpis?.active_lots || 0} open lots
+          <div className="mt-4 flex items-center justify-between pt-3 border-t border-white/10">
+            <span className="inline-flex items-center rounded-md bg-[#07233b]/80 px-2.5 py-1 text-[11px] font-bold text-[#faedcd] truncate max-w-full">
+              ₹{Number(cards.total_settlement_value ?? cards.today_settlement_value ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+            </span>
+            <span className="text-[11px] font-semibold text-slate-300 group-hover:text-white flex items-center gap-1 transition-colors">
+              View all <ChevronRight className="w-3.5 h-3.5" />
+            </span>
           </div>
-        </div>
+        </Link>
 
-        {/* Card 4: Total Inward (Solid Teal / Emerald) */}
-        <div className="rounded-2xl bg-teal-700 p-5 text-white shadow-sm transition-transform hover:-translate-y-0.5 flex flex-col justify-between">
+        {/* Card 2: Total Debit */}
+        <Link
+          to="/panel/debit-notes"
+          className="group rounded-2xl bg-amber-600 p-5 text-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between cursor-pointer border border-amber-500/40"
+        >
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-teal-100">Total Inward</span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-800 text-white shrink-0">
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-100 flex items-center gap-1.5">
+                Total Debit Notes
+                <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-white" />
+              </span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-700/80 text-white shrink-0">
                 <ArrowDownRight className="w-5 h-5" />
               </div>
             </div>
             <div className="mt-4 flex items-baseline gap-2">
               <span className="text-3xl font-black tracking-tight text-white">
-                {Number(invKpis?.total_in_qty || 0).toLocaleString('en-IN')}
+                {cards.total_debit_count ?? cards.pending_debit_notes ?? 0}
               </span>
-              <span className="text-xs font-medium text-teal-100">MT</span>
+              <span className="text-xs font-medium text-amber-100">notes</span>
             </div>
           </div>
-          <div className="mt-3 inline-flex items-center rounded-md bg-teal-800/80 px-2.5 py-1 text-[11px] font-bold text-white truncate w-fit max-w-full">
-            Valued at ₹{Number(invKpis?.total_inward_value || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+          <div className="mt-4 flex items-center justify-between pt-3 border-t border-white/15">
+            <span className="inline-flex items-center rounded-md bg-amber-700/70 px-2.5 py-1 text-[11px] font-bold text-white truncate max-w-full">
+              ₹{Number(cards.total_debit_value ?? cards.total_receivable ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+            </span>
+            <span className="text-[11px] font-semibold text-amber-100 group-hover:text-white flex items-center gap-1 transition-colors">
+              View debit <ChevronRight className="w-3.5 h-3.5" />
+            </span>
           </div>
-        </div>
+        </Link>
 
-        {/* Card 5: Total Outward (Solid Rose) */}
-        <div className="rounded-2xl bg-rose-600 p-5 text-white shadow-sm transition-transform hover:-translate-y-0.5 flex flex-col justify-between">
+        {/* Card 3: Total Credit */}
+        <Link
+          to="/panel/debit-notes"
+          className="group rounded-2xl bg-emerald-600 p-5 text-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between cursor-pointer border border-emerald-500/40"
+        >
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-rose-100">Total Outward</span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-700 text-white shrink-0">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-100 flex items-center gap-1.5">
+                Total Credit Notes
+                <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-white" />
+              </span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-700/80 text-white shrink-0">
                 <ArrowUpRight className="w-5 h-5" />
               </div>
             </div>
             <div className="mt-4 flex items-baseline gap-2">
               <span className="text-3xl font-black tracking-tight text-white">
-                {Number(invKpis?.total_out_qty || 0).toLocaleString('en-IN')}
+                {cards.total_credit_count ?? 0}
               </span>
-              <span className="text-xs font-medium text-rose-100">MT</span>
+              <span className="text-xs font-medium text-emerald-100">notes</span>
             </div>
           </div>
-          <div className="mt-3 inline-flex items-center rounded-md bg-rose-700/80 px-2.5 py-1 text-[11px] font-bold text-white truncate w-fit max-w-full">
-            Valued at ₹{Number(invKpis?.total_outward_value || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+          <div className="mt-4 flex items-center justify-between pt-3 border-t border-white/15">
+            <span className="inline-flex items-center rounded-md bg-emerald-700/70 px-2.5 py-1 text-[11px] font-bold text-white truncate max-w-full">
+              ₹{Number(cards.total_credit_value ?? cards.total_payable ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+            </span>
+            <span className="text-[11px] font-semibold text-emerald-100 group-hover:text-white flex items-center gap-1 transition-colors">
+              View credit <ChevronRight className="w-3.5 h-3.5" />
+            </span>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Quick Action Bar */}
@@ -236,13 +224,6 @@ export default function Dashboard() {
         >
           <Plus className="w-4 h-4 text-[#d69e2e]" />
           New Settlement Bill
-        </Link>
-        <Link
-          to="/panel/debit-notes/new"
-          className="flex items-center gap-2 rounded-xl bg-[#b37d14] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#976508] transition-colors"
-        >
-          <FileText className="w-4 h-4 text-[#fbf5ea]" />
-          Create Debit Note
         </Link>
       </div>
 

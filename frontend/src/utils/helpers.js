@@ -13,13 +13,18 @@ export function formatMoney(value, currency = 'INR') {
   }
 }
 
-export function formatNumber(value, digits = 3) {
+export function formatNumber(value, digits = 3, minDigits = null) {
   const n = Number(value || 0)
-  if (Number.isNaN(n)) return '0'
+  const maxD = typeof digits === 'number' ? digits : 3
+  const minD = typeof minDigits === 'number' ? minDigits : (maxD === 0 ? 0 : 3)
+  if (Number.isNaN(n)) return (0).toFixed(minD)
   try {
-    return n.toLocaleString('en-IN', { maximumFractionDigits: digits })
+    return n.toLocaleString('en-IN', {
+      minimumFractionDigits: minD,
+      maximumFractionDigits: maxD,
+    })
   } catch {
-    return String(n)
+    return n.toFixed(minD)
   }
 }
 
