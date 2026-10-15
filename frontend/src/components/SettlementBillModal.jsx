@@ -46,18 +46,37 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
     }
   }
 
-  // Calculate debit/credit note values if not explicitly provided
+  // Calculate debit/credit note values
   const existingNote = settlement.debit_notes?.[0]
-  const noteType = existingNote?.transaction_type || settlement.note_type || 'debit'
+  const origInv = parseFloat(settlement.original_invoice_value) || 0
+  const branVal = parseFloat(settlement.bran_value) || 0
+  const manualAdj = parseFloat(settlement.manual_adjustment) || 0
+
+  let noteType = settlement.note_type
+  if (origInv > 0) {
+    const diff = (origInv - branVal) + manualAdj
+    noteType = diff < -0.001 ? 'credit' : 'debit'
+  } else if (manualAdj !== 0) {
+    noteType = manualAdj < -0.001 ? 'credit' : 'debit'
+  } else if (!noteType) {
+    const rawType = existingNote?.transaction_type ? String(existingNote.transaction_type).toLowerCase() : ''
+    noteType = (rawType === 'credit' || rawType === 'cn') ? 'credit' : 'debit'
+  }
+
   const isCredit = noteType === 'credit'
   const noteLabel = isCredit ? 'CREDIT NOTE' : 'DEBIT NOTE'
   const noteDocLabel = isCredit ? 'CreditNote No:' : 'DebitNote No:'
-  const notePrefix = isCredit ? 'CN' : 'DN'
 
-  const rebateAmount = parseFloat(settlement.rebate_amount) || parseFloat(settlement.note_amount) || 0
+  const calculatedDiff = origInv > 0 ? Math.abs((origInv - branVal) + manualAdj) : Math.abs(manualAdj)
+  const rebateAmount = parseFloat(settlement.rebate_amount) > 0
+    ? parseFloat(settlement.rebate_amount)
+    : (parseFloat(settlement.note_amount) > 0 ? parseFloat(settlement.note_amount) : (calculatedDiff > 0 ? calculatedDiff : 0))
+
   const invoiceValue = parseFloat(settlement.original_invoice_value) > 0
     ? parseFloat(settlement.original_invoice_value)
-    : (parseFloat(settlement.bran_value) || 0) + rebateAmount
+    : (isCredit
+        ? Math.max(0, (parseFloat(settlement.bran_value) || 0) - rebateAmount)
+        : (parseFloat(settlement.bran_value) || 0) + rebateAmount)
 
   const isInterstate = Boolean(settlement.is_interstate)
   const cgstRate = parseFloat(settlement.cgst_rate) || 2.5
@@ -74,24 +93,30 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
   const invIgst = isInterstate ? Number(((invoiceValue * igstRate) / 100).toFixed(2)) : 0
   const invTotal = Number((invoiceValue + invCgst + invSgst + invIgst).toFixed(2))
 
-  const dnNumber = existingNote?.debit_note_number ||
-    `${notePrefix}/${(settlement.settlement_number || '1019').replace(/\D/g, '') || '1019'}/${settlement.financial_year || '26-27'}`
+  let dnNumber = existingNote?.debit_note_number
+  if (isCredit && dnNumber && dnNumber.startsWith('DN/')) {
+    dnNumber = 'CN/' + dnNumber.slice(3)
+  } else if (!isCredit && dnNumber && dnNumber.startsWith('CN/')) {
+    dnNumber = 'DN/' + dnNumber.slice(3)
+  }
+  if (!dnNumber) {
+    const rawNum = String(settlement.settlement_number || '0001').replace(/^SB\//, '')
+    dnNumber = `${isCredit ? 'CN' : 'DN'}/${rawNum}`
+  }
 
   const billNo = settlement.bill_number || settlement.invoice?.invoice_number || '68'
   const billDate = settlement.bill_date || settlement.invoice?.invoice_date || settlement.settlement_date
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-6 overflow-y-auto backdrop-blur-xs">
-      <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[96vh]">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
+      <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[95vh]">
         
-        {/* Modal Top Actions Toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-3.5 bg-[#0b3558] text-white">
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-bold text-white bg-[#07233b] px-2.5 py-0.5 rounded">
-              {settlement.settlement_number || 'NEW'}
-            </span>
-            <span className="text-sm font-bold text-slate-100">
-              Settlement Bill & Debit Note (Single Document Preview)
+        {/* Top Control Bar */}
+        <div className="flex items-center justify-between px-5 py-3.5 bg-[#0b3558] text-white">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            <span className="text-sm font-bold tracking-wide">
+              Settlement Bill & {noteLabel} (Detailed Document Preview)
             </span>
           </div>
 
@@ -119,13 +144,14 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
           </div>
         </div>
 
-        {/* Single Page Preview Container */}
+        {/* Preview Container */}
         <div className="p-4 sm:p-6 overflow-y-auto bg-[#f4f6f9] flex flex-col items-center">
           
-          <div className="w-full max-w-3xl bg-white border-2 border-[#0b3558] p-4 text-[10.5px] text-slate-900 font-sans shadow-lg select-text space-y-2">
+          {/* Document Canvas matching Inward border box and PDF layout */}
+          <div className="w-full max-w-3xl bg-white rounded-lg shadow-md border-2 border-[#0b3558] p-5 sm:p-6 text-[10.5px] text-slate-900 font-sans select-text space-y-3">
             
             {/* Top Company Header */}
-            <div className="flex items-center justify-between pb-2 border-b-2 border-[#0b3558]">
+            <div className="flex items-center justify-between pb-2">
               <div className="flex items-center gap-3">
                 {coLogo ? (
                   <img
@@ -158,14 +184,18 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
                   <strong>GSTIN :</strong> <span className="font-mono font-bold">{coGstin}</span>
                 </div>
                 <div><strong>State :</strong> {coState} &nbsp;|&nbsp; <strong>State Code :</strong> {coStateCode}</div>
+                <div><strong>Phone :</strong> {co.phone || '-'} {co.phone_2 ? ` / ${co.phone_2}` : ''} {co.email ? ` | Email : ${co.email}` : ''}</div>
               </div>
             </div>
 
-            {/* ========================================================================= */}
-            {/* SECTION 1: SETTLEMENT BILL                                                */}
-            {/* ========================================================================= */}
+            {/* Header Divider Line */}
+            <div className="h-0.5 bg-[#0b3558]"></div>
+
+            {/* SECTION 1: SETTLEMENT BILL */}
             <div className="bg-[#0b3558] text-white text-center font-bold text-xs tracking-widest py-1 uppercase rounded-xs">
+              <span className="inline-block w-5 h-px bg-[#d69e2e] align-middle mr-2"></span>
               SETTLEMENT BILL
+              <span className="inline-block w-5 h-px bg-[#d69e2e] align-middle ml-2"></span>
             </div>
 
             {/* Vendor Details & Bill Header Grid */}
@@ -174,16 +204,17 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
               <div className="p-2 border-r border-slate-300 flex flex-col justify-between">
                 <div>
                   <div className="text-[9px] font-bold text-[#0b3558] uppercase">Vendor Details</div>
-                  <div className="text-xs font-black text-[#0b3558] uppercase">{settlement.vendor?.vendor_name || 'SRI RAM AGRO'}</div>
-                  <div className="text-slate-600 text-[9px] mt-0.5">
-                    {settlement.vendor?.address || 'ARIYALUR'}<br />
-                    {settlement.vendor?.city || 'ARIYALUR'} {settlement.vendor?.pincode ? `, ${settlement.vendor?.pincode}` : ''}<br />
+                  <div className="text-xs font-black text-[#0b3558] uppercase">{settlement.vendor?.vendor_name || 'S.K. SATHANA TRADERS'}</div>
+                  <div className="text-slate-600 text-[9px] mt-0.5 leading-relaxed">
+                    {settlement.vendor?.address || '45/B, Mill Road, Sathy Main Road'}<br />
+                    {settlement.vendor?.city || 'Gobichettipalayam'} {settlement.vendor?.pincode ? `, ${settlement.vendor?.pincode}` : ''}<br />
                     <strong>GSTIN :</strong> <span className="font-mono font-bold text-slate-800">{settlement.vendor?.gstin || '-'}</span>
+                    {settlement.vendor?.phone && <span> &nbsp;|&nbsp; <strong>Phone :</strong> {settlement.vendor.phone}</span>}
                   </div>
                 </div>
                 <div className="mt-2 pt-1 border-t border-slate-200 flex items-center gap-2">
                   <span className="font-bold text-slate-700">Product</span>
-                  <span className="font-black text-[#0b3558] uppercase">{settlement.product?.product_name || 'BOILED BRAN'}</span>
+                  <span className="font-black text-[#0b3558] uppercase">{settlement.product?.product_name || 'Rice Bran Grade II'}</span>
                 </div>
               </div>
 
@@ -203,7 +234,7 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
                 </div>
                 <div className="grid grid-cols-2 px-2 py-0.5">
                   <span className="font-bold text-slate-700">Cont.Unit Rate</span>
-                  <span className="font-bold text-slate-900 text-right">{Number(settlement.contract_unit_rate || 0).toFixed(2)}</span>
+                  <span className="font-bold text-slate-900 text-right">{Number(settlement.contract_unit_rate || 0).toFixed(2)} {settlement.rate_basis === 'per_10kg' ? 'PP Bag' : (settlement.rate_basis === 'per_mt' ? 'Per MT' : 'Per Kg')}</span>
                 </div>
                 <div className="grid grid-cols-2 px-2 py-0.5">
                   <span className="font-bold text-slate-700">Final Unit Rate</span>
@@ -293,9 +324,9 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
                   <span>IGST ({Number(settlement.igst_rate || 0).toFixed(2)}%)</span>
                   <span>{Number(settlement.igst_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
-                <div className="flex justify-between px-2 py-1 bg-slate-100 font-black text-[#0b3558] border-y border-slate-200 my-0.5">
+                <div className="flex justify-between px-2 py-1 bg-slate-100 font-bold text-slate-800 border-y border-slate-200 my-0.5">
                   <span>Sub Total (Bran Value + GST)</span>
-                  <span>{Number(settlement.subtotal_amount || (Number(settlement.bran_value || 0) + Number(settlement.bag_amount || 0) + Number(settlement.cgst_amount || 0) + Number(settlement.sgst_amount || 0) + Number(settlement.igst_amount || 0))).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  <span>{Number(settlement.subtotal_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between px-2 py-0.5">
                   <span>Loading charges</span>
@@ -328,15 +359,15 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
               </div>
             </div>
 
-            {/* ========================================================================= */}
-            {/* SECTION 2: DEBIT / CREDIT NOTE (ALWAYS IN SAME SINGLE CARD/PDF PREVIEW)   */}
-            {/* ========================================================================= */}
-            <div className="pt-2 border-t-2 border-dashed border-[#0b3558] space-y-2">
+            {/* SECTION 2: DEBIT / CREDIT NOTE */}
+            <div className="space-y-2 pt-1">
               <div className="bg-[#0b3558] text-white text-center font-bold text-xs tracking-widest py-1 uppercase rounded-xs">
+                <span className="inline-block w-5 h-px bg-[#d69e2e] align-middle mr-2"></span>
                 {noteLabel}
+                <span className="inline-block w-5 h-px bg-[#d69e2e] align-middle ml-2"></span>
               </div>
 
-              {/* Debit Note Header Grid */}
+              {/* Debit/Credit Note Header Grid */}
               <div className="grid grid-cols-2 border border-slate-300 bg-[#fdfbf7] text-[10px]">
                 <div className="p-2 border-r border-slate-300">
                   <div className="text-[9px] font-bold text-[#0b3558] uppercase">Vendor Details</div>
@@ -386,7 +417,7 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
                     <td className="p-1 text-center font-bold border-r border-slate-300">1</td>
                     <td className="p-1 border-r border-slate-300 font-medium">
                       {isCredit 
-                        ? 'Quality Premium / Price Bonus (Settlement value exceeds invoice)' 
+                        ? 'Credit (Oil Content & Quality Bonus / Premium Rate Difference)' 
                         : 'Rebate (Oil Content & Quality Adjustment Difference)'}
                     </td>
                     <td className="p-1 text-right font-black">{Number(rebateAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
@@ -446,14 +477,26 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
               </div>
 
               <div className="text-[9px] text-[#0b3558] font-bold">
-                <strong>Remarks:</strong> {settlement.remarks || `Auto-generated ${noteLabel} posted to vendor ledger`}
+                <strong>Remarks:</strong> {(() => {
+                  const r = existingNote?.remarks || settlement.remarks
+                  if (isCredit && (!r || r.toLowerCase().includes('debit'))) {
+                    return 'Auto-generated Credit Note posted to vendor ledger'
+                  }
+                  if (!isCredit && (!r || r.toLowerCase().includes('credit'))) {
+                    return 'Auto-generated Debit Note posted to vendor ledger'
+                  }
+                  return r || `Auto-generated ${noteLabel} posted to vendor ledger`
+                })()}
               </div>
             </div>
 
+            {/* Clean Footer Divider Line */}
+            <div className="h-0.5 bg-[#0b3558]"></div>
+
             {/* Bottom Signature */}
-            <div className="pt-4 flex justify-between items-end text-[10px] font-bold text-[#0b3558]">
+            <div className="pt-1 flex justify-between items-end text-[10px] font-bold text-[#0b3558]">
               <div>AUTHORISED SIGNATURE</div>
-              <div className="text-right border-t-2 border-[#0b3558] pt-1 w-52 text-center">
+              <div className="text-right border-t border-[#0b3558] pt-1 w-52 text-center">
                 For {coName}
               </div>
             </div>
@@ -465,4 +508,3 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
     </div>
   )
 }
-

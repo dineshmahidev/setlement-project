@@ -499,6 +499,7 @@ export default function SettlementForm() {
       oil_quantity_kg: calc.oil_quantity_kg,
       bran_value: calc.bran_value,
       rebate_amount: calc.rebate_amount,
+      note_type: calc.note_type,
       subtotal_amount: calc.subtotal_amount,
       cgst_amount: calc.cgst_amount,
       sgst_amount: calc.sgst_amount,

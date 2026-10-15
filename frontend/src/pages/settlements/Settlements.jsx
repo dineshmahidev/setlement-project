@@ -57,6 +57,18 @@ export default function Settlements() {
     }
   }
 
+  const handleViewSettlement = async (s) => {
+    setPreviewSettlement(s)
+    try {
+      const res = await api.get(`/settlements/${s.id}`)
+      if (res.data?.data) {
+        setPreviewSettlement(res.data.data)
+      }
+    } catch (err) {
+      // Keep shallow settlement as fallback
+    }
+  }
+
   const handleCancelSubmit = async (e) => {
     e.preventDefault()
     if (!settlementToCancel || !cancelReason.trim()) return
@@ -193,7 +205,10 @@ export default function Settlements() {
                     </td>
                     <td className="py-3 px-4 text-right font-semibold">
                       {Number(s.rebate_amount) > 0 ? (
-                        s.debit_notes?.[0]?.transaction_type === 'credit' ? (
+                        (s.debit_notes?.[0]?.transaction_type === 'credit' ||
+                         s.note_type === 'credit' ||
+                         (parseFloat(s.original_invoice_value) > 0 && ((parseFloat(s.original_invoice_value) - parseFloat(s.bran_value) + (parseFloat(s.manual_adjustment) || 0)) < 0)) ||
+                         (!parseFloat(s.original_invoice_value) && parseFloat(s.manual_adjustment) < 0)) ? (
                           <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[11px] font-bold inline-block">
                             +₹{Number(s.rebate_amount).toLocaleString('en-IN')} (CN)
                           </span>
@@ -215,9 +230,9 @@ export default function Settlements() {
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
-                          onClick={() => setPreviewSettlement(s)}
+                          onClick={() => handleViewSettlement(s)}
                           className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-[#0b3558] shadow-xs hover:bg-[#fbf5ea] hover:border-[#b37d14] transition-colors cursor-pointer"
-                          title="View exact Settlement Bill & Debit Note"
+                          title="View exact Settlement Bill & Note"
                         >
                           <Eye className="w-3.5 h-3.5 text-[#b37d14]" />
                           <span>View</span>
