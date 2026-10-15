@@ -10,11 +10,10 @@ import {
   Modal,
   PageHeader,
   Select,
-  StatusBadge,
   Textarea,
 } from '../../components'
 import { formatMoney, formatNumber, formatDate, today, extractList, qs } from '../../utils/helpers'
-import { Plus, Trash2, Eye, RefreshCw, Truck, Printer } from 'lucide-react'
+import { Plus, Trash2, RefreshCw, Truck, Printer, FileText, Filter, X, Calendar, Edit2 } from 'lucide-react'
 
 function FormField({ label, required, className, children }) {
   return (
@@ -42,7 +41,7 @@ function useMasterData() {
       api.get('/items?all=true').catch(() => api.get('/items?per_page=200').catch(() => ({ data: [] }))),
       api.get('/products?all=true').catch(() => api.get('/products?per_page=200').catch(() => ({ data: [] }))),
       api.get('/branches?per_page=200').catch(() => ({ data: [] })),
-      api.get('/lots?per_page=500&status=OPEN').catch(() => ({ data: [] })),
+      api.get('/lots?per_page=500').catch(() => ({ data: [] })),
       api.get('/units?all=true').catch(() => api.get('/units').catch(() => ({ data: [] }))),
     ]).then(([v, i, p, b, l, u]) => {
       setVendors(extractList(v.data ?? v))
@@ -100,16 +99,99 @@ const emptyItem = () => ({
   available_qty: null,
 })
 
+function computeDateRange(preset) {
+  const now = new Date()
+  const toYmd = (d) => {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+
+  if (preset === 'today') {
+    const dStr = toYmd(now)
+    return { from: dStr, to: dStr }
+  }
+  if (preset === 'yesterday') {
+    const yest = new Date(now)
+    yest.setDate(yest.getDate() - 1)
+    return { from: toYmd(yest), to: toYmd(yest) }
+  }
+  if (preset === 'this_week') {
+    const d = new Date(now)
+    const day = d.getDay()
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1)
+    const monday = new Date(d.setDate(diff))
+    return { from: toYmd(monday), to: toYmd(now) }
+  }
+  if (preset === 'this_month') {
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
+    return { from: toYmd(firstDay), to: toYmd(now) }
+  }
+  if (preset === 'last_month') {
+    const firstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const lastDay = new Date(now.getFullYear(), now.getMonth(), 0)
+    return { from: toYmd(firstDay), to: toYmd(lastDay) }
+  }
+  if (preset === 'this_fy') {
+    const y = now.getFullYear()
+    const m = now.getMonth() + 1
+    const fyStartYear = m >= 4 ? y : y - 1
+    return { from: `${fyStartYear}-04-01`, to: `${fyStartYear + 1}-03-31` }
+  }
+  if (preset === 'all') {
+    return { from: '', to: '' }
+  }
+  return null
+}
+
 export default function Outward() {
   const toast = useToast()
   const { branchId, activeCompany } = useAuth()
   const { vendors, items, branches, lots, units } = useMasterData()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
-  const [statusFilter, setStatusFilter] = useState('')
   const [search, setSearch] = useState('')
+  const [duration, setDuration] = useState('all')
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
+  const [branchFilter, setBranchFilter] = useState('')
+  const [partyFilter, setPartyFilter] = useState('')
+
+  function handleDurationChange(preset) {
+    setDuration(preset)
+    if (preset !== 'custom') {
+      const range = computeDateRange(preset)
+      if (range) {
+        setFromDate(range.from)
+        setToDate(range.to)
+      }
+    }
+  }
+
+  function resetFilters() {
+    setDuration('all')
+    setFromDate('')
+    setToDate('')
+    setBranchFilter('')
+    setPartyFilter('')
+    setSearch('')
+  }
+
+  function handleExportPdf() {
+    const params = {
+      from_date: fromDate || undefined,
+      to_date: toDate || undefined,
+      branch_id: branchFilter || undefined,
+      party_id: partyFilter || undefined,
+      search: search || undefined,
+    }
+    const fileSuffix = fromDate && toDate ? `${fromDate}_to_${toDate}` : (fromDate ? `from_${fromDate}` : (toDate ? `to_${toDate}` : 'all'))
+    openPdf(`/outward-report-pdf${qs(params)}`, `Outward_Report_${fileSuffix}.pdf`)
+  }
 
   const [modalOpen, setModalOpen] = useState(false)
+  const [editingEntry, setEditingEntry] = useState(null)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({
     date: today(),
@@ -129,7 +211,14 @@ export default function Outward() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await api.get(`/outward${qs({ status: statusFilter, search, per_page: 100 })}`)
+      const res = await api.get(`/outward${qs({
+        search: search || undefined,
+        from_date: fromDate || undefined,
+        to_date: toDate || undefined,
+        branch_id: branchFilter || undefined,
+        party_id: partyFilter || undefined,
+        per_page: 100,
+      })}`)
       setRows(extractList(res.data))
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Failed to load outward entries'))
@@ -137,13 +226,14 @@ export default function Outward() {
     } finally {
       setLoading(false)
     }
-  }, [statusFilter, search, toast])
+  }, [search, fromDate, toDate, branchFilter, partyFilter, toast])
 
   useEffect(() => {
     load()
   }, [load])
 
   function openCreate() {
+    setEditingEntry(null)
     setForm({
       date: today(),
       branch_id: branchId || '',
@@ -155,6 +245,44 @@ export default function Outward() {
     })
     setFormItems([emptyItem()])
     setModalOpen(true)
+  }
+
+  async function openEdit(row) {
+    try {
+      const res = await api.get(`/outward/${row.id}`)
+      const data = res.data.data || res.data
+      setEditingEntry(data)
+      setForm({
+        date: data.date ? String(data.date).slice(0, 10) : today(),
+        branch_id: data.branch_id ? String(data.branch_id) : '',
+        party_id: data.party_id ? String(data.party_id) : '',
+        bill_no: data.bill_no || '',
+        destination: data.destination || '',
+        vehicle_number: data.vehicle_number || '',
+        remarks: data.remarks || data.notes || '',
+      })
+      if (data.items && data.items.length > 0) {
+        setFormItems(
+          data.items.map((it) => ({
+            item_id: it.item_id ? String(it.item_id) : '',
+            lot_id: it.lot_id ? String(it.lot_id) : '',
+            quantity: it.quantity != null ? String(it.quantity) : '',
+            unit_id: it.unit_id ? String(it.unit_id) : '',
+            oil_pct: it.oil_pct != null ? String(it.oil_pct) : '',
+            grade_id: it.grade_id ? String(it.grade_id) : '',
+            rate: it.rate != null ? String(it.rate) : '',
+            amount: it.amount != null ? String(it.amount) : '',
+            available_qty: it.lot?.available_qty,
+            orig_qty: Number(it.quantity || 0),
+          }))
+        )
+      } else {
+        setFormItems([emptyItem()])
+      }
+      setModalOpen(true)
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Failed to load outward dispatch for editing'))
+    }
   }
 
   function setItemField(idx, key, value) {
@@ -261,12 +389,12 @@ export default function Outward() {
   }
 
   // Show available lots for selected item with available qty (scoped to chosen godown if selected)
-  const availableLotsFor = (itemId) =>
+  const availableLotsFor = (itemId, currentLotId) =>
     lots.filter(
       (l) =>
         (!itemId || String(l.item_id) === String(itemId)) &&
         (!form.branch_id || String(l.branch_id) === String(form.branch_id)) &&
-        Number(l.available_qty) > 0
+        (Number(l.available_qty) > 0 || (currentLotId && String(l.id) === String(currentLotId)))
     )
 
   const grandTotal = useMemo(
@@ -311,12 +439,11 @@ export default function Outward() {
 
     setSaving(true)
     try {
-      await api.post('/outward', {
+      const payload = {
         date: form.date,
         branch_id: Number(form.branch_id),
         party_id: form.party_id ? Number(form.party_id) : null,
         bill_no: form.bill_no || null,
-        dispatch_type: 'DIRECT',
         destination: form.destination || null,
         vehicle_number: form.vehicle_number || null,
         remarks: form.remarks || null,
@@ -330,12 +457,23 @@ export default function Outward() {
           rate: it.rate === '' || it.rate == null ? null : Number(it.rate),
           amount: it.amount === '' || it.amount == null ? null : Number(it.amount),
         })),
-      })
-      toast.success('Dispatch created & stock deducted automatically!')
+      }
+
+      if (editingEntry) {
+        await api.put(`/outward/${editingEntry.id}`, payload)
+        toast.success('Dispatch entry updated & stock adjusted!')
+      } else {
+        await api.post('/outward', {
+          ...payload,
+          dispatch_type: 'DIRECT',
+        })
+        toast.success('Dispatch created & stock deducted automatically!')
+      }
       setModalOpen(false)
+      setEditingEntry(null)
       load()
     } catch (err) {
-      toast.error(apiErrorMessage(err, 'Failed to create outward dispatch'))
+      toast.error(apiErrorMessage(err, editingEntry ? 'Failed to update dispatch' : 'Failed to create outward dispatch'))
     } finally {
       setSaving(false)
     }
@@ -381,24 +519,130 @@ export default function Outward() {
         }
       />
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          placeholder="Search entry no / destination…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
-        />
-        <Select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="max-w-[160px]"
-        >
-          <option value="">All Status</option>
-          <option value="CONFIRMED">Confirmed</option>
-          <option value="DRAFT">Draft</option>
-          <option value="CANCELLED">Cancelled</option>
-        </Select>
+      {/* Filter, Duration, and Report PDF Controls */}
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-3.5 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700">
+              <Filter className="h-4 w-4" />
+            </div>
+            <span className="text-xs font-black uppercase tracking-wider text-slate-700">Filters & Duration</span>
+            <span className="text-[11px] font-semibold text-slate-400">({rows.length} records)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {(fromDate || toDate || branchFilter || partyFilter || search || duration !== 'all') && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={resetFilters}
+                className="text-xs font-semibold text-slate-500 hover:text-slate-800"
+              >
+                <X className="h-3.5 w-3.5 mr-1" /> Reset
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleExportPdf}
+              className="border-indigo-200 bg-indigo-50/70 text-indigo-700 hover:bg-indigo-100 text-xs font-bold shadow-xs"
+              title="Download / Print Outward Summary Report PDF for selected duration"
+            >
+              <FileText className="h-3.5 w-3.5 mr-1.5 text-indigo-600" /> Get PDF Report
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 items-end">
+          {/* Duration Selector */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">Duration</label>
+            <Select
+              value={duration}
+              onChange={(e) => handleDurationChange(e.target.value)}
+              className="text-xs font-semibold"
+            >
+              <option value="all">All Dates</option>
+              <option value="today">Today</option>
+              <option value="yesterday">Yesterday</option>
+              <option value="this_week">This Week</option>
+              <option value="this_month">This Month</option>
+              <option value="last_month">Last Month</option>
+              <option value="this_fy">This Financial Year</option>
+              <option value="custom">Custom Range</option>
+            </Select>
+          </div>
+
+          {/* From Date */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">From Date</label>
+            <Input
+              type="date"
+              value={fromDate}
+              onChange={(e) => {
+                setFromDate(e.target.value)
+                setDuration('custom')
+              }}
+              className="text-xs font-semibold"
+            />
+          </div>
+
+          {/* To Date */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">To Date</label>
+            <Input
+              type="date"
+              value={toDate}
+              onChange={(e) => {
+                setToDate(e.target.value)
+                setDuration('custom')
+              }}
+              className="text-xs font-semibold"
+            />
+          </div>
+
+          {/* Godown */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">Godown</label>
+            <Select
+              value={branchFilter}
+              onChange={(e) => setBranchFilter(e.target.value)}
+              className="text-xs font-semibold"
+            >
+              <option value="">All Godowns</option>
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>{b.branch_name || b.name}</option>
+              ))}
+            </Select>
+          </div>
+
+          {/* Party */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">Party / Customer</label>
+            <Select
+              value={partyFilter}
+              onChange={(e) => setPartyFilter(e.target.value)}
+              className="text-xs font-semibold"
+            >
+              <option value="">All Parties</option>
+              {vendors.map((v) => (
+                <option key={v.id} value={v.id}>{v.vendor_name}</option>
+              ))}
+            </Select>
+          </div>
+
+          {/* Search */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">Search</label>
+            <Input
+              placeholder="Entry / Bill / Vehicle…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="text-xs"
+            />
+          </div>
+        </div>
       </div>
+
 
       <DataTable
         loading={loading}
@@ -406,6 +650,7 @@ export default function Outward() {
         rowKey="id"
         emptyTitle="No dispatch entries"
         emptyMessage="Create a dispatch to ship stock out of a godown."
+        onRowClick={(r) => openView(r)}
         columns={[
           {
             key: 'party',
@@ -464,18 +709,19 @@ export default function Outward() {
             render: (r) => formatMoney(r.total_amount),
           },
           {
-            key: 'status',
-            label: 'Status',
-            render: (r) => <StatusBadge status={r.status} />,
-          },
-          {
             key: 'actions',
             label: 'Actions',
             align: 'right',
             render: (r) => (
-              <div className="flex justify-end gap-1.5">
-                <Button size="sm" variant="secondary" onClick={() => openView(r)}>
-                  <Eye className="h-3 w-3" /> View
+              <div className="flex justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => openEdit(r)}
+                  className="border-amber-200 bg-amber-50/70 text-amber-800 hover:bg-amber-100"
+                  title="Edit Dispatch"
+                >
+                  <Edit2 className="h-3 w-3" /> Edit
                 </Button>
                 <Button
                   size="sm"
@@ -494,19 +740,23 @@ export default function Outward() {
         ]}
       />
 
-      {/* New Dispatch Modal */}
+      {/* Create / Edit Dispatch Modal */}
       <Modal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={<span className="text-xl font-black text-[#0b3558]">New Outward / Dispatch</span>}
+        onClose={() => { setModalOpen(false); setEditingEntry(null); }}
+        title={
+          <span className="text-xl font-black text-[#0b3558]">
+            {editingEntry ? `Edit Outward / Dispatch (${editingEntry.entry_number})` : 'New Outward / Dispatch'}
+          </span>
+        }
         size="xl"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setModalOpen(false)} className="text-sm font-bold">
+            <Button variant="secondary" onClick={() => { setModalOpen(false); setEditingEntry(null); }} className="text-sm font-bold">
               Cancel
             </Button>
             <Button onClick={save} loading={saving} form="outward-form" className="text-base font-black px-6 py-2.5">
-              Save & Dispatch
+              {editingEntry ? 'Update Dispatch' : 'Save & Dispatch'}
             </Button>
           </>
         }
@@ -637,8 +887,15 @@ export default function Outward() {
                     const lotUnit = matchedLot?.unit || units.find((u) => String(u.id) === String(matchedLot?.unit_id))
                     const itemUnit = matchedItem?.unit || units.find((u) => String(u.id) === String(matchedItem?.unit_id))
                     const displayUnit = lotUnit || itemUnit
-                    const availLots = availableLotsFor(it.item_id)
+                    const availLots = availableLotsFor(it.item_id, it.lot_id)
                     const isUnitFromLot = Boolean(matchedLot && String(it.unit_id) === String(matchedLot.unit_id))
+                    const effectiveLotAvail = (l) => {
+                      let qty = Number(l?.available_qty || 0)
+                      if (editingEntry && String(l?.id) === String(it.lot_id) && it.orig_qty) {
+                        qty += Number(it.orig_qty)
+                      }
+                      return qty
+                    }
 
                     return (
                       <tr key={idx} className="align-top">
@@ -672,7 +929,7 @@ export default function Outward() {
                               const uCode = l.unit?.code || l.unit?.name || l.item?.unit?.code || ''
                               return (
                                 <option key={l.id} value={l.id}>
-                                  {l.lot_number} (Avail: {formatNumber(l.available_qty)} {uCode}{l.unit_cost ? ` @ ₹${formatNumber(l.unit_cost)}` : ''})
+                                  {l.lot_number} (Avail: {formatNumber(effectiveLotAvail(l))} {uCode}{l.unit_cost ? ` @ ₹${formatNumber(l.unit_cost)}` : ''})
                                 </option>
                               )
                             })}
@@ -680,9 +937,9 @@ export default function Outward() {
                           {matchedLot && (
                             <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
                               <span className="font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                                Avail: {formatNumber(matchedLot.available_qty)} {lotUnit?.code || itemUnit?.code || ''}
+                                Avail: {formatNumber(effectiveLotAvail(matchedLot))} {lotUnit?.code || itemUnit?.code || ''}
                               </span>
-                              {Number(it.quantity) > Number(matchedLot.available_qty) && (
+                              {Number(it.quantity) > effectiveLotAvail(matchedLot) && (
                                 <span className="font-bold text-rose-600 bg-rose-50 px-1 py-0.5 rounded border border-rose-200">
                                   Exceeds stock!
                                 </span>
@@ -811,6 +1068,18 @@ export default function Outward() {
                 Official Document Preview (Matches Printed PDF Challan)
               </div>
               <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    const target = viewing
+                    setViewing(null)
+                    openEdit(target)
+                  }}
+                  className="border-amber-200 bg-amber-50/70 text-amber-850 hover:bg-amber-100 font-bold"
+                  title="Edit this Outward Dispatch"
+                >
+                  <Edit2 className="h-4 w-4 mr-1 text-amber-700" /> Edit Dispatch
+                </Button>
                 <Button variant="secondary" onClick={() => setViewing(null)}>
                   Close
                 </Button>
@@ -875,9 +1144,6 @@ export default function Outward() {
                   )}
                   <div className="text-xs text-slate-600">
                     Date: <span className="font-semibold">{formatDate(viewing.date)}</span>
-                  </div>
-                  <div className="mt-1">
-                    <StatusBadge status={viewing.status} />
                   </div>
                 </div>
               </div>

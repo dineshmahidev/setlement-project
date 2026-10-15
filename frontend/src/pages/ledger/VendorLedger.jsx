@@ -26,7 +26,6 @@ export default function VendorLedger() {
 
   const [vendorsList, setVendorsList] = useState([])
   const [selectedVendorId, setSelectedVendorId] = useState(initialVendorId)
-  const [selectedBranchId, setSelectedBranchId] = useState(branchId || '')
   const [docTypeFilter, setDocTypeFilter] = useState('')
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
@@ -44,7 +43,7 @@ export default function VendorLedger() {
     amount: '',
     document_number: '',
     description: '',
-    branch_id: branchId || '',
+    branch_id: branchId || (branches[0]?.id || ''),
   })
 
   // Load vendors list
@@ -73,7 +72,6 @@ export default function VendorLedger() {
       const res = await api.get('/ledger', {
         params: {
           vendor_id: selectedVendorId,
-          branch_id: selectedBranchId || undefined,
           document_type: docTypeFilter || undefined,
           from_date: fromDate || undefined,
           to_date: toDate || undefined,
@@ -91,7 +89,7 @@ export default function VendorLedger() {
     if (selectedVendorId) {
       fetchLedger()
     }
-  }, [selectedVendorId, selectedBranchId, docTypeFilter, fromDate, toDate])
+  }, [selectedVendorId, docTypeFilter, fromDate, toDate])
 
   const handleExportPdf = async () => {
     if (!selectedVendorId) return
@@ -100,7 +98,6 @@ export default function VendorLedger() {
         vendor_id: selectedVendorId,
         ...(fromDate && { from_date: fromDate }),
         ...(toDate && { to_date: toDate }),
-        ...(selectedBranchId && { branch_id: selectedBranchId }),
         ...(docTypeFilter && { document_type: docTypeFilter }),
       })
       await openPdf(`/ledger/pdf?${params.toString()}`, `Vendor_Ledger_${selectedVendorId}.pdf`)
@@ -167,13 +164,6 @@ export default function VendorLedger() {
 
         <div className="flex flex-wrap items-center gap-2.5">
           <button
-            onClick={() => setAdjModalOpen(true)}
-            className="flex items-center gap-1.5 rounded-xl bg-[#0b3558] px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#07233b] border border-[#b37d14]/30"
-          >
-            <Plus className="w-4 h-4 text-[#d69e2e]" />
-            Post Payment / Adjustment
-          </button>
-          <button
             onClick={handleExportPdf}
             disabled={!selectedVendorId}
             className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-[#fbf5ea] hover:text-[#0b3558] disabled:opacity-50"
@@ -194,38 +184,20 @@ export default function VendorLedger() {
 
       {/* Vendor Selector & Filters */}
       <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="md:col-span-2">
-            <Autocomplete
-              label="Select Vendor Account"
-              items={vendorsList}
-              value={selectedVendorId}
-              onChange={(val) => {
-                setSelectedVendorId(val)
-                setSearchParams({ vendor_id: val })
-              }}
-              displayKey="vendor_name"
-              secondaryKey="vendor_code"
-              extraInfoKey="gstin"
-              placeholder="Search vendor name, code, GSTIN..."
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">Branch</label>
-            <select
-              value={selectedBranchId}
-              onChange={(e) => setSelectedBranchId(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none font-medium"
-            >
-              <option value="">All Branches (Consolidated)</option>
-              {(Array.isArray(branches) ? branches : []).map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.branch_name}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="w-full">
+          <Autocomplete
+            label="Select Vendor Account"
+            items={vendorsList}
+            value={selectedVendorId}
+            onChange={(val) => {
+              setSelectedVendorId(val)
+              setSearchParams({ vendor_id: val })
+            }}
+            displayKey="vendor_name"
+            secondaryKey="vendor_code"
+            extraInfoKey="gstin"
+            placeholder="Search vendor name, code, GSTIN..."
+          />
         </div>
 
         <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100 text-xs">

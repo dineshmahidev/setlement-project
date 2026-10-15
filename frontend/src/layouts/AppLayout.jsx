@@ -31,7 +31,6 @@ import {
 
 const SETTLEMENT_NAVIGATION = [
   { label: 'Dashboard', to: '/panel', icon: LayoutDashboard, perm: null, end: true },
-  { label: 'Leads & Traffic', to: '/panel/leads-traffic', icon: TrendingUp, perm: null },
   { label: 'Vendors', to: '/panel/vendors', icon: Users2, perm: 'vendors.view' },
   { label: 'Items', to: '/panel/products', icon: Package, perm: 'products.view' },
   { label: 'Settlements', to: '/panel/settlements', icon: Scale, perm: 'settlements.view' },
@@ -359,7 +358,7 @@ function CompanySwitcher({ companies = [], activeCompany, onSelect }) {
 }
 
 export default function AppLayout() {
-  const { user, isSuperAdmin, can, logout, branchId, setBranchId, branches, companies, activeCompany, setCompanyById } =
+  const { user, isSuperAdmin, isAdmin, isBranchManagerOrStaff, can, logout, branchId, setBranchId, branches, companies, activeCompany, setCompanyById } =
     useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
@@ -411,7 +410,9 @@ export default function AppLayout() {
               <span className="rounded bg-emerald-50 border border-emerald-300/80 px-1.5 py-0.2 text-[8px] font-black text-[#02492a] uppercase">PANEL</span>
             </h1>
             <p className="text-[10.5px] font-semibold text-slate-500 truncate">
-              {activeCompany?.city ? `${activeCompany.city} • Godowns` : 'Settlement & Godowns'}
+              {isInventorySection
+                ? (activeCompany?.city ? `${activeCompany.city} • Godowns` : 'Inventory & Godowns')
+                : (activeCompany?.city || 'Company Panel')}
             </p>
           </div>
           <button
@@ -424,39 +425,41 @@ export default function AppLayout() {
 
         {/* Navigation Items */}
         <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-3 bg-slate-50/50">
-          {/* SECTION 1: SETTLEMENT */}
-          <div className="space-y-1">
-            <div className="px-3 pt-1 pb-1 flex items-center justify-between select-none pointer-events-none">
-              <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-                Settlement
-              </span>
-              <div className="h-px w-10 bg-slate-200" />
+          {/* SECTION 1: SETTLEMENT (Super Admin & Admin; Hidden for Branch Manager & Staff) */}
+          {!isBranchManagerOrStaff && (
+            <div className="space-y-1">
+              <div className="px-3 pt-1 pb-1 flex items-center justify-between select-none pointer-events-none">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+                  Settlement
+                </span>
+                <div className="h-px w-10 bg-slate-200" />
+              </div>
+
+              {SETTLEMENT_NAVIGATION.filter((item) => !item.perm || can(item.perm)).map((item) => {
+                const Icon = item.icon
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={navTo(item.to)}
+                    end={item.end || item.to === '/panel'}
+                    onClick={() => setSidebarOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-bold transition-all ${
+                        isActive
+                          ? 'bg-[#0B1A2D] text-white shadow-xs border-l-3 border-[#C9A227]'
+                          : 'text-slate-700 hover:bg-slate-200/70 hover:text-slate-950'
+                      }`
+                    }
+                  >
+                    <Icon className="w-4.5 h-4.5 shrink-0 text-[#C9A227]" strokeWidth={2.1} />
+                    <span className="truncate flex-1">{item.label}</span>
+                  </NavLink>
+                )
+              })}
             </div>
+          )}
 
-            {SETTLEMENT_NAVIGATION.filter((item) => !item.perm || can(item.perm)).map((item) => {
-              const Icon = item.icon
-              return (
-                <NavLink
-                  key={item.to}
-                  to={navTo(item.to)}
-                  end={item.end || item.to === '/panel'}
-                  onClick={() => setSidebarOpen(false)}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-bold transition-all ${
-                      isActive
-                        ? 'bg-[#0B1A2D] text-white shadow-xs border-l-3 border-[#C9A227]'
-                        : 'text-slate-700 hover:bg-slate-200/70 hover:text-slate-950'
-                    }`
-                  }
-                >
-                  <Icon className="w-4.5 h-4.5 shrink-0 text-[#C9A227]" strokeWidth={2.1} />
-                  <span className="truncate flex-1">{item.label}</span>
-                </NavLink>
-              )
-            })}
-          </div>
-
-          {/* SECTION 2: INVENTORY */}
+          {/* SECTION 2: INVENTORY (All Roles: Super Admin, Admin, Branch Manager, Staff) */}
           <div className="space-y-1 pt-2 border-t border-slate-200/70">
             <div className="px-3 pt-1 pb-1 flex items-center justify-between select-none pointer-events-none">
               <span className="text-[11px] font-black uppercase tracking-wider text-[#B78A16] flex items-center gap-1.5">
@@ -496,7 +499,33 @@ export default function AppLayout() {
             })}
           </div>
 
-          {/* SECTION 3: MASTER ADMIN ONLY (Confidential: Godowns, Companies, CMS, Users, Settings) */}
+          {/* SECTION 3: USER MANAGEMENT FOR NORMAL ADMIN (Admin can access Users, but NOT other Master Admin modules) */}
+          {isAdmin && (
+            <div className="space-y-1 pt-2 border-t border-slate-200/70">
+              <div className="px-3 pt-1 pb-1 flex items-center justify-between select-none pointer-events-none">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                  <UserCheck className="w-3.5 h-3.5 text-[#0b3558]" />
+                  User Management
+                </span>
+              </div>
+              <NavLink
+                to={navTo('/panel/users')}
+                onClick={() => setSidebarOpen(false)}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-bold transition-all ${
+                    isActive
+                      ? 'bg-[#0B1A2D] text-white shadow-xs border-l-3 border-[#C9A227]'
+                      : 'text-slate-700 hover:bg-slate-200/70 hover:text-slate-950'
+                  }`
+                }
+              >
+                <UserCheck className="w-4.5 h-4.5 shrink-0 text-[#C9A227]" strokeWidth={2.1} />
+                <span className="truncate flex-1">Users & Staff</span>
+              </NavLink>
+            </div>
+          )}
+
+          {/* SECTION 4: MASTER ADMIN ONLY (Confidential: Godowns, Companies, CMS, Users, Settings) */}
           {isSuperAdmin && (
             <div className="space-y-1 pt-2 border-t border-slate-200/70">
               <div className="px-3 pt-1 pb-1 flex items-center justify-between select-none pointer-events-none">

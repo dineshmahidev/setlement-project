@@ -14,12 +14,14 @@ import {
   CheckCircle2,
   XCircle,
   Layers,
+  Sparkles,
+  Check,
 } from 'lucide-react'
 import { extractList } from '../../utils/helpers'
 
 export default function Users() {
   const toast = useToast()
-  const { activeCompany, companies: authCompanies } = useAuth()
+  const { isSuperAdmin, isAdmin, activeCompany, companies: authCompanies } = useAuth()
   const [users, setUsers] = useState([])
   const [roles, setRoles] = useState([])
   const [companies, setCompanies] = useState([])
@@ -34,6 +36,7 @@ export default function Users() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingUser, setEditingUser] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [accessMode, setAccessMode] = useState('custom') // 'all' | 'custom'
   const [form, setForm] = useState({
     name: '',
     employee_id: '',
@@ -96,11 +99,25 @@ export default function Users() {
     })
   }, [authCompanies])
 
-  // Branches filtered by selected company in modal
-  const availableGodowns = useMemo(() => {
-    if (!form.company_id) return branches
-    return branches.filter((b) => String(b.company_id) === String(form.company_id))
-  }, [branches, form.company_id])
+  // Frontend safeguard: never show Super Admin users if caller is not Super Admin
+  const displayedUsers = useMemo(() => {
+    if (isSuperAdmin) return users
+    return users.filter((u) => {
+      const roleName = (u.role?.name || u.role?.label || '').toLowerCase().trim()
+      if (roleName.includes('super') || roleName.includes('master')) return false
+      if (u.email === 'admin@laxmitraders.com') return false
+      return true
+    })
+  }, [users, isSuperAdmin])
+
+  // Selectable roles: Super Admin role hidden if caller is not Super Admin
+  const selectableRoles = useMemo(() => {
+    if (isSuperAdmin) return roles
+    return roles.filter((r) => {
+      const roleName = (r.name || r.label || '').toLowerCase().trim()
+      return !roleName.includes('super') && !roleName.includes('master')
+    })
+  }, [roles, isSuperAdmin])
 
   // Branches filtered for filter toolbar
   const filterToolbarGodowns = useMemo(() => {
@@ -108,23 +125,144 @@ export default function Users() {
     return branches.filter((b) => String(b.company_id) === String(companyFilter))
   }, [branches, companyFilter])
 
-  const handleCompanyChange = (newCompanyId) => {
-    const godownsOfCompany = branches.filter((b) => String(b.company_id) === String(newCompanyId))
-    const firstGodown = godownsOfCompany[0]?.id || ''
+  // Branches available for normal admin (single selected company)
+  const singleCompanyGodowns = useMemo(() => {
+    if (!form.company_id) return branches
+    return branches.filter((b) => String(b.company_id) === String(form.company_id))
+  }, [branches, form.company_id])
+
+  // All godowns belonging to currently selected companies (in custom multi-company mode)
+  const godownsOfSelectedCompanies = useMemo(() => {
+    if (!form.company_ids || form.company_ids.length === 0) return []
+    const selectedCIds = form.company_ids.map(Number)
+    return branches.filter((b) => selectedCIds.includes(Number(b.company_id)))
+  }, [branches, form.company_ids])
+
+  // Helper for toggling a single company selection
+  const toggleCompany = (companyId) => {
+    const numId = Number(companyId)
+    setForm((prev) => {
+      const exists = prev.company_ids.includes(numId)
+      let nextCompanyIds = []
+      let nextBranchIds = [...prev.branch_ids]
+
+      if (exists) {
+        nextCompanyIds = prev.company_ids.filter((id) => id !== numId)
+        // Remove branches belonging to unselected company
+        const companyBranchIds = branches
+          .filter((b) => Number(b.company_id) === numId)
+          .map((b) => Number(b.id))
+        nextBranchIds = nextBranchIds.filter((id) => !companyBranchIds.includes(id))
+      } else {
+        nextCompanyIds = [...prev.company_ids, numId]
+        // Auto-select all godowns of the newly checked company
+        const newBranchIds = branches
+          .filter((b) => Number(b.company_id) === numId)
+          .map((b) => Number(b.id))
+        nextBranchIds = Array.from(new Set([...nextBranchIds, ...newBranchIds]))
+      }
+
+      const nextCompanyId = nextCompanyIds[0] ? String(nextCompanyIds[0]) : ''
+      let nextDefault = prev.default_branch_id
+      if (nextDefault && !nextBranchIds.includes(Number(nextDefault))) {
+        nextDefault = nextBranchIds[0] ? String(nextBranchIds[0]) : ''
+      } else if (!nextDefault && nextBranchIds[0]) {
+        nextDefault = String(nextBranchIds[0])
+      }
+
+      return {
+        ...prev,
+        company_id: nextCompanyId,
+        company_ids: nextCompanyIds,
+        branch_ids: nextBranchIds,
+        default_branch_id: nextDefault,
+      }
+    })
+  }
+
+  // Select all companies & all branches
+  const selectAllCompanies = () => {
+    const allCompanyIds = companies.map((c) => Number(c.id))
+    const allBranchIds = branches.map((b) => Number(b.id))
     setForm((prev) => ({
       ...prev,
-      company_id: newCompanyId,
-      company_ids: newCompanyId ? [Number(newCompanyId)] : [],
-      default_branch_id: firstGodown ? String(firstGodown) : '',
-      branch_ids: firstGodown ? [Number(firstGodown)] : [],
+      company_ids: allCompanyIds,
+      company_id: allCompanyIds[0] ? String(allCompanyIds[0]) : '',
+      branch_ids: allBranchIds,
+      default_branch_id: prev.default_branch_id || (allBranchIds[0] ? String(allBranchIds[0]) : ''),
     }))
+  }
+
+  // Clear all companies & branches
+  const clearAllCompanies = () => {
+    setForm((prev) => ({
+      ...prev,
+      company_ids: [],
+      company_id: '',
+      branch_ids: [],
+      default_branch_id: '',
+    }))
+  }
+
+  // Toggle single branch
+  const toggleBranch = (branchId) => {
+    const numId = Number(branchId)
+    setForm((prev) => {
+      const exists = prev.branch_ids.includes(numId)
+      const nextBranches = exists
+        ? prev.branch_ids.filter((id) => id !== numId)
+        : [...prev.branch_ids, numId]
+
+      let nextDefault = prev.default_branch_id
+      if (exists && String(prev.default_branch_id) === String(numId)) {
+        nextDefault = nextBranches[0] ? String(nextBranches[0]) : ''
+      } else if (!exists && !prev.default_branch_id) {
+        nextDefault = String(numId)
+      }
+
+      return { ...prev, branch_ids: nextBranches, default_branch_id: nextDefault }
+    })
+  }
+
+  // Select all godowns for a specific company
+  const selectAllGodownsForCompany = (companyId) => {
+    const numCId = Number(companyId)
+    const godownsOfC = branches.filter((b) => Number(b.company_id) === numCId).map((b) => Number(b.id))
+    setForm((prev) => {
+      const merged = Array.from(new Set([...prev.branch_ids, ...godownsOfC]))
+      return {
+        ...prev,
+        branch_ids: merged,
+        default_branch_id: prev.default_branch_id || (merged[0] ? String(merged[0]) : ''),
+      }
+    })
+  }
+
+  // Clear all godowns for a specific company
+  const clearGodownsForCompany = (companyId) => {
+    const numCId = Number(companyId)
+    const godownsOfC = branches.filter((b) => Number(b.company_id) === numCId).map((b) => Number(b.id))
+    setForm((prev) => {
+      const remaining = prev.branch_ids.filter((id) => !godownsOfC.includes(id))
+      let nextDefault = prev.default_branch_id
+      if (godownsOfC.includes(Number(nextDefault))) {
+        nextDefault = remaining[0] ? String(remaining[0]) : ''
+      }
+      return {
+        ...prev,
+        branch_ids: remaining,
+        default_branch_id: nextDefault,
+      }
+    })
   }
 
   const handleOpenCreate = () => {
     setEditingUser(null)
+    setAccessMode('custom')
     const initialCompany = activeCompany?.id || companies[0]?.id || ''
     const initialGodowns = branches.filter((b) => !initialCompany || String(b.company_id) === String(initialCompany))
     const firstGodown = initialGodowns[0]?.id || ''
+    const defaultRole = selectableRoles[0]?.id ? String(selectableRoles[0].id) : ''
 
     setForm({
       name: '',
@@ -132,7 +270,7 @@ export default function Users() {
       email: '',
       mobile: '',
       password: '',
-      role_id: roles[0]?.id ? String(roles[0].id) : '',
+      role_id: defaultRole,
       company_id: initialCompany ? String(initialCompany) : '',
       company_ids: initialCompany ? [Number(initialCompany)] : [],
       default_branch_id: firstGodown ? String(firstGodown) : '',
@@ -143,7 +281,22 @@ export default function Users() {
   }
 
   const handleOpenEdit = (u) => {
+    const roleName = (u.role?.name || u.role?.label || '').toLowerCase().trim()
+    if (!isSuperAdmin && (roleName.includes('super') || roleName.includes('master') || u.email === 'admin@laxmitraders.com')) {
+      toast.error('Unauthorized: You cannot view or modify a Super Admin user.')
+      return
+    }
+
     setEditingUser(u)
+    const userCompanyIds = (u.companies || []).map((c) => Number(c.id))
+    const userBranchIds = (u.branches || []).map((b) => Number(b.id))
+
+    const hasAllCompanies = companies.length > 0 && userCompanyIds.length >= companies.length
+    const hasAllBranches = branches.length > 0 && userBranchIds.length >= branches.length
+    const isEnterpriseAll = isSuperAdmin && hasAllCompanies && hasAllBranches
+
+    setAccessMode(isEnterpriseAll ? 'all' : 'custom')
+
     const userCompanyId =
       u.companies?.[0]?.id ||
       u.default_branch?.company_id ||
@@ -151,7 +304,6 @@ export default function Users() {
       activeCompany?.id ||
       ''
 
-    const userCompanyIds = (u.companies || []).map((c) => c.id)
     if (userCompanyId && !userCompanyIds.includes(Number(userCompanyId))) {
       userCompanyIds.push(Number(userCompanyId))
     }
@@ -166,47 +318,10 @@ export default function Users() {
       company_id: userCompanyId ? String(userCompanyId) : '',
       company_ids: userCompanyIds,
       default_branch_id: u.default_branch_id ? String(u.default_branch_id) : u.default_branch?.id ? String(u.default_branch.id) : '',
-      branch_ids: (u.branches || []).map((b) => b.id),
+      branch_ids: userBranchIds,
       status: u.status || 'active',
     })
     setModalOpen(true)
-  }
-
-  const toggleBranch = (branchId) => {
-    const numId = Number(branchId)
-    setForm((prev) => {
-      const exists = prev.branch_ids.includes(numId)
-      const nextBranches = exists
-        ? prev.branch_ids.filter((id) => id !== numId)
-        : [...prev.branch_ids, numId]
-
-      // If default_branch_id was unselected, update default to next available
-      let nextDefault = prev.default_branch_id
-      if (exists && String(prev.default_branch_id) === String(numId)) {
-        nextDefault = nextBranches[0] ? String(nextBranches[0]) : ''
-      } else if (!exists && !prev.default_branch_id) {
-        nextDefault = String(numId)
-      }
-
-      return { ...prev, branch_ids: nextBranches, default_branch_id: nextDefault }
-    })
-  }
-
-  const selectAllGodownsOfCompany = () => {
-    const ids = availableGodowns.map((b) => b.id)
-    setForm((prev) => ({
-      ...prev,
-      branch_ids: ids,
-      default_branch_id: prev.default_branch_id || (ids[0] ? String(ids[0]) : ''),
-    }))
-  }
-
-  const clearAllGodowns = () => {
-    setForm((prev) => ({
-      ...prev,
-      branch_ids: [],
-      default_branch_id: '',
-    }))
   }
 
   const handleSubmit = async (e) => {
@@ -216,25 +331,46 @@ export default function Users() {
       return
     }
 
-    if (!form.company_id && (!form.company_ids || form.company_ids.length === 0)) {
-      toast.error('Please select a Company for this user.')
+    const isEnterpriseAll = isSuperAdmin && accessMode === 'all'
+
+    if (!isEnterpriseAll && (!form.company_ids || form.company_ids.length === 0) && !form.company_id) {
+      toast.error('Please select at least one Company for this user.')
       return
     }
 
     setSaving(true)
     try {
+      let finalCompanyIds = []
+      let finalBranchIds = []
+      let finalCompanyId = null
+      let finalDefaultBranchId = null
+
+      if (isEnterpriseAll) {
+        finalCompanyIds = companies.map((c) => Number(c.id))
+        finalBranchIds = branches.map((b) => Number(b.id))
+        finalCompanyId = finalCompanyIds[0] || null
+        finalDefaultBranchId = form.default_branch_id ? Number(form.default_branch_id) : (finalBranchIds[0] || null)
+      } else {
+        finalCompanyIds = form.company_ids.length > 0
+          ? form.company_ids.map(Number)
+          : (form.company_id ? [Number(form.company_id)] : [])
+        finalBranchIds = (form.branch_ids || []).map(Number)
+        finalCompanyId = form.company_id ? Number(form.company_id) : (finalCompanyIds[0] || null)
+        finalDefaultBranchId = form.default_branch_id ? Number(form.default_branch_id) : (finalBranchIds[0] || null)
+      }
+
       const payload = {
         name: form.name.trim(),
         employee_id: form.employee_id?.trim() || null,
         email: form.email.trim(),
         mobile: form.mobile?.trim() || null,
         role_id: Number(form.role_id),
-        company_id: form.company_id ? Number(form.company_id) : null,
-        company_ids: form.company_ids.length > 0
-          ? form.company_ids.map(Number)
-          : (form.company_id ? [Number(form.company_id)] : []),
-        default_branch_id: form.default_branch_id ? Number(form.default_branch_id) : null,
-        branch_ids: (form.branch_ids || []).map(Number),
+        company_id: finalCompanyId,
+        company_ids: finalCompanyIds,
+        default_branch_id: finalDefaultBranchId,
+        branch_ids: finalBranchIds,
+        all_companies: isEnterpriseAll,
+        all_branches: isEnterpriseAll,
         status: form.status,
       }
 
@@ -296,7 +432,7 @@ export default function Users() {
         </div>
         <button
           onClick={handleOpenCreate}
-          className="flex items-center justify-center gap-2 rounded-xl bg-[#0b3558] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#07233b] border border-[#b37d14]/40 transition-all hover:scale-[1.01]"
+          className="flex items-center justify-center gap-2 rounded-xl bg-[#0b3558] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#07233b] border border-[#b37d14]/40 transition-all hover:scale-[1.01] cursor-pointer"
         >
           <UserPlus className="w-4 h-4 text-[#d69e2e]" />
           Create New User
@@ -355,8 +491,8 @@ export default function Users() {
             onChange={(e) => setRoleFilter(e.target.value)}
             className="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-xs bg-slate-50 focus:border-[#0b3558] focus:bg-white focus:outline-none font-semibold text-slate-700"
           >
-            <option value="">All Security Roles ({roles.length})</option>
-            {roles.map((r) => (
+            <option value="">All Security Roles ({selectableRoles.length})</option>
+            {selectableRoles.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.label || r.name}
               </option>
@@ -365,7 +501,7 @@ export default function Users() {
         </div>
       </div>
 
-      {/* Users Table with Striped Rows */}
+      {/* Users Table */}
       <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-100 text-xs">
@@ -390,18 +526,34 @@ export default function Users() {
                     </div>
                   </td>
                 </tr>
-              ) : users.length === 0 ? (
+              ) : displayedUsers.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-12 text-center text-slate-400 text-xs">
                     No users matching criteria found.
                   </td>
                 </tr>
               ) : (
-                users.map((u, idx) => {
-                  const companyName =
-                    u.companies && u.companies.length > 0
-                      ? u.companies.map((c) => c.company_name).join(', ')
-                      : u.default_branch?.company?.company_name || 'Shriee Laxmi Group'
+                displayedUsers.map((u, idx) => {
+                  const hasAllCompanies =
+                    companies.length > 1 &&
+                    u.companies &&
+                    u.companies.length >= companies.length
+
+                  const companyText =
+                    hasAllCompanies ? (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-sky-100 px-2 py-0.5 text-[10px] font-black text-sky-800 border border-sky-300">
+                        All Companies ({companies.length})
+                      </span>
+                    ) : u.companies && u.companies.length > 0 ? (
+                      u.companies.map((c) => c.company_name).join(', ')
+                    ) : (
+                      u.default_branch?.company?.company_name || 'Shriee Laxmi Group'
+                    )
+
+                  const hasAllBranches =
+                    branches.length > 1 &&
+                    u.branches &&
+                    u.branches.length >= branches.length
 
                   return (
                     <tr
@@ -449,7 +601,7 @@ export default function Users() {
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-1.5">
                           <Building2 className="w-3.5 h-3.5 text-[#0b3558] shrink-0" />
-                          <span className="font-bold text-[#0b3558]">{companyName}</span>
+                          <span className="font-bold text-[#0b3558]">{companyText}</span>
                         </div>
                       </td>
 
@@ -467,7 +619,11 @@ export default function Users() {
                       </td>
 
                       <td className="px-4 py-3.5">
-                        {u.branches && u.branches.length > 0 ? (
+                        {hasAllBranches ? (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-black text-emerald-800 border border-emerald-300">
+                            All Godowns ({branches.length})
+                          </span>
+                        ) : u.branches && u.branches.length > 0 ? (
                           <div className="flex flex-wrap gap-1 max-w-xs">
                             {u.branches.slice(0, 3).map((b) => (
                               <span
@@ -530,10 +686,10 @@ export default function Users() {
         </div>
       </div>
 
-      {/* User Create/Edit Modal with Company & Godown Selectors */}
+      {/* User Create/Edit Modal */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col border border-amber-300">
+          <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col border border-amber-300">
             {/* Modal Header */}
             <div className="bg-gradient-to-r from-[#0b3558] via-[#12426c] to-[#0b3558] px-6 py-4 text-white flex items-center justify-between">
               <div>
@@ -541,7 +697,9 @@ export default function Users() {
                   {editingUser ? 'Edit User Profile & Access Scopes' : 'Create New User Account'}
                 </h3>
                 <p className="text-[11px] text-slate-300">
-                  Select the Company and Godowns this staff member is allowed to operate.
+                  {isSuperAdmin
+                    ? 'Configure role, enterprise company assignment, and godown authorizations.'
+                    : 'Configure employee details, role, and branch godown authorizations.'}
                 </p>
               </div>
               <button
@@ -640,7 +798,7 @@ export default function Users() {
                     className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs font-bold text-[#0b3558] focus:border-[#0b3558] focus:bg-white focus:outline-none"
                   >
                     <option value="">Select Role...</option>
-                    {roles.map((r) => (
+                    {selectableRoles.map((r) => (
                       <option key={r.id} value={r.id}>
                         {r.label || r.name}
                       </option>
@@ -648,130 +806,403 @@ export default function Users() {
                   </select>
                 </div>
 
-                {/* COMPANY SELECTION (CRITICAL REQUIREMENT) */}
-                <div className="sm:col-span-2 rounded-xl bg-amber-50/70 p-3.5 border border-amber-300/80 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-xs font-black text-[#0b3558] uppercase flex items-center gap-1.5">
-                      <Building2 className="w-4 h-4 text-[#b37d14]" />
-                      Assigned Company <span className="text-rose-500">*</span>
-                    </label>
-                    <span className="text-[10px] font-bold text-amber-800">
-                      Controls which company books user operates
-                    </span>
-                  </div>
-                  <select
-                    value={form.company_id}
-                    onChange={(e) => handleCompanyChange(e.target.value)}
-                    required
-                    className="w-full rounded-xl border border-amber-400 bg-white px-3.5 py-2 text-xs font-extrabold text-[#0b3558] focus:outline-none shadow-xs"
-                  >
-                    <option value="">Select Company...</option>
-                    {companies.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.company_name} ({c.code})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {/* SUPER ADMIN: ENTERPRISE ACCESS SCOPE ASSIGNMENT */}
+                {isSuperAdmin ? (
+                  <div className="sm:col-span-2 space-y-4 rounded-2xl bg-gradient-to-br from-amber-50/70 via-slate-50 to-amber-100/40 p-4 border-2 border-amber-300/80 shadow-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-amber-600" />
+                        <span className="text-xs font-black uppercase text-[#0b3558] tracking-wider">
+                          Enterprise Role Assignment
+                        </span>
+                      </div>
+                      <span className="rounded-full bg-amber-200/90 border border-amber-400 px-2.5 py-0.5 text-[10px] font-black text-amber-950">
+                        SUPER ADMIN PRIVILEGE
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 leading-snug">
+                      As Super Admin, you can assign <strong>All Branches & All Companies</strong> to any role (Admin, Branch Manager, or Staff), or select specific companies and mapped godowns.
+                    </p>
 
-                {/* PRIMARY GODOWN SELECTION */}
-                <div className="sm:col-span-2 rounded-xl bg-slate-50 p-3.5 border border-slate-200 space-y-2">
-                  <label className="block text-xs font-black text-slate-800 uppercase flex items-center gap-1.5">
-                    <Layers className="w-4 h-4 text-[#0b3558]" />
-                    Primary / Default Godown (Branch)
-                  </label>
-                  <p className="text-[11px] text-slate-500">
-                    The default godown loaded when this user logs in and posts inward/outward entries.
-                  </p>
-                  <select
-                    value={form.default_branch_id}
-                    onChange={(e) => {
-                      const val = e.target.value
-                      setForm((prev) => {
-                        const numVal = val ? Number(val) : null
-                        const nextBranches = numVal && !prev.branch_ids.includes(numVal)
-                          ? [...prev.branch_ids, numVal]
-                          : prev.branch_ids
-                        return {
-                          ...prev,
-                          default_branch_id: val,
-                          branch_ids: nextBranches,
-                        }
-                      })
-                    }}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-[#0b3558] focus:outline-none"
-                  >
-                    <option value="">None / Not Restricted</option>
-                    {availableGodowns.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.branch_name || b.name} ({b.branch_code || b.code || `ID:${b.id}`})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* ACCESSIBLE GODOWNS MULTI-SELECT */}
-                <div className="sm:col-span-2 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-xs font-bold text-slate-800 uppercase">
-                      Permitted Godowns in Selected Company ({availableGodowns.length} available)
-                    </label>
-                    <div className="flex items-center gap-2">
+                    {/* Mode Toggle Bar */}
+                    <div className="grid grid-cols-2 gap-2 bg-white p-1 rounded-xl border border-amber-300">
                       <button
                         type="button"
-                        onClick={selectAllGodownsOfCompany}
-                        className="text-[10px] font-bold text-[#0b3558] hover:underline cursor-pointer"
+                        onClick={() => setAccessMode('all')}
+                        className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                          accessMode === 'all'
+                            ? 'bg-[#0b3558] text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        }`}
                       >
-                        Select All
+                        <Shield className="w-3.5 h-3.5 text-amber-400" />
+                        All Branches & All Companies
                       </button>
-                      <span className="text-slate-300">•</span>
+
                       <button
                         type="button"
-                        onClick={clearAllGodowns}
-                        className="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer"
+                        onClick={() => setAccessMode('custom')}
+                        className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                          accessMode === 'custom'
+                            ? 'bg-[#0b3558] text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        }`}
                       >
-                        Clear
+                        <Building2 className="w-3.5 h-3.5 text-amber-400" />
+                        Select Specific Companies & Godowns
                       </button>
                     </div>
-                  </div>
 
-                  {availableGodowns.length === 0 ? (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center text-xs text-slate-400">
-                      No godowns registered under the selected company. Create godowns in Godowns & Branches first.
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border border-slate-200 rounded-xl p-3 max-h-40 overflow-y-auto bg-slate-50/50">
-                      {availableGodowns.map((b) => {
-                        const isChecked = form.branch_ids.includes(Number(b.id))
-                        const isDefault = String(form.default_branch_id) === String(b.id)
-                        return (
-                          <label
-                            key={b.id}
-                            className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
-                              isChecked
-                                ? 'bg-amber-100/70 border-amber-300 text-amber-950 font-bold'
-                                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => toggleBranch(b.id)}
-                              className="h-4 w-4 rounded border-slate-300 text-[#0b3558] focus:ring-[#0b3558]"
-                            />
-                            <div className="flex-1 truncate">
-                              <span className="block truncate">{b.branch_name || b.name}</span>
-                              <span className="text-[10px] font-mono text-slate-400">
-                                {b.branch_code || `ID:${b.id}`}
-                                {isDefault && ' (Primary)'}
-                              </span>
-                            </div>
+                    {/* Mode A: ALL ACCESS */}
+                    {accessMode === 'all' ? (
+                      <div className="rounded-xl bg-emerald-50 border border-emerald-300 p-3.5 space-y-2">
+                        <div className="flex items-center gap-2 text-emerald-900 font-black text-xs">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>Full Enterprise Scope: All {companies.length} Companies & All {branches.length} Godowns</span>
+                        </div>
+                        <p className="text-[11px] text-emerald-800 leading-relaxed">
+                          This user will have access to all registered companies and branches across the entire organization.
+                        </p>
+
+                        <div className="pt-2 border-t border-emerald-200">
+                          <label className="block text-[11px] font-bold text-emerald-950 uppercase mb-1">
+                            Primary / Default Login Godown (Optional):
                           </label>
-                        )
-                      })}
+                          <select
+                            value={form.default_branch_id}
+                            onChange={(e) => setForm({ ...form, default_branch_id: e.target.value })}
+                            className="w-full rounded-xl border border-emerald-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none"
+                          >
+                            <option value="">Auto (Default to First Godown)</option>
+                            {branches.map((b) => (
+                              <option key={b.id} value={b.id}>
+                                {b.company?.company_name ? `${b.company.company_name} — ` : ''}{b.branch_name || b.name} ({b.branch_code || `ID:${b.id}`})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Mode B: CUSTOM SELECTABLE COMPANIES & GODOWNS */
+                      <div className="space-y-4 pt-1">
+                        {/* Company Selection Header */}
+                        <div className="rounded-xl bg-white p-3 border border-slate-200 space-y-2.5">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-black uppercase text-[#0b3558] flex items-center gap-1.5">
+                              <Building2 className="w-4 h-4 text-[#b37d14]" />
+                              Select Companies for this User <span className="text-rose-500">*</span>
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={selectAllCompanies}
+                                className="text-[10px] font-black text-[#0b3558] hover:underline cursor-pointer"
+                              >
+                                Select All Companies
+                              </button>
+                              <span className="text-slate-300">•</span>
+                              <button
+                                type="button"
+                                onClick={clearAllCompanies}
+                                className="text-[10px] font-black text-rose-600 hover:underline cursor-pointer"
+                              >
+                                Clear All
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Company Checkboxes */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {companies.map((c) => {
+                              const isChecked = form.company_ids.includes(Number(c.id))
+                              return (
+                                <label
+                                  key={c.id}
+                                  className={`flex items-center gap-2.5 p-2 rounded-xl border text-xs cursor-pointer transition-all ${
+                                    isChecked
+                                      ? 'bg-amber-100/80 border-amber-400 text-amber-950 font-bold shadow-2xs'
+                                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                                  }`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => toggleCompany(c.id)}
+                                    className="h-4 w-4 rounded border-slate-300 text-[#0b3558] focus:ring-[#0b3558]"
+                                  />
+                                  <div className="truncate">
+                                    <span className="block truncate font-bold">{c.company_name}</span>
+                                    <span className="text-[10px] font-mono text-slate-400">Code: {c.code}</span>
+                                  </div>
+                                </label>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Mapped Godowns per Selected Company */}
+                        {form.company_ids.length === 0 ? (
+                          <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50/50 p-4 text-center text-xs text-amber-900 font-semibold">
+                            Select at least one company above to view and assign mapped godowns.
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            <label className="block text-xs font-black uppercase text-slate-800">
+                              Mapped Godowns by Selected Company
+                            </label>
+
+                            {companies
+                              .filter((c) => form.company_ids.includes(Number(c.id)))
+                              .map((c) => {
+                                const companyGodowns = branches.filter((b) => Number(b.company_id) === Number(c.id))
+                                const selectedGodownsCount = companyGodowns.filter((b) =>
+                                  form.branch_ids.includes(Number(b.id)),
+                                ).length
+
+                                return (
+                                  <div
+                                    key={c.id}
+                                    className="rounded-xl border border-slate-200 bg-white p-3 space-y-2 shadow-2xs"
+                                  >
+                                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                      <div className="flex items-center gap-1.5">
+                                        <Building2 className="w-3.5 h-3.5 text-[#0b3558]" />
+                                        <span className="font-extrabold text-xs text-slate-900">{c.company_name}</span>
+                                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
+                                          {selectedGodownsCount}/{companyGodowns.length} Selected
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => selectAllGodownsForCompany(c.id)}
+                                          className="text-[10px] font-bold text-[#0b3558] hover:underline cursor-pointer"
+                                        >
+                                          Select All
+                                        </button>
+                                        <span className="text-slate-300">•</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => clearGodownsForCompany(c.id)}
+                                          className="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer"
+                                        >
+                                          Clear
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    {companyGodowns.length === 0 ? (
+                                      <p className="text-[11px] text-slate-400 italic py-1">
+                                        No godowns registered under {c.company_name}.
+                                      </p>
+                                    ) : (
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-36 overflow-y-auto pt-1">
+                                        {companyGodowns.map((b) => {
+                                          const isChecked = form.branch_ids.includes(Number(b.id))
+                                          const isDefault = String(form.default_branch_id) === String(b.id)
+                                          return (
+                                            <label
+                                              key={b.id}
+                                              className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                                                isChecked
+                                                  ? 'bg-amber-50 border-amber-300 text-amber-950 font-bold'
+                                                  : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                                              }`}
+                                            >
+                                              <input
+                                                type="checkbox"
+                                                checked={isChecked}
+                                                onChange={() => toggleBranch(b.id)}
+                                                className="h-3.5 w-3.5 rounded border-slate-300 text-[#0b3558] focus:ring-[#0b3558]"
+                                              />
+                                              <div className="truncate flex-1">
+                                                <span className="block truncate">{b.branch_name || b.name}</span>
+                                                <span className="text-[10px] font-mono text-slate-400">
+                                                  {b.branch_code || `ID:${b.id}`}
+                                                  {isDefault && ' (Primary)'}
+                                                </span>
+                                              </div>
+                                            </label>
+                                          )
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              })}
+
+                            {/* Primary Godown Selector */}
+                            <div className="rounded-xl bg-slate-50 p-3 border border-slate-200 space-y-1.5">
+                              <label className="block text-xs font-black uppercase text-slate-800">
+                                Primary / Default Login Godown:
+                              </label>
+                              <select
+                                value={form.default_branch_id}
+                                onChange={(e) => setForm({ ...form, default_branch_id: e.target.value })}
+                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none"
+                              >
+                                <option value="">Auto (First Selected Godown)</option>
+                                {godownsOfSelectedCompanies.map((b) => (
+                                  <option key={b.id} value={b.id}>
+                                    {b.company?.company_name ? `${b.company.company_name} — ` : ''}{b.branch_name || b.name} ({b.branch_code || `ID:${b.id}`})
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* NORMAL ADMIN: SCOPED COMPANY & GODOWN SELECTION */
+                  <>
+                    <div className="sm:col-span-2 rounded-xl bg-amber-50/70 p-3.5 border border-amber-300/80 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-black text-[#0b3558] uppercase flex items-center gap-1.5">
+                          <Building2 className="w-4 h-4 text-[#b37d14]" />
+                          Assigned Company <span className="text-rose-500">*</span>
+                        </label>
+                        <span className="text-[10px] font-bold text-amber-800">
+                          Controls which company books user operates
+                        </span>
+                      </div>
+                      <select
+                        value={form.company_id}
+                        onChange={(e) => {
+                          const newCompanyId = e.target.value
+                          const godownsOfC = branches.filter((b) => String(b.company_id) === String(newCompanyId))
+                          const firstGodown = godownsOfC[0]?.id || ''
+                          setForm((prev) => ({
+                            ...prev,
+                            company_id: newCompanyId,
+                            company_ids: newCompanyId ? [Number(newCompanyId)] : [],
+                            default_branch_id: firstGodown ? String(firstGodown) : '',
+                            branch_ids: firstGodown ? [Number(firstGodown)] : [],
+                          }))
+                        }}
+                        required
+                        className="w-full rounded-xl border border-amber-400 bg-white px-3.5 py-2 text-xs font-extrabold text-[#0b3558] focus:outline-none shadow-xs"
+                      >
+                        <option value="">Select Company...</option>
+                        {companies.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.company_name} ({c.code})
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                  )}
-                </div>
+
+                    {/* Primary Godown */}
+                    <div className="sm:col-span-2 rounded-xl bg-slate-50 p-3.5 border border-slate-200 space-y-2">
+                      <label className="block text-xs font-black text-slate-800 uppercase flex items-center gap-1.5">
+                        <Layers className="w-4 h-4 text-[#0b3558]" />
+                        Primary / Default Godown (Branch)
+                      </label>
+                      <select
+                        value={form.default_branch_id}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          setForm((prev) => {
+                            const numVal = val ? Number(val) : null
+                            const nextBranches = numVal && !prev.branch_ids.includes(numVal)
+                              ? [...prev.branch_ids, numVal]
+                              : prev.branch_ids
+                            return {
+                              ...prev,
+                              default_branch_id: val,
+                              branch_ids: nextBranches,
+                            }
+                          })
+                        }}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-[#0b3558] focus:outline-none"
+                      >
+                        <option value="">None / Not Restricted</option>
+                        {singleCompanyGodowns.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.branch_name || b.name} ({b.branch_code || b.code || `ID:${b.id}`})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Permitted Godowns */}
+                    <div className="sm:col-span-2 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-bold text-slate-800 uppercase">
+                          Permitted Godowns in Selected Company ({singleCompanyGodowns.length} available)
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const ids = singleCompanyGodowns.map((b) => b.id)
+                              setForm((prev) => ({
+                                ...prev,
+                                branch_ids: ids,
+                                default_branch_id: prev.default_branch_id || (ids[0] ? String(ids[0]) : ''),
+                              }))
+                            }}
+                            className="text-[10px] font-bold text-[#0b3558] hover:underline cursor-pointer"
+                          >
+                            Select All
+                          </button>
+                          <span className="text-slate-300">•</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setForm((prev) => ({
+                                ...prev,
+                                branch_ids: [],
+                                default_branch_id: '',
+                              }))
+                            }}
+                            className="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </div>
+
+                      {singleCompanyGodowns.length === 0 ? (
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center text-xs text-slate-400">
+                          No godowns registered under the selected company.
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border border-slate-200 rounded-xl p-3 max-h-40 overflow-y-auto bg-slate-50/50">
+                          {singleCompanyGodowns.map((b) => {
+                            const isChecked = form.branch_ids.includes(Number(b.id))
+                            const isDefault = String(form.default_branch_id) === String(b.id)
+                            return (
+                              <label
+                                key={b.id}
+                                className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                                  isChecked
+                                    ? 'bg-amber-100/70 border-amber-300 text-amber-950 font-bold'
+                                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => toggleBranch(b.id)}
+                                  className="h-4 w-4 rounded border-slate-300 text-[#0b3558] focus:ring-[#0b3558]"
+                                />
+                                <div className="flex-1 truncate">
+                                  <span className="block truncate">{b.branch_name || b.name}</span>
+                                  <span className="text-[10px] font-mono text-slate-400">
+                                    {b.branch_code || `ID:${b.id}`}
+                                    {isDefault && ' (Primary)'}
+                                  </span>
+                                </div>
+                              </label>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
 
                 {/* Account Status */}
                 <div className="sm:col-span-2">

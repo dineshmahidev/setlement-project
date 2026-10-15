@@ -543,15 +543,6 @@ export default function LeadsTraffic() {
                         <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-1.5">
                             <button
-                              onClick={() => openViewModal(enquiry)}
-                              className="inline-flex items-center gap-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-1 text-xs font-bold transition-all cursor-pointer"
-                              title="View full enquiry and contact customer"
-                            >
-                              <Eye className="w-3.5 h-3.5 text-amber-700" />
-                              <span>View Enquiry</span>
-                            </button>
-
-                            <button
                               onClick={(e) => handleDeleteLead(enquiry.id, e)}
                               className="rounded-lg p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-all cursor-pointer"
                               title="Delete enquiry"

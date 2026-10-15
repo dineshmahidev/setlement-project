@@ -30,7 +30,6 @@ export default function DebitNotes() {
           status: statusFilter || undefined,
           from_date: fromDate || undefined,
           to_date: toDate || undefined,
-          branch_id: branchId || undefined,
         },
       })
       setDebitNotes(extractList(res))
@@ -44,7 +43,7 @@ export default function DebitNotes() {
 
   useEffect(() => {
     fetchDebitNotes()
-  }, [search, statusFilter, fromDate, toDate, branchId])
+  }, [search, statusFilter, fromDate, toDate])
 
   const handlePrintPdf = async (dn) => {
     try {
@@ -151,7 +150,7 @@ export default function DebitNotes() {
                 <tr className="border-b border-[#0e4470] bg-[#0b3558] text-[11px] font-semibold uppercase tracking-wider text-white">
                   <th className="py-3.5 px-4">Note Number</th>
                   <th className="py-3.5 px-4">Date</th>
-                  <th className="py-3.5 px-4">Vendor & Branch</th>
+                  <th className="py-3.5 px-4">Vendor</th>
                   <th className="py-3.5 px-4">Invoice / Lot Ref</th>
                   <th className="py-3.5 px-4">Reason</th>
                   <th className="py-3.5 px-4 text-center">Type</th>
@@ -172,7 +171,6 @@ export default function DebitNotes() {
                     <td className="py-3 px-4 text-slate-600">{formatDate(dn.date)}</td>
                     <td className="py-3 px-4">
                       <span className="font-bold text-slate-900 block">{dn.vendor?.vendor_name}</span>
-                      <span className="text-[10.5px] text-slate-400 block">{dn.branch?.branch_name}</span>
                     </td>
                     <td className="py-3 px-4 text-slate-700">
                       <span className="font-medium block">{dn.invoice_number ? `Inv: ${dn.invoice_number}` : 'Settlement'}</span>

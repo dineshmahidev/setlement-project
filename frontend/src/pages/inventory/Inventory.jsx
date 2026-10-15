@@ -62,23 +62,13 @@ function useMasters() {
     Promise.all([
       api.get('/vendors?per_page=100').catch(() => ({ data: [] })),
       api.get('/vehicles?per_page=100').catch(() => ({ data: [] })),
-      api.get('/items?per_page=100').catch(() => ({ data: [] })),
-      api.get('/products?all=1').catch(() => ({ data: [] })),
+      api.get('/items?all=1').catch(() => ({ data: [] })),
       api.get('/branches?per_page=100').catch(() => ({ data: [] })),
       api.get('/units?all=1').catch(() => ({ data: [] })),
-    ]).then(([v, veh, it, pr, br, u]) => {
+    ]).then(([v, veh, it, br, u]) => {
       setVendors(list(v.data))
       setVehicles(list(veh.data))
-      const rawItems = list(it.data)
-      const rawProducts = list(pr.data).map((p) => ({
-        id: p.id,
-        name: p.product_name || p.name,
-        code: p.product_code || p.code,
-        unit: p.unit,
-      }))
-      const combined = [...rawItems, ...rawProducts]
-      const unique = Array.from(new Map(combined.map((i) => [i.id || i.name, i])).values())
-      setItems(unique)
+      setItems(list(it.data))
       setBranches(list(br.data))
       setUnits(list(u.data))
     })
@@ -825,16 +815,7 @@ export function CurrentStock() {
   const { branches, items } = useMasters()
   const [selBranch, setSelBranch] = useState('')
   const [selItem, setSelItem] = useState('')
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
   const [hideZeroStock, setHideZeroStock] = useState(false)
-  const [exportModalOpen, setExportModalOpen] = useState(false)
-  const [exportFilters, setExportFilters] = useState({
-    branch_id: '',
-    item_id: '',
-    date_from: '',
-    date_to: '',
-  })
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -842,8 +823,6 @@ export function CurrentStock() {
       const res = await api.get('/inventory/stock', {
         params: {
           branch_id: selBranch || branchId || undefined,
-          date_from: dateFrom || undefined,
-          date_to: dateTo || undefined,
           hide_zero: hideZeroStock ? 1 : undefined,
         },
       })
@@ -873,37 +852,20 @@ export function CurrentStock() {
     } finally {
       setLoading(false)
     }
-  }, [branchId, selBranch, selItem, search, dateFrom, dateTo, hideZeroStock, toast])
+  }, [branchId, selBranch, selItem, search, hideZeroStock, toast])
 
   useEffect(() => {
     load()
   }, [load])
 
-  function openExportModal() {
-    setExportFilters({
-      branch_id: selBranch || branchId || '',
-      item_id: selItem || '',
-      date_from: dateFrom || '',
-      date_to: dateTo || '',
-    })
-    setExportModalOpen(true)
-  }
-
-  function handleExportPdf(p) {
+  function handleExportPdf() {
     const params = new URLSearchParams({
-      ...(p.branch_id && { branch_id: p.branch_id }),
-      ...(p.item_id && { item_id: p.item_id }),
-      ...(p.date_from && { date_from: p.date_from }),
-      ...(p.date_to && { date_to: p.date_to }),
+      ...(selBranch || branchId ? { branch_id: selBranch || branchId } : {}),
+      ...(selItem && { item_id: selItem }),
       ...(search && { search: search }),
       ...(hideZeroStock && { hide_zero: 1 }),
     })
-    const filename = p.date_from && p.date_to
-      ? `Current_Stock_${p.date_from}_to_${p.date_to}.pdf`
-      : p.date_from
-      ? `Current_Stock_from_${p.date_from}.pdf`
-      : `Current_Stock_Report.pdf`
-    openPdf(`/inventory/stock/pdf?${params.toString()}`, filename)
+    openPdf(`/inventory/stock/pdf?${params.toString()}`, 'Current_Stock_Report.pdf')
   }
 
   const totalItemsCount = rows.length
@@ -932,59 +894,14 @@ export function CurrentStock() {
             </button>
             <Button
               variant="secondary"
-              onClick={openExportModal}
-              className="border-[#C9A227]/50 text-[#0b3558] font-bold hover:bg-amber-50"
+              onClick={handleExportPdf}
+              className="border-[#C9A227]/50 text-[#0b3558] font-bold hover:bg-amber-50 cursor-pointer"
             >
               <Printer className="h-4 w-4 text-[#C9A227]" /> Export PDF
             </Button>
           </div>
         }
       />
-
-      {/* Duration Presets Quick Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] font-bold uppercase text-slate-500 mr-1 flex items-center gap-1">
-            <Calendar className="h-3.5 w-3.5 text-[#C9A227]" /> Duration:
-          </span>
-          {[
-            { label: 'All Dates', key: 'all' },
-            { label: 'Today', key: 'today' },
-            { label: 'This Month', key: 'this_month' },
-            { label: 'Last Month', key: 'last_month' },
-            { label: 'This FY (Apr-Mar)', key: 'this_fy' },
-          ].map((p) => (
-            <button
-              key={p.key}
-              type="button"
-              onClick={() => {
-                const dates = getDurationDates(p.key)
-                setDateFrom(dates.from)
-                setDateTo(dates.to)
-              }}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#C9A227] hover:bg-amber-50 transition-all cursor-pointer"
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center gap-2">
-          {Boolean(dateFrom || dateTo) && (
-            <span className="text-xs font-bold text-blue-900 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
-              {dateFrom ? formatDate(dateFrom) : 'Start'} → {dateTo ? formatDate(dateTo) : 'Present'}
-            </span>
-          )}
-          <label className="flex items-center gap-2 cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 shadow-2xs hover:border-[#C9A227] hover:bg-amber-50 transition-all select-none">
-            <input
-              type="checkbox"
-              checked={hideZeroStock}
-              onChange={(e) => setHideZeroStock(e.target.checked)}
-              className="rounded text-[#0b3558] focus:ring-[#C9A227]"
-            />
-            <span>Hide Zero Stock</span>
-          </label>
-        </div>
-      </div>
 
       {/* KPI Mini-Metrics Ribbon - Solid Colors */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1020,8 +937,8 @@ export function CurrentStock() {
       </div>
 
       {/* Filters Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-        <div className="relative sm:col-span-1">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
           <Input
             placeholder="Search item name or code..."
@@ -1030,15 +947,15 @@ export function CurrentStock() {
             className="pl-9"
           />
         </div>
-        <div>
+        <div className="w-52">
           <Select value={selBranch} onChange={(e) => setSelBranch(e.target.value)}>
-            <option value="">Branch (default)</option>
+            <option value="">All Godowns / Branches</option>
             {branches.map((b) => (
               <option key={b.id} value={b.id}>{b.name || b.branch_name}</option>
             ))}
           </Select>
         </div>
-        <div>
+        <div className="w-56">
           <Select value={selItem} onChange={(e) => setSelItem(e.target.value)}>
             <option value="">All items</option>
             {items.map((i) => (
@@ -1046,24 +963,15 @@ export function CurrentStock() {
             ))}
           </Select>
         </div>
-        <div>
-          <Input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            title="Duration From"
-            placeholder="Duration From"
+        <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 shadow-2xs hover:border-[#C9A227] hover:bg-amber-50 transition-all select-none">
+          <input
+            type="checkbox"
+            checked={hideZeroStock}
+            onChange={(e) => setHideZeroStock(e.target.checked)}
+            className="rounded text-[#0b3558] focus:ring-[#C9A227]"
           />
-        </div>
-        <div>
-          <Input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            title="Duration To"
-            placeholder="Duration To"
-          />
-        </div>
+          <span>Hide Zero Stock</span>
+        </label>
       </div>
 
       <DataTable
@@ -1141,100 +1049,6 @@ export function CurrentStock() {
           ) : null
         }
       />
-
-      {/* Export Current Stock PDF with Duration Modal */}
-      <Modal
-        open={exportModalOpen}
-        onClose={() => setExportModalOpen(false)}
-        title="Export Current Items Stock PDF"
-        size="md"
-        footer={
-          <div className="flex items-center justify-end gap-2 w-full">
-            <Button variant="secondary" onClick={() => setExportModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                handleExportPdf(exportFilters)
-                setExportModalOpen(false)
-              }}
-              className="bg-[#0b3558] text-white hover:bg-[#07233b]"
-            >
-              <Printer className="h-4 w-4 mr-1.5 text-[#C9A227]" /> Download / Print PDF
-            </Button>
-          </div>
-        }
-      >
-        <div className="space-y-4 py-1">
-          <div>
-            <label className="mb-1.5 block text-xs font-bold text-slate-700">Quick Duration Presets</label>
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                { label: 'All Dates', key: 'all' },
-                { label: 'Today', key: 'today' },
-                { label: 'This Month', key: 'this_month' },
-                { label: 'Last Month', key: 'last_month' },
-                { label: 'This FY (Apr-Mar)', key: 'this_fy' },
-              ].map((p) => (
-                <button
-                  key={p.key}
-                  type="button"
-                  onClick={() => {
-                    const dates = getDurationDates(p.key)
-                    setExportFilters((f) => ({ ...f, date_from: dates.from, date_to: dates.to }))
-                  }}
-                  className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-[#0b3558] hover:text-white transition-colors cursor-pointer"
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <FormField label="Duration From">
-              <Input
-                type="date"
-                value={exportFilters.date_from}
-                onChange={(e) => setExportFilters((f) => ({ ...f, date_from: e.target.value }))}
-              />
-            </FormField>
-            <FormField label="Duration To">
-              <Input
-                type="date"
-                value={exportFilters.date_to}
-                onChange={(e) => setExportFilters((f) => ({ ...f, date_to: e.target.value }))}
-              />
-            </FormField>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <FormField label="Godown / Branch">
-              <Select
-                value={exportFilters.branch_id}
-                onChange={(e) => setExportFilters((f) => ({ ...f, branch_id: e.target.value }))}
-              >
-                <option value="">All Godowns</option>
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id}>{b.name || b.branch_name}</option>
-                ))}
-              </Select>
-            </FormField>
-
-            <FormField label="Item / Commodity">
-              <Select
-                value={exportFilters.item_id}
-                onChange={(e) => setExportFilters((f) => ({ ...f, item_id: e.target.value }))}
-              >
-                <option value="">All Items</option>
-                {items.map((i) => (
-                  <option key={i.id} value={i.id}>{i.name}</option>
-                ))}
-              </Select>
-            </FormField>
-          </div>
-        </div>
-      </Modal>
     </div>
   )
 }
@@ -2383,7 +2197,8 @@ export function StockLedger() {
             key: 'type',
             label: 'Type',
             render: (r) => {
-              const isIn = ['STOCK_IN', 'TRANSFER_IN', 'ADJUSTMENT_IN', 'OPENING'].includes(r.type)
+              const isIn = ['STOCK_IN', 'TRANSFER_IN', 'ADJUSTMENT_IN', 'OPENING', 'PRODUCTION_OUT'].includes(r.type) || (Number(r.in ?? r.stock_in ?? 0) > 0)
+              const typeLabel = isIn ? 'STOCK IN' : 'STOCK OUT'
               return (
                 <span
                   className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${
@@ -2392,7 +2207,7 @@ export function StockLedger() {
                       : 'bg-rose-50 text-rose-700 border border-rose-200'
                   }`}
                 >
-                  {r.type?.replace(/_/g, ' ') || '—'}
+                  {typeLabel}
                 </span>
               )
             },

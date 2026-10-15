@@ -10,11 +10,10 @@ import {
   Modal,
   PageHeader,
   Select,
-  StatusBadge,
   Textarea,
 } from '../../components'
 import { formatMoney, formatNumber, formatDate, today, extractList, qs } from '../../utils/helpers'
-import { Plus, Trash2, Eye, RefreshCw, Package, Printer } from 'lucide-react'
+import { Plus, Trash2, RefreshCw, Package, Printer, FileText, Filter, X, Calendar, Edit2 } from 'lucide-react'
 
 function FormField({ label, required, className, children }) {
   return (
@@ -86,16 +85,99 @@ function useMasterData() {
 
 const emptyItem = () => ({ item_id: '', lot_number: '', quantity: '', unit_id: '', oil_pct: '', rate: '', amount: '' })
 
+function computeDateRange(preset) {
+  const now = new Date()
+  const toYmd = (d) => {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+
+  if (preset === 'today') {
+    const dStr = toYmd(now)
+    return { from: dStr, to: dStr }
+  }
+  if (preset === 'yesterday') {
+    const yest = new Date(now)
+    yest.setDate(yest.getDate() - 1)
+    return { from: toYmd(yest), to: toYmd(yest) }
+  }
+  if (preset === 'this_week') {
+    const d = new Date(now)
+    const day = d.getDay()
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1)
+    const monday = new Date(d.setDate(diff))
+    return { from: toYmd(monday), to: toYmd(now) }
+  }
+  if (preset === 'this_month') {
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
+    return { from: toYmd(firstDay), to: toYmd(now) }
+  }
+  if (preset === 'last_month') {
+    const firstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const lastDay = new Date(now.getFullYear(), now.getMonth(), 0)
+    return { from: toYmd(firstDay), to: toYmd(lastDay) }
+  }
+  if (preset === 'this_fy') {
+    const y = now.getFullYear()
+    const m = now.getMonth() + 1
+    const fyStartYear = m >= 4 ? y : y - 1
+    return { from: `${fyStartYear}-04-01`, to: `${fyStartYear + 1}-03-31` }
+  }
+  if (preset === 'all') {
+    return { from: '', to: '' }
+  }
+  return null
+}
+
 export default function Inward() {
   const toast = useToast()
   const { branchId, activeCompany } = useAuth()
   const { vendors, items, branches, units } = useMasterData()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
-  const [statusFilter, setStatusFilter] = useState('')
   const [search, setSearch] = useState('')
+  const [duration, setDuration] = useState('all')
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
+  const [branchFilter, setBranchFilter] = useState('')
+  const [partyFilter, setPartyFilter] = useState('')
+
+  function handleDurationChange(preset) {
+    setDuration(preset)
+    if (preset !== 'custom') {
+      const range = computeDateRange(preset)
+      if (range) {
+        setFromDate(range.from)
+        setToDate(range.to)
+      }
+    }
+  }
+
+  function resetFilters() {
+    setDuration('all')
+    setFromDate('')
+    setToDate('')
+    setBranchFilter('')
+    setPartyFilter('')
+    setSearch('')
+  }
+
+  function handleExportPdf() {
+    const params = {
+      from_date: fromDate || undefined,
+      to_date: toDate || undefined,
+      branch_id: branchFilter || undefined,
+      party_id: partyFilter || undefined,
+      search: search || undefined,
+    }
+    const fileSuffix = fromDate && toDate ? `${fromDate}_to_${toDate}` : (fromDate ? `from_${fromDate}` : (toDate ? `to_${toDate}` : 'all'))
+    openPdf(`/inward-report-pdf${qs(params)}`, `Inward_Report_${fileSuffix}.pdf`)
+  }
 
   const [modalOpen, setModalOpen] = useState(false)
+  const [editingEntry, setEditingEntry] = useState(null)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({ date: today(), branch_id: branchId || '', party_id: '', load_reference: '', remarks: '' })
   const [formItems, setFormItems] = useState([emptyItem()])
@@ -125,7 +207,14 @@ export default function Inward() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await api.get(`/inward${qs({ status: statusFilter, search, per_page: 100 })}`)
+      const res = await api.get(`/inward${qs({
+        search: search || undefined,
+        from_date: fromDate || undefined,
+        to_date: toDate || undefined,
+        branch_id: branchFilter || undefined,
+        party_id: partyFilter || undefined,
+        per_page: 100,
+      })}`)
       setRows(extractList(res.data))
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Failed to load inward entries'))
@@ -133,14 +222,48 @@ export default function Inward() {
     } finally {
       setLoading(false)
     }
-  }, [statusFilter, search, toast])
+  }, [search, fromDate, toDate, branchFilter, partyFilter, toast])
 
   useEffect(() => { load() }, [load])
 
   function openCreate() {
+    setEditingEntry(null)
     setForm({ date: today(), branch_id: branchId || '', party_id: '', load_reference: '', remarks: '' })
     setFormItems([emptyItem()])
     setModalOpen(true)
+  }
+
+  async function openEdit(row) {
+    try {
+      const res = await api.get(`/inward/${row.id}`)
+      const data = res.data.data || res.data
+      setEditingEntry(data)
+      setForm({
+        date: data.date ? String(data.date).slice(0, 10) : today(),
+        branch_id: data.branch_id ? String(data.branch_id) : '',
+        party_id: data.party_id ? String(data.party_id) : '',
+        load_reference: data.load_reference || data.bill_no || '',
+        remarks: data.remarks || data.notes || '',
+      })
+      if (data.items && data.items.length > 0) {
+        setFormItems(
+          data.items.map((it) => ({
+            item_id: it.item_id ? String(it.item_id) : '',
+            lot_number: it.lot_number || '',
+            quantity: it.quantity != null ? String(it.quantity) : '',
+            unit_id: it.unit_id ? String(it.unit_id) : '',
+            oil_pct: it.oil_pct != null ? String(it.oil_pct) : '',
+            rate: it.rate != null ? String(it.rate) : '',
+            amount: it.amount != null ? String(it.amount) : '',
+          }))
+        )
+      } else {
+        setFormItems([emptyItem()])
+      }
+      setModalOpen(true)
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Failed to load inward entry for editing'))
+    }
   }
 
   function setItemField(idx, key, value) {
@@ -171,7 +294,7 @@ export default function Inward() {
     }
     setSaving(true)
     try {
-      await api.post('/inward', {
+      const payload = {
         date: form.date,
         branch_id: Number(form.branch_id),
         party_id: form.party_id ? Number(form.party_id) : null,
@@ -182,16 +305,24 @@ export default function Inward() {
           lot_number: it.lot_number || null,
           quantity: Number(it.quantity),
           unit_id: it.unit_id ? Number(it.unit_id) : null,
-          oil_pct: it.oil_pct === '' ? null : Number(it.oil_pct),
-          rate: it.rate === '' ? null : Number(it.rate),
-          amount: it.amount === '' ? null : Number(it.amount),
+          oil_pct: it.oil_pct === '' || it.oil_pct == null ? null : Number(it.oil_pct),
+          rate: it.rate === '' || it.rate == null ? null : Number(it.rate),
+          amount: it.amount === '' || it.amount == null ? null : Number(it.amount),
         })),
-      })
-      toast.success('Inward entry created & stock added to lots automatically!')
+      }
+
+      if (editingEntry) {
+        await api.put(`/inward/${editingEntry.id}`, payload)
+        toast.success('Inward entry updated & stock adjusted!')
+      } else {
+        await api.post('/inward', payload)
+        toast.success('Inward entry created & stock added to lots automatically!')
+      }
       setModalOpen(false)
+      setEditingEntry(null)
       load()
     } catch (err) {
-      toast.error(apiErrorMessage(err, 'Failed to create inward'))
+      toast.error(apiErrorMessage(err, editingEntry ? 'Failed to update inward' : 'Failed to create inward'))
     } finally {
       setSaving(false)
     }
@@ -253,15 +384,130 @@ export default function Inward() {
         }
       />
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Input placeholder="Search bill no / entry no…" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
-        <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="max-w-[160px]">
-          <option value="">All Status</option>
-          <option value="DRAFT">Draft</option>
-          <option value="CONFIRMED">Confirmed</option>
-          <option value="CANCELLED">Cancelled</option>
-        </Select>
+      {/* Filter, Duration, and Report PDF Controls */}
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-3.5 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700">
+              <Filter className="h-4 w-4" />
+            </div>
+            <span className="text-xs font-black uppercase tracking-wider text-slate-700">Filters & Duration</span>
+            <span className="text-[11px] font-semibold text-slate-400">({rows.length} records)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {(fromDate || toDate || branchFilter || partyFilter || search || duration !== 'all') && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={resetFilters}
+                className="text-xs font-semibold text-slate-500 hover:text-slate-800"
+              >
+                <X className="h-3.5 w-3.5 mr-1" /> Reset
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleExportPdf}
+              className="border-indigo-200 bg-indigo-50/70 text-indigo-700 hover:bg-indigo-100 text-xs font-bold shadow-xs"
+              title="Download / Print Inward Summary Report PDF for selected duration"
+            >
+              <FileText className="h-3.5 w-3.5 mr-1.5 text-indigo-600" /> Get PDF Report
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 items-end">
+          {/* Duration Selector */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">Duration</label>
+            <Select
+              value={duration}
+              onChange={(e) => handleDurationChange(e.target.value)}
+              className="text-xs font-semibold"
+            >
+              <option value="all">All Dates</option>
+              <option value="today">Today</option>
+              <option value="yesterday">Yesterday</option>
+              <option value="this_week">This Week</option>
+              <option value="this_month">This Month</option>
+              <option value="last_month">Last Month</option>
+              <option value="this_fy">This Financial Year</option>
+              <option value="custom">Custom Range</option>
+            </Select>
+          </div>
+
+          {/* From Date */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">From Date</label>
+            <Input
+              type="date"
+              value={fromDate}
+              onChange={(e) => {
+                setFromDate(e.target.value)
+                setDuration('custom')
+              }}
+              className="text-xs font-semibold"
+            />
+          </div>
+
+          {/* To Date */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">To Date</label>
+            <Input
+              type="date"
+              value={toDate}
+              onChange={(e) => {
+                setToDate(e.target.value)
+                setDuration('custom')
+              }}
+              className="text-xs font-semibold"
+            />
+          </div>
+
+          {/* Godown */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">Godown</label>
+            <Select
+              value={branchFilter}
+              onChange={(e) => setBranchFilter(e.target.value)}
+              className="text-xs font-semibold"
+            >
+              <option value="">All Godowns</option>
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>{b.branch_name || b.name}</option>
+              ))}
+            </Select>
+          </div>
+
+          {/* Party */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">Party</label>
+            <Select
+              value={partyFilter}
+              onChange={(e) => setPartyFilter(e.target.value)}
+              className="text-xs font-semibold"
+            >
+              <option value="">All Parties</option>
+              {vendors.map((v) => (
+                <option key={v.id} value={v.id}>{v.vendor_name}</option>
+              ))}
+            </Select>
+          </div>
+
+          {/* Search */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">Search</label>
+            <Input
+              placeholder="Bill / Entry no…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="text-xs"
+            />
+          </div>
+        </div>
       </div>
+
 
       <DataTable
         loading={loading}
@@ -269,6 +515,7 @@ export default function Inward() {
         rowKey="id"
         emptyTitle="No inward entries"
         emptyMessage="Create a multi-item load receipt to start stocking."
+        onRowClick={(r) => openView(r)}
         columns={[
           { key: 'entry_number', label: 'Entry No', render: (r) => <span className="font-mono text-[11px] font-bold text-[#0B1A2D]">{r.entry_number}</span> },
           { key: 'load_reference', label: 'Bill No', render: (r) => <span className="font-mono text-[11px] font-semibold text-slate-700">{r.load_reference || '—'}</span> },
@@ -276,48 +523,59 @@ export default function Inward() {
           { key: 'party', label: 'Party', render: (r) => <span className="block max-w-[140px] truncate" title={r.party?.vendor_name || r.party_name || ''}>{r.party?.vendor_name || r.party_name || '—'}</span> },
           { key: 'branch', label: 'Godown', render: (r) => <span className="block max-w-[150px] truncate" title={r.branch?.branch_name || r.branch_name || ''}>{r.branch?.branch_name || r.branch_name || '—'}</span> },
           { key: 'items_count', label: 'Items', render: (r) => (r.items || []).length },
-          { key: 'status', label: 'Status', render: (r) => <StatusBadge status={r.status} /> },
           {
             key: 'actions',
-              label: 'Actions',
-              align: 'right',
-              render: (r) => (
-                <div className="flex justify-end gap-1.5">
-                  <Button size="sm" variant="secondary" onClick={() => openView(r)}>
-                    <Eye className="h-3 w-3" /> View
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => openPdf(`/inward/${r.id}/pdf`, `${r.entry_number}.pdf`)}
-                    title="Print / View PDF"
-                  >
-                    <Printer className="h-3 w-3" /> PDF
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    onClick={() => setDeleteTarget(r)}
-                    title="Delete Inward Entry"
-                  >
-                    <Trash2 className="h-3 w-3" /> Delete
-                  </Button>
-                </div>
-              ),
-            },
+            label: 'Actions',
+            align: 'right',
+            render: (r) => (
+              <div className="flex justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => openEdit(r)}
+                  className="border-amber-200 bg-amber-50/70 text-amber-800 hover:bg-amber-100"
+                  title="Edit Inward Entry"
+                >
+                  <Edit2 className="h-3 w-3" /> Edit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => openPdf(`/inward/${r.id}/pdf`, `${r.entry_number}.pdf`)}
+                  title="Print / View PDF"
+                >
+                  <Printer className="h-3 w-3" /> PDF
+                </Button>
+                <Button
+                  size="sm"
+                  variant="danger"
+                  onClick={() => setDeleteTarget(r)}
+                  title="Delete Inward Entry"
+                >
+                  <Trash2 className="h-3 w-3" /> Delete
+                </Button>
+              </div>
+            ),
+          },
         ]}
       />
 
-      {/* Create modal */}
+      {/* Create / Edit modal */}
       <Modal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={<span className="text-xl font-black text-[#0b3558]">New Inward Entry</span>}
+        onClose={() => { setModalOpen(false); setEditingEntry(null); }}
+        title={
+          <span className="text-xl font-black text-[#0b3558]">
+            {editingEntry ? `Edit Inward Entry (${editingEntry.entry_number})` : 'New Inward Entry'}
+          </span>
+        }
         size="xl"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setModalOpen(false)} className="text-sm font-bold">Cancel</Button>
-            <Button onClick={save} loading={saving} form="inward-form" className="text-base font-black px-6 py-2.5">Save & Add Stock</Button>
+            <Button variant="secondary" onClick={() => { setModalOpen(false); setEditingEntry(null); }} className="text-sm font-bold">Cancel</Button>
+            <Button onClick={save} loading={saving} form="inward-form" className="text-base font-black px-6 py-2.5">
+              {editingEntry ? 'Update Inward Entry' : 'Save & Add Stock'}
+            </Button>
           </>
         }
       >
@@ -517,6 +775,18 @@ export default function Inward() {
                 Official Document Preview (Matches Printed PDF Challan)
               </div>
               <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    const target = viewing
+                    setViewing(null)
+                    openEdit(target)
+                  }}
+                  className="border-amber-200 bg-amber-50/70 text-amber-850 hover:bg-amber-100 font-bold"
+                  title="Edit this Inward Entry"
+                >
+                  <Edit2 className="h-4 w-4 mr-1 text-amber-700" /> Edit Entry
+                </Button>
                 <Button variant="secondary" onClick={() => setViewing(null)}>
                   Close
                 </Button>
@@ -574,9 +844,6 @@ export default function Inward() {
                   </div>
                   <div className="text-xs text-slate-600">
                     Date: <span className="font-semibold">{formatDate(viewing.date)}</span>
-                  </div>
-                  <div className="mt-1">
-                    <StatusBadge status={viewing.status} />
                   </div>
                 </div>
               </div>

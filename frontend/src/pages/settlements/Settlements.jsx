@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api, { apiErrorMessage, openPdf, downloadPdf } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
-import { Plus, Search, Scale, FileDown, Eye, Edit3, Ban, Calendar, Building, Printer, ChevronRight, Trash2 } from 'lucide-react'
-import { PageSpinner, StatusBadge, Modal, SettlementBillModal, ConfirmDialog } from '../../components'
+import { Plus, Search, Scale, FileDown, Edit3, Calendar, Building, Printer, ChevronRight, Trash2 } from 'lucide-react'
+import { PageSpinner, Modal, SettlementBillModal, ConfirmDialog } from '../../components'
 import { extractList, formatDate } from '../../utils/helpers'
 
 export default function Settlements() {
@@ -11,18 +11,11 @@ export default function Settlements() {
   const [settlements, setSettlements] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
 
   // Preview Modal
   const [previewSettlement, setPreviewSettlement] = useState(null)
-
-  // Cancel modal
-  const [cancelModalOpen, setCancelModalOpen] = useState(false)
-  const [settlementToCancel, setSettlementToCancel] = useState(null)
-  const [cancelReason, setCancelReason] = useState('')
-  const [cancelling, setCancelling] = useState(false)
 
   // Delete Confirmation
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
@@ -50,10 +43,8 @@ export default function Settlements() {
       const res = await api.get('/settlements', {
         params: {
           search: search || undefined,
-          status: statusFilter || undefined,
           from_date: fromDate || undefined,
           to_date: toDate || undefined,
-          branch_id: branchId || undefined,
         },
       })
       setSettlements(extractList(res))
@@ -67,7 +58,7 @@ export default function Settlements() {
 
   useEffect(() => {
     fetchSettlements()
-  }, [search, statusFilter, fromDate, toDate, branchId])
+  }, [search, fromDate, toDate])
 
   const handlePrintPdf = async (s) => {
     try {
@@ -86,26 +77,6 @@ export default function Settlements() {
       }
     } catch (err) {
       // Keep shallow settlement as fallback
-    }
-  }
-
-  const handleCancelSubmit = async (e) => {
-    e.preventDefault()
-    if (!settlementToCancel || !cancelReason.trim()) return
-
-    setCancelling(true)
-    try {
-      await api.post(`/settlements/${settlementToCancel.id}/cancel`, {
-        cancellation_reason: cancelReason,
-      })
-      setCancelModalOpen(false)
-      setSettlementToCancel(null)
-      setCancelReason('')
-      fetchSettlements()
-    } catch (err) {
-      alert(apiErrorMessage(err, 'Failed to cancel settlement'))
-    } finally {
-      setCancelling(false)
     }
   }
 
@@ -155,17 +126,6 @@ export default function Settlements() {
             onChange={(e) => setToDate(e.target.value)}
             className="rounded-lg border border-slate-200 bg-[#fdfbf7] px-2.5 py-1.5 text-xs text-slate-700"
           />
-
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-[#fdfbf7] px-3 py-1.5 text-xs font-medium text-slate-700 focus:border-[#0b3558] focus:bg-white focus:outline-none"
-          >
-            <option value="">All Statuses</option>
-            <option value="approved">Approved</option>
-            <option value="posted">Posted</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
         </div>
       </div>
 
@@ -186,30 +146,33 @@ export default function Settlements() {
                 <tr className="border-b border-[#0e4470] bg-[#0b3558] text-[11px] font-semibold uppercase tracking-wider text-white">
                   <th className="py-3.5 px-4">Settlement No</th>
                   <th className="py-3.5 px-4">Date</th>
-                  <th className="py-3.5 px-4">Branch & Vendor</th>
+                  <th className="py-3.5 px-4">Vendor</th>
                   <th className="py-3.5 px-4 text-right">Final Wt (MT)</th>
                   <th className="py-3.5 px-4 text-center">Oil %</th>
                   <th className="py-3.5 px-4 text-right">Oil Qty (KG)</th>
                   <th className="py-3.5 px-4 text-right">Bran Value (₹)</th>
                   <th className="py-3.5 px-4 text-right">Rebate (₹)</th>
                   <th className="py-3.5 px-4 text-right">Net Payable (₹)</th>
-                  <th className="py-3.5 px-4 text-center">Status</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {(Array.isArray(settlements) ? settlements : []).map((s) => (
-                  <tr key={s.id} className="hover:bg-[#fbf5ea]/60 transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-[#0b3558]">
-                      <Link to={`/panel/settlements/${s.id}/edit`} className="hover:text-[#b37d14] hover:underline">
+                  <tr
+                    key={s.id}
+                    onClick={() => handleViewSettlement(s)}
+                    className="hover:bg-[#fbf5ea]/80 transition-colors cursor-pointer group"
+                    title="Click to view Settlement Bill & Debit Note"
+                  >
+                    <td className="py-3 px-4 font-mono font-bold text-[#0b3558] group-hover:text-[#b37d14] transition-colors">
+                      <span className="hover:underline">
                         {s.settlement_number}
-                      </Link>
-                      <span className="block text-[10px] text-slate-400 font-mono">Lot: {s.lot_number || '-'}</span>
+                      </span>
+                      <span className="block text-[10px] text-slate-400 font-mono font-normal">Lot: {s.lot_number || '-'}</span>
                     </td>
                     <td className="py-3 px-4 text-slate-600">{formatDate(s.settlement_date)}</td>
                     <td className="py-3 px-4">
                       <span className="font-bold text-slate-900 block">{s.vendor?.vendor_name}</span>
-                      <span className="text-[10.5px] text-slate-400 block">{s.branch?.branch_name}</span>
                     </td>
                     <td className="py-3 px-4 text-right font-semibold text-slate-800">
                       {Number(s.final_weight_mt).toFixed(3)}
@@ -244,20 +207,8 @@ export default function Settlements() {
                     <td className="py-3 px-4 text-right font-bold text-[#0b3558]">
                       ₹{Number(s.net_payable).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                     </td>
-                    <td className="py-3 px-4 text-center">
-                      <StatusBadge status={s.status} />
-                    </td>
                     <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => handleViewSettlement(s)}
-                          className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-[#0b3558] shadow-xs hover:bg-[#fbf5ea] hover:border-[#b37d14] transition-colors cursor-pointer"
-                          title="View exact Settlement Bill & Note"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-[#b37d14]" />
-                          <span>View</span>
-                        </button>
-
+                      <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                         <Link
                           to={`/panel/settlements/${s.id}/edit`}
                           className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 shadow-xs hover:bg-[#fbf5ea] hover:text-[#0b3558] hover:border-[#0b3558] transition-colors"
@@ -275,20 +226,6 @@ export default function Settlements() {
                           <Printer className="w-3.5 h-3.5 text-slate-600" />
                           <span>PDF</span>
                         </button>
-
-                        {s.status !== 'cancelled' && (
-                          <button
-                            onClick={() => {
-                              setSettlementToCancel(s)
-                              setCancelReason('')
-                              setCancelModalOpen(true)
-                            }}
-                            className="rounded-lg p-1.5 text-slate-400 hover:bg-amber-50 hover:text-amber-600 transition-colors cursor-pointer"
-                            title="Cancel settlement"
-                          >
-                            <Ban className="w-3.5 h-3.5" />
-                          </button>
-                        )}
 
                         <button
                           onClick={() => {
@@ -310,50 +247,6 @@ export default function Settlements() {
           </div>
         )}
       </div>
-
-      {/* Cancel Settlement Modal */}
-      <Modal
-        open={cancelModalOpen}
-        onClose={() => setCancelModalOpen(false)}
-        title="Cancel Settlement Bill"
-      >
-        <form onSubmit={handleCancelSubmit} className="space-y-4">
-          <p className="text-xs text-slate-600">
-            Cancelling Settlement <strong>{settlementToCancel?.settlement_number}</strong> will cancel all linked debit notes and reverse the vendor ledger adjustments.
-          </p>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
-              Cancellation Reason <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              rows={3}
-              required
-              value={cancelReason}
-              onChange={(e) => setCancelReason(e.target.value)}
-              placeholder="State the audit reason for settlement cancellation..."
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none"
-            />
-          </div>
-
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={() => setCancelModalOpen(false)}
-              className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
-            >
-              Abort
-            </button>
-            <button
-              type="submit"
-              disabled={cancelling}
-              className="rounded-lg bg-red-600 px-5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-red-700 disabled:opacity-50"
-            >
-              {cancelling ? 'Cancelling...' : 'Confirm Cancellation'}
-            </button>
-          </div>
-        </form>
-      </Modal>
 
       {/* Exact Combined Settlement Bill & Debit Note Preview Modal */}
       <SettlementBillModal

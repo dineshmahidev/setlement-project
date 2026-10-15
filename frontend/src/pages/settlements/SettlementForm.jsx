@@ -178,8 +178,9 @@ export default function SettlementForm() {
         setVendorsList(vList)
         setProductsList(pList)
 
-        if (!isEdit && bList.length > 0 && !formData.branch_id) {
-          setFormData((prev) => ({ ...prev, branch_id: bList[0].id }))
+        const defBranch = branchId || (bList.length > 0 ? bList[0].id : '')
+        if (!isEdit && defBranch && !formData.branch_id) {
+          setFormData((prev) => ({ ...prev, branch_id: prev.branch_id || defBranch }))
         }
       } catch (err) {
         console.error(err)
@@ -459,8 +460,9 @@ export default function SettlementForm() {
     setErrors({})
 
     // Client-side validation to prevent ghost required field issues
+    const activeBranchId = formData.branch_id || branchId || (branchesList[0]?.id)
     const validationErrors = {}
-    if (!formData.branch_id) validationErrors.branch_id = ['Branch is required']
+    if (!activeBranchId) validationErrors.branch_id = ['Branch is required']
     if (!formData.vendor_id) validationErrors.vendor_id = ['Vendor is required']
     if (!formData.settlement_date) validationErrors.settlement_date = ['Settlement date is required']
     if (!formData.net_weight_mt || Number(formData.net_weight_mt) <= 0) validationErrors.net_weight_mt = ['Net weight must be greater than 0']
@@ -478,6 +480,7 @@ export default function SettlementForm() {
 
     const payload = {
       ...formData,
+      branch_id: activeBranchId,
       net_weight_mt: parseFloat(formData.net_weight_mt) || 0,
       jute_bag: parseFloat(formData.jute_bag) || 0,
       pp_bag: parseFloat(formData.pp_bag) || 0,
@@ -600,68 +603,22 @@ export default function SettlementForm() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-800 uppercase mb-1.5">
-                Branch <span className="text-red-500">*</span>
-              </label>
-              <select
-                required
-                value={formData.branch_id}
-                onChange={(e) => setFormData({ ...formData, branch_id: e.target.value })}
-                className="w-full rounded-xl bg-[#f4f6f9] px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0b3558]"
-              >
-                <option value="">Select Branch</option>
-                {(Array.isArray(branchesList) ? branchesList : []).map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.branch_name} ({b.branch_code})
-                  </option>
-                ))}
-              </select>
-              {errors.branch_id && <p className="text-[11px] text-red-500 mt-1">{errors.branch_id[0]}</p>}
-            </div>
-
-            <div className="sm:col-span-2">
-              <Autocomplete
-                label="Vendor / Supplier"
-                required
-                items={vendorsList}
-                value={formData.vendor_id}
-                onChange={(val) => setFormData({ ...formData, vendor_id: val })}
-                onSelect={handleVendorSelect}
-                displayKey="vendor_name"
-                secondaryKey="vendor_code"
-                extraInfoKey="gstin"
-                placeholder="Type to search vendor by name, code or GSTIN..."
-                error={errors.vendor_id ? errors.vendor_id[0] : ''}
-              />
-            </div>
+          <div>
+            <Autocomplete
+              label="Vendor / Supplier"
+              required
+              items={vendorsList}
+              value={formData.vendor_id}
+              onChange={(val) => setFormData({ ...formData, vendor_id: val })}
+              onSelect={handleVendorSelect}
+              displayKey="vendor_name"
+              secondaryKey="vendor_code"
+              extraInfoKey="gstin"
+              placeholder="Type to search vendor by name, code or GSTIN..."
+              error={errors.vendor_id ? errors.vendor_id[0] : ''}
+            />
           </div>
 
-          {/* Quick Purchase Invoice Autofill */}
-          {invoicesList.length > 0 && (
-            <div className="rounded-xl bg-[#fef3c7] p-4 space-y-2">
-              <label className="block text-xs font-black text-[#78350f] uppercase flex items-center gap-1.5">
-                <Receipt className="w-4 h-4 text-[#b37d14]" />
-                Auto-Fill From Existing Purchase Invoice
-              </label>
-              <select
-                value={formData.invoice_id}
-                onChange={(e) => {
-                  const selected = invoicesList.find((inv) => String(inv.id) === e.target.value)
-                  handleInvoiceSelect(selected)
-                }}
-                className="w-full rounded-lg bg-white px-3.5 py-2 text-xs text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-[#b37d14]"
-              >
-                <option value="">-- Select Invoice to Auto-populate Bill, Date, Weight & Taxable Value --</option>
-                {(Array.isArray(invoicesList) ? invoicesList : []).map((inv) => (
-                  <option key={inv.id} value={inv.id}>
-                    {inv.invoice_number} ({inv.invoice_date}) | Wt: {inv.net_weight_mt} MT | Rate: ₹{inv.rate} | Taxable: ₹{Number(inv.taxable_amount).toLocaleString('en-IN')}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div>

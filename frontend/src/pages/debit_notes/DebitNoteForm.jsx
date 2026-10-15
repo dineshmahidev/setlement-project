@@ -198,11 +198,15 @@ export default function DebitNoteForm() {
     setErrors({})
 
     try {
+      const payload = {
+        ...formData,
+        branch_id: formData.branch_id || branchId || (branchesList[0]?.id || 1),
+      }
       if (isEdit) {
-        await api.put(`/debit-notes/${id}`, formData)
+        await api.put(`/debit-notes/${id}`, payload)
         toast.success('Debit note updated successfully')
       } else {
-        await api.post('/debit-notes', formData)
+        await api.post('/debit-notes', payload)
         toast.success('Debit note created and posted to ledger')
       }
       navigate('/panel/debit-notes')
@@ -268,7 +272,7 @@ export default function DebitNoteForm() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-800 uppercase mb-1.5">
                 Transaction Nature <span className="text-red-500">*</span>
@@ -280,25 +284,6 @@ export default function DebitNoteForm() {
               >
                 <option value="debit">Debit Note (Decreases Vendor Balance - Rebate)</option>
                 <option value="credit">Credit Note (Increases Vendor Balance - Premium)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-800 uppercase mb-1.5">
-                Branch <span className="text-red-500">*</span>
-              </label>
-              <select
-                required
-                value={formData.branch_id}
-                onChange={(e) => setFormData({ ...formData, branch_id: e.target.value })}
-                className="w-full rounded-xl bg-[#f4f6f9] px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0b3558]"
-              >
-                <option value="">Select Branch</option>
-                {(Array.isArray(branchesList) ? branchesList : []).map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.branch_name} ({b.branch_code})
-                  </option>
-                ))}
               </select>
             </div>
 

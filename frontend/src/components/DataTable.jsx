@@ -86,7 +86,7 @@ export function DataTable({ columns, rows, data, loading, emptyTitle, emptyMessa
               </Td>
             ))}
             {actions && (
-              <Td align="right">
+              <Td align="right" onClick={(e) => e.stopPropagation()}>
                 <div className="flex flex-wrap items-center justify-end gap-1.5">{actions.render(row)}</div>
               </Td>
             )}

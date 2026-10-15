@@ -39,7 +39,6 @@ export default function Dashboard() {
         params: {
           from_date: fromDate,
           to_date: toDate,
-          branch_id: branchId || undefined,
         },
       })
       setData(res.data.data)
@@ -53,7 +52,7 @@ export default function Dashboard() {
   const fetchInventoryKpis = async () => {
     try {
       const res = await api.get('/inventory/dashboard-kpis', {
-        params: { branch_id: branchId || undefined, from_date: fromDate, to_date: toDate },
+        params: { from_date: fromDate, to_date: toDate },
       })
       setInvKpis(res.data)
     } catch {
@@ -64,7 +63,7 @@ export default function Dashboard() {
   useEffect(() => {
     fetchDashboard()
     fetchInventoryKpis()
-  }, [branchId, fromDate, toDate])
+  }, [fromDate, toDate])
 
   if (loading && !data) {
     return (
@@ -270,7 +269,6 @@ export default function Dashboard() {
                     <td className="py-3 px-4 text-slate-600">{formatDate(s.settlement_date)}</td>
                     <td className="py-3 px-4 font-medium text-slate-900">
                       {s.vendor?.vendor_name}
-                      <span className="block text-[10px] text-slate-400 font-normal">{s.branch?.branch_name}</span>
                     </td>
                     <td className="py-3 px-4 font-semibold text-slate-800">{Number(s.final_weight_mt).toFixed(3)} MT</td>
                     <td className="py-3 px-4 text-center font-bold text-[#b37d14]">{Number(s.oil_content).toFixed(2)}%</td>

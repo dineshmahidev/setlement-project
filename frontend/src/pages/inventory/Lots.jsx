@@ -11,7 +11,7 @@ import {
   Select,
 } from '../../components'
 import { formatMoney, formatNumber, extractList, qs } from '../../utils/helpers'
-import { RefreshCw, Layers, Eye } from 'lucide-react'
+import { RefreshCw, Layers } from 'lucide-react'
 
 function useMasterData() {
   const [items, setItems] = useState([])
@@ -93,7 +93,15 @@ export default function Lots() {
   async function openView(row) {
     try {
       const res = await api.get(`/lots/${row.id}`)
-      setViewing(res.data.data || res.data)
+      const raw = res.data?.data || res.data || {}
+      const lotObj = raw.lot || raw
+      setViewing({
+        ...row,
+        ...lotObj,
+        item: lotObj.item || row.item,
+        branch: lotObj.branch || row.branch,
+        movements: raw.movements || lotObj.movements || [],
+      })
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Failed to load lot'))
     }
@@ -105,13 +113,13 @@ export default function Lots() {
     <div className="space-y-4">
       <PageHeader
         title="Lots / Stock"
-        subtitle="Lot-wise available stock with oil% grading"
+        subtitle="Lot-wise available stock and movements"
         icon={Layers}
         actions={<Button variant="secondary" onClick={load} loading={loading}><RefreshCw className="h-3.5 w-3.5" /> Refresh</Button>}
       />
 
       {/* KPI ribbon - Solid Colors */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="rounded-xl bg-[#0b3558] p-3.5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
           <span className="text-[10px] font-bold uppercase text-[#faedcd] tracking-wider block">Open Lots</span>
           <div className="text-xl font-black text-white mt-0.5">{formatNumber(tot.total_lots ?? rows.length)}</div>
@@ -123,10 +131,6 @@ export default function Lots() {
         <div className="rounded-xl bg-[#b37d14] p-3.5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
           <span className="text-[10px] font-bold uppercase text-amber-100 tracking-wider block">Stock Value</span>
           <div className="text-xl font-black text-white mt-0.5">{formatMoney(tot.total_value ?? 0)}</div>
-        </div>
-        <div className="rounded-xl bg-[#1e40af] p-3.5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
-          <span className="text-[10px] font-bold uppercase text-blue-100 tracking-wider block">Avg Oil %</span>
-          <div className="text-xl font-black text-white mt-0.5">{formatNumber(tot.avg_oil_pct ?? 0, 2)}%</div>
         </div>
       </div>
 
@@ -148,35 +152,28 @@ export default function Lots() {
         rowKey="id"
         emptyTitle="No open lots"
         emptyMessage="Lots appear once you confirm an inward entry."
+        onRowClick={(r) => openView(r)}
         columns={[
           { key: 'lot_number', label: 'Lot No', render: (r) => <span className="font-mono text-[11px] font-bold text-[#0B1A2D]">{r.lot_number}</span> },
           { key: 'item', label: 'Item', render: (r) => r.item?.name || `#${r.item_id}` },
           { key: 'branch', label: 'Godown', render: (r) => r.branch?.branch_name || `#${r.branch_id}` },
           { key: 'oil_pct', label: 'Oil %', align: 'right', render: (r) => r.oil_pct != null ? formatNumber(r.oil_pct, 2) : '—' },
-          { key: 'grade', label: 'Grade', render: (r) => r.grade?.name || '—' },
           { key: 'available_qty', label: 'Available', align: 'right', render: (r) => <span className="font-extrabold text-emerald-800">{formatNumber(r.available_qty)}</span> },
           { key: 'stock_value', label: 'Value', align: 'right', render: (r) => formatMoney(r.stock_value) },
-          {
-            key: 'actions',
-            label: 'Actions',
-            align: 'right',
-            render: (r) => <Button size="sm" variant="secondary" onClick={() => openView(r)}><Eye className="h-3 w-3" /> View</Button>,
-          },
         ]}
       />
 
       <Modal open={Boolean(viewing)} onClose={() => setViewing(null)} title={`Lot ${viewing?.lot_number || ''}`} size="lg">
         {viewing && (
           <div className="space-y-3 text-xs">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div><span className="text-slate-500">Item</span><div className="font-bold">{viewing.item?.name || '—'}</div></div>
-              <div><span className="text-slate-500">Godown</span><div className="font-bold">{viewing.branch?.branch_name || '—'}</div></div>
-              <div><span className="text-slate-500">Oil %</span><div className="font-bold">{viewing.oil_pct ?? '—'}</div></div>
-              <div><span className="text-slate-500">Grade</span><div className="font-bold">{viewing.grade?.name || '—'}</div></div>
-              <div><span className="text-slate-500">Received</span><div className="font-bold">{formatNumber(viewing.received_qty)}</div></div>
-              <div><span className="text-slate-500">Issued</span><div className="font-bold">{formatNumber(viewing.issued_qty)}</div></div>
-              <div><span className="text-slate-500">Available</span><div className="font-bold text-emerald-800">{formatNumber(viewing.available_qty)}</div></div>
-              <div><span className="text-slate-500">Value</span><div className="font-bold">{formatMoney(viewing.stock_value)}</div></div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50/70 p-3 rounded-lg border border-slate-100">
+              <div><span className="text-slate-500 text-[11px] block font-medium">Item</span><div className="font-bold text-slate-900 mt-0.5">{viewing.item?.name || '—'}</div></div>
+              <div><span className="text-slate-500 text-[11px] block font-medium">Godown</span><div className="font-bold text-slate-900 mt-0.5">{viewing.branch?.branch_name || '—'}</div></div>
+              <div><span className="text-slate-500 text-[11px] block font-medium">Oil %</span><div className="font-bold text-slate-900 mt-0.5">{viewing.oil_pct != null && viewing.oil_pct !== '' ? `${formatNumber(viewing.oil_pct, 2)}%` : '—'}</div></div>
+              <div><span className="text-slate-500 text-[11px] block font-medium">Stock Value</span><div className="font-bold text-slate-900 mt-0.5">{formatMoney(viewing.stock_value)}</div></div>
+              <div><span className="text-slate-500 text-[11px] block font-medium">Received</span><div className="font-bold text-slate-900 mt-0.5">{formatNumber(viewing.received_qty)} MT</div></div>
+              <div><span className="text-slate-500 text-[11px] block font-medium">Issued</span><div className="font-bold text-slate-900 mt-0.5">{formatNumber(viewing.issued_qty)} MT</div></div>
+              <div><span className="text-slate-500 text-[11px] block font-medium">Available</span><div className="font-bold text-emerald-800 mt-0.5">{formatNumber(viewing.available_qty)} MT</div></div>
             </div>
             {(viewing.movements || []).length > 0 && (
               <div>
