@@ -289,31 +289,19 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
                   </div>
                   <div className="flex justify-between px-2 py-0.5">
                     <span>FFA</span>
-                    <span>{settlement.ffa ? Number(settlement.ffa).toFixed(2) : '-'}</span>
+                    <span>{settlement.ffa ? (!isNaN(Number(settlement.ffa)) && settlement.ffa !== '' ? Number(settlement.ffa).toFixed(2) : settlement.ffa) : '-'}</span>
                   </div>
                   <div className="flex justify-between px-2 py-0.5">
                     <span>SS (Sand Silica)</span>
-                    <span>{settlement.ss ? Number(settlement.ss).toFixed(2) : '-'}</span>
+                    <span>{settlement.ss ? (!isNaN(Number(settlement.ss)) && settlement.ss !== '' ? Number(settlement.ss).toFixed(2) : settlement.ss) : '-'}</span>
                   </div>
                   <div className="flex justify-between px-2 py-0.5">
                     <span>Fibre</span>
-                    <span>{settlement.fibre ? Number(settlement.fibre).toFixed(2) : '-'}</span>
+                    <span>{settlement.fibre ? (!isNaN(Number(settlement.fibre)) && settlement.fibre !== '' ? Number(settlement.fibre).toFixed(2) : settlement.fibre) : '-'}</span>
                   </div>
                   <div className="flex justify-between px-2 py-0.5">
                     <span>Moisture</span>
-                    <span>{settlement.moisture ? Number(settlement.moisture).toFixed(2) : '-'}</span>
-                  </div>
-                  <div className="flex justify-between px-2 py-0.5">
-                    <span>IV</span>
-                    <span>{settlement.iv ? Number(settlement.iv).toFixed(3) : '-'}</span>
-                  </div>
-                  <div className="flex justify-between px-2 py-0.5">
-                    <span>Calcium</span>
-                    <span>{settlement.calcium ? Number(settlement.calcium).toFixed(2) : '0'}</span>
-                  </div>
-                  <div className="flex justify-between px-2 py-0.5">
-                    <span>Protein</span>
-                    <span>{settlement.protein ? Number(settlement.protein).toFixed(2) : '0'}</span>
+                    <span>{settlement.moisture ? (!isNaN(Number(settlement.moisture)) && settlement.moisture !== '' ? Number(settlement.moisture).toFixed(2) : settlement.moisture) : '-'}</span>
                   </div>
                 </div>
               </div>
@@ -429,7 +417,7 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
                   <tr>
                     <th className="p-1 text-center w-10 border-r border-slate-300">S.No</th>
                     <th className="p-1 text-left border-r border-slate-300">Particulars</th>
-                    <th className="p-1 text-right w-28">Amount</th>
+                    <th className="p-1 text-right w-28">Amount (Rs.)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -440,7 +428,7 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
                         ? 'Credit (Oil Content & Quality Bonus / Premium Rate Difference)' 
                         : 'Rebate (Oil Content & Quality Adjustment Difference)'}
                     </td>
-                    <td className="p-1 text-right font-black">{Number(rebateAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    <td className="p-1 text-right font-black">Rs. {Number(rebateAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                   </tr>
                 </tbody>
               </table>
@@ -451,23 +439,23 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
                 <div className="border border-slate-300 divide-y divide-slate-200">
                   <div className="flex justify-between px-2 py-0.5 font-bold">
                     <span>Party Invoice</span>
-                    <span>{Number(invoiceValue).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span>Rs. {Number(invoiceValue).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between px-2 py-0.5">
                     <span>CGST</span>
-                    <span>{Number(invCgst).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span>Rs. {Number(invCgst).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between px-2 py-0.5">
                     <span>SGST</span>
-                    <span>{Number(invSgst).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span>Rs. {Number(invSgst).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between px-2 py-0.5">
                     <span>IGST</span>
-                    <span>{Number(invIgst).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span>Rs. {Number(invIgst).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between px-2 py-0.5 bg-[#fdfbf7] font-black text-[#0b3558]">
                     <span>Total Party Invoice</span>
-                    <span>{Number(invTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span>Rs. {Number(invTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
 
@@ -475,23 +463,23 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
                 <div className="border border-slate-300 divide-y divide-slate-200">
                   <div className="flex justify-between px-2 py-0.5 bg-[#fdfbf7] font-bold">
                     <span>{isCredit ? 'Total (Credit)' : 'Total (Debit)'}</span>
-                    <span>{Number(rebateAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span>Rs. {Number(rebateAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between px-2 py-0.5">
                     <span>CGST</span>
-                    <span>{Number(rebateCgst).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span>Rs. {Number(rebateCgst).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between px-2 py-0.5">
                     <span>SGST</span>
-                    <span>{Number(rebateSgst).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span>Rs. {Number(rebateSgst).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between px-2 py-0.5">
                     <span>IGST</span>
-                    <span>{Number(rebateIgst).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span>Rs. {Number(rebateIgst).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between px-2 py-1 bg-[#faedcd] text-[#0b3558] font-black">
                     <span>Total</span>
-                    <span>₹{Number(rebateTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span>Rs. {Number(rebateTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               </div>

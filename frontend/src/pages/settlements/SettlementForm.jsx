@@ -912,29 +912,6 @@ export default function SettlementForm() {
                 />
               </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">IV</label>
-                <input
-                  type="number"
-                  step="0.001"
-                  value={formData.iv ?? ''}
-                  onChange={(e) => setFormData({ ...formData, iv: e.target.value })}
-                  placeholder="-"
-                  className="w-full rounded-xl bg-[#f4f6f9] px-3 py-2 text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0b3558]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Protein (%)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.protein ?? ''}
-                  onChange={(e) => setFormData({ ...formData, protein: e.target.value })}
-                  placeholder="-"
-                  className="w-full rounded-xl bg-[#f4f6f9] px-3 py-2 text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0b3558]"
-                />
-              </div>
             </div>
           </div>
         </div>

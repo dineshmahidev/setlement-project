@@ -26,9 +26,6 @@ const QC_FIELDS = [
   { key: 'ss', name: 'SS' },
   { key: 'fibre', name: 'Fibre' },
   { key: 'moisture', name: 'Moisture' },
-  { key: 'iv', name: 'IV' },
-  { key: 'calcium', name: 'Calcium' },
-  { key: 'protein', name: 'Protein' },
 ]
 
 function emptyForm(branchId) {

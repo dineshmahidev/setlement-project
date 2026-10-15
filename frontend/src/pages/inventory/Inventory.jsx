@@ -827,6 +827,7 @@ export function CurrentStock() {
   const [selItem, setSelItem] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [hideZeroStock, setHideZeroStock] = useState(false)
   const [exportModalOpen, setExportModalOpen] = useState(false)
   const [exportFilters, setExportFilters] = useState({
     branch_id: '',
@@ -843,9 +844,19 @@ export function CurrentStock() {
           branch_id: selBranch || branchId || undefined,
           date_from: dateFrom || undefined,
           date_to: dateTo || undefined,
+          hide_zero: hideZeroStock ? 1 : undefined,
         },
       })
       let data = Array.isArray(res.data) ? res.data : res.data.data || []
+      if (hideZeroStock) {
+        data = data.filter(
+          (r) =>
+            Math.abs(Number(r.available || 0)) > 0.0001 ||
+            Math.abs(Number(r.total_in || 0)) > 0.0001 ||
+            Math.abs(Number(r.total_out || 0)) > 0.0001 ||
+            Math.abs(Number(r.opening || 0)) > 0.0001,
+        )
+      }
       if (selItem) data = data.filter((r) => String(r.item_id) === String(selItem))
       if (search) {
         const q = search.toLowerCase()
@@ -862,7 +873,7 @@ export function CurrentStock() {
     } finally {
       setLoading(false)
     }
-  }, [branchId, selBranch, selItem, search, dateFrom, dateTo, toast])
+  }, [branchId, selBranch, selItem, search, dateFrom, dateTo, hideZeroStock, toast])
 
   useEffect(() => {
     load()
@@ -885,6 +896,7 @@ export function CurrentStock() {
       ...(p.date_from && { date_from: p.date_from }),
       ...(p.date_to && { date_to: p.date_to }),
       ...(search && { search: search }),
+      ...(hideZeroStock && { hide_zero: 1 }),
     })
     const filename = p.date_from && p.date_to
       ? `Current_Stock_${p.date_from}_to_${p.date_to}.pdf`
@@ -956,11 +968,22 @@ export function CurrentStock() {
             </button>
           ))}
         </div>
-        {Boolean(dateFrom || dateTo) && (
-          <span className="text-xs font-bold text-blue-900 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
-            {dateFrom ? formatDate(dateFrom) : 'Start'} → {dateTo ? formatDate(dateTo) : 'Present'}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {Boolean(dateFrom || dateTo) && (
+            <span className="text-xs font-bold text-blue-900 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
+              {dateFrom ? formatDate(dateFrom) : 'Start'} → {dateTo ? formatDate(dateTo) : 'Present'}
+            </span>
+          )}
+          <label className="flex items-center gap-2 cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 shadow-2xs hover:border-[#C9A227] hover:bg-amber-50 transition-all select-none">
+            <input
+              type="checkbox"
+              checked={hideZeroStock}
+              onChange={(e) => setHideZeroStock(e.target.checked)}
+              className="rounded text-[#0b3558] focus:ring-[#C9A227]"
+            />
+            <span>Hide Zero Stock</span>
+          </label>
+        </div>
       </div>
 
       {/* KPI Mini-Metrics Ribbon - Solid Colors */}
