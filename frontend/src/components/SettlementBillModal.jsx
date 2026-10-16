@@ -254,7 +254,7 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
                 </div>
                 <div className="grid grid-cols-2 px-2 py-0.5">
                   <span className="font-bold text-slate-700">Cont.Unit Rate</span>
-                  <span className="font-bold text-slate-900 text-right">{Number(settlement.contract_unit_rate || 0).toFixed(2)} {settlement.rate_basis === 'per_10kg' ? 'PP Bag' : (settlement.rate_basis === 'per_mt' ? 'Per MT' : 'Per Kg')}</span>
+                  <span className="font-bold text-slate-900 text-right">{Number(settlement.contract_unit_rate || 0).toFixed(2)}</span>
                 </div>
                 <div className="grid grid-cols-2 px-2 py-0.5">
                   <span className="font-bold text-slate-700">Final Unit Rate</span>

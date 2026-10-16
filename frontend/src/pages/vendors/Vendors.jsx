@@ -14,19 +14,24 @@ import {
   CreditCard,
   Loader2,
   CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react'
-import { Modal, PageSpinner, StatusBadge, ConfirmDialog } from '../../components'
+import { Modal, PageSpinner, StatusBadge, ConfirmDialog, Button } from '../../components'
 import { extractList } from '../../utils/helpers'
 
 export default function Vendors() {
   const [vendors, setVendors] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('active')
+  const [statusNotification, setStatusNotification] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingVendor, setEditingVendor] = useState(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [vendorToDelete, setVendorToDelete] = useState(null)
+  const [deactivatingId, setDeactivatingId] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
   const [formErrors, setFormErrors] = useState({})
   const [saving, setSaving] = useState(false)
   const [lookingUpGst, setLookingUpGst] = useState(false)
@@ -193,15 +198,72 @@ export default function Vendors() {
     }
   }
 
+  const handleToggleStatus = async (vendor, newStatus = null) => {
+    if (!vendor) return
+    const targetStatus = newStatus || (vendor.status === 'active' ? 'inactive' : 'active')
+    const actionLabel = targetStatus === 'inactive' ? 'deactivate' : 'activate'
+
+    const confirmMsg =
+      targetStatus === 'inactive'
+        ? `Are you sure you want to deactivate "${vendor.vendor_name}"?\n\nWhen inactive, this vendor and all related transactions (Settlements, Inwards, Outwards, Debit Notes, and Reports) will be hidden from active views.`
+        : `Are you sure you want to activate "${vendor.vendor_name}"?\n\nThis vendor and their records will become visible again across all screens.`
+
+    if (!window.confirm(confirmMsg)) {
+      return
+    }
+
+    setDeactivatingId(vendor.id)
+    try {
+      await api.patch(`/vendors/${vendor.id}/status`, { status: targetStatus })
+      await fetchVendors()
+      setStatusNotification({
+        type: 'success',
+        message:
+          targetStatus === 'inactive'
+            ? `Vendor "${vendor.vendor_name}" is now Inactive and hidden. To view, switch to "Inactive Vendors (Hidden)".`
+            : `Vendor "${vendor.vendor_name}" has been Re-activated and is visible.`,
+      })
+    } catch (err) {
+      alert(apiErrorMessage(err, `Failed to ${actionLabel} vendor`))
+    } finally {
+      setDeactivatingId(null)
+    }
+  }
+
+  const handleDirectDeactivate = async (vendor) => {
+    if (!vendor) return
+    setDeactivatingId(vendor.id)
+    try {
+      await api.patch(`/vendors/${vendor.id}/status`, { status: 'inactive' })
+      setDeleteConfirmOpen(false)
+      setVendorToDelete(null)
+      setDeleteError(null)
+      await fetchVendors()
+      setStatusNotification({
+        type: 'success',
+        message: `Vendor "${vendor.vendor_name}" (${vendor.vendor_code}) has been set to Inactive. All linked records are hidden.`,
+      })
+    } catch (err) {
+      alert(apiErrorMessage(err, 'Failed to set vendor inactive'))
+    } finally {
+      setDeactivatingId(null)
+    }
+  }
+
   const handleDelete = async () => {
     if (!vendorToDelete) return
+    setDeleting(true)
+    setDeleteError(null)
     try {
       await api.delete(`/vendors/${vendorToDelete.id}`)
       setDeleteConfirmOpen(false)
       setVendorToDelete(null)
       fetchVendors()
     } catch (err) {
-      alert(apiErrorMessage(err, 'Failed to delete vendor'))
+      const msg = apiErrorMessage(err, 'Failed to delete vendor')
+      setDeleteError(msg)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -235,16 +297,71 @@ export default function Vendors() {
           />
         </div>
 
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-[#fdfbf7] px-3 py-1.5 text-xs font-medium text-slate-700 focus:border-[#0b3558] focus:bg-white focus:outline-none"
-        >
-          <option value="">All Statuses</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-slate-500 font-bold whitespace-nowrap">Status:</label>
+          <div className="inline-flex rounded-lg border border-slate-200 bg-[#fdfbf7] p-0.5 text-xs">
+            <button
+              type="button"
+              onClick={() => setStatusFilter('active')}
+              className={`rounded-md px-3 py-1 font-semibold transition-colors ${
+                statusFilter === 'active'
+                  ? 'bg-[#0b3558] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Active Vendors
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('inactive')}
+              className={`rounded-md px-3 py-1 font-semibold transition-colors ${
+                statusFilter === 'inactive'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Inactive Vendors (Hidden)
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('all')}
+              className={`rounded-md px-3 py-1 font-semibold transition-colors ${
+                statusFilter === 'all'
+                  ? 'bg-slate-700 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              All
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* Status Notification Banner */}
+      {statusNotification && (
+        <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-900 shadow-xs">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+            <span>{statusNotification.message}</span>
+            {statusFilter === 'active' && (
+              <button
+                type="button"
+                onClick={() => setStatusFilter('inactive')}
+                className="ml-2 font-bold text-amber-800 underline hover:text-amber-950"
+              >
+                View Inactive Vendors &rarr;
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setStatusNotification(null)}
+            className="text-amber-600 hover:text-amber-800 font-bold ml-2 text-base leading-none"
+          >
+            &times;
+          </button>
+        </div>
+      )}
 
       {/* Table List */}
       <div className="rounded-2xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
@@ -297,7 +414,22 @@ export default function Vendors() {
                         {v.email && <div className="text-[10.5px] text-slate-400 truncate max-w-[140px]">{v.email}</div>}
                       </td>
                       <td className="py-3 px-4 text-center">
-                        <StatusBadge status={v.status} />
+                        {v.status === 'inactive' ? (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleStatus(v, 'active')}
+                            disabled={deactivatingId === v.id}
+                            className="cursor-pointer group inline-flex items-center gap-1"
+                            title="Click to re-activate vendor"
+                          >
+                            <StatusBadge status={v.status} />
+                            <span className="text-[10px] text-emerald-600 font-semibold group-hover:underline">
+                              Activate
+                            </span>
+                          </button>
+                        ) : (
+                          <StatusBadge status={v.status} />
+                        )}
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
@@ -318,10 +450,11 @@ export default function Vendors() {
                           <button
                             onClick={() => {
                               setVendorToDelete(v)
+                              setDeleteError(null)
                               setDeleteConfirmOpen(true)
                             }}
                             className="rounded-lg p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors"
-                            title="Delete vendor"
+                            title="Delete or Set Inactive"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -344,6 +477,32 @@ export default function Vendors() {
         size="lg"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Status Banner when Editing */}
+          {editingVendor && (
+            <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5">
+              <div>
+                <span className="text-xs font-bold text-slate-700 uppercase">Vendor Active Status</span>
+                <p className="text-[11px] text-slate-500">
+                  {formData.status === 'active'
+                    ? 'Active: Visible in all dropdowns, bills, settlements, and reports.'
+                    : 'Inactive: Hidden across all active dropdowns, settlements, and reports.'}
+                </p>
+              </div>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className={`rounded-lg border px-3 py-1.5 text-xs font-bold uppercase transition-colors ${
+                  formData.status === 'active'
+                    ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                    : 'border-amber-300 bg-amber-50 text-amber-800'
+                }`}
+              >
+                <option value="active">Active (Visible)</option>
+                <option value="inactive">Inactive (Hidden)</option>
+              </select>
+            </div>
+          )}
+
           {/* GSTIN Lookup Section */}
           <div className="rounded-xl border border-[#b37d14]/30 bg-[#fdfbf7] p-3.5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -604,14 +763,117 @@ export default function Vendors() {
         </form>
       </Modal>
 
-      <ConfirmDialog
+      {/* Delete / Deactivate Modal */}
+      <Modal
         open={deleteConfirmOpen}
-        onClose={() => setDeleteConfirmOpen(false)}
-        onCancel={() => setDeleteConfirmOpen(false)}
-        onConfirm={handleDelete}
-        title="Delete Vendor"
-        message={`Are you sure you want to delete vendor "${vendorToDelete?.vendor_name}" (${vendorToDelete?.vendor_code})? If this vendor has existing invoices or settlements, consider deactivating them instead.`}
-      />
+        onClose={() => {
+          if (!deleting && !deactivatingId) {
+            setDeleteConfirmOpen(false)
+            setVendorToDelete(null)
+            setDeleteError(null)
+          }
+        }}
+        title="Delete or Deactivate Vendor"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 shrink-0">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-800">
+                {vendorToDelete?.vendor_name} ({vendorToDelete?.vendor_code})
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Current Status: <span className="font-semibold uppercase text-slate-700">{vendorToDelete?.status}</span>
+              </p>
+            </div>
+          </div>
+
+          {deleteError ? (
+            <div className="rounded-xl border border-red-200 bg-red-50/80 p-3 text-xs text-red-700 space-y-1">
+              <p className="font-bold flex items-center gap-1.5">
+                <AlertTriangle className="w-4 h-4 text-red-600" />
+                Permanent deletion blocked
+              </p>
+              <p className="text-[11.5px] leading-relaxed">{deleteError}</p>
+              <p className="text-[11px] text-red-800 font-semibold pt-1 border-t border-red-200/60">
+                Click <strong>"Set Inactive (Hide Vendor)"</strong> below to safely hide this vendor and all their transactions across all screens.
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600 space-y-1.5">
+              <p className="leading-relaxed">
+                Vendors linked to financial records (Inwards, Outwards, Settlements, Invoices, Debit Notes) cannot be permanently deleted to preserve ledger integrity.
+              </p>
+              <p className="text-[11px] text-slate-500">
+                <strong>Setting inactive</strong> is the recommended action: it hides the vendor and all their transactions from all active dropdowns, bill lists, and reports.
+              </p>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setDeleteConfirmOpen(false)
+                setVendorToDelete(null)
+                setDeleteError(null)
+              }}
+              disabled={deleting || Boolean(deactivatingId)}
+            >
+              Cancel
+            </Button>
+            <div className="flex items-center gap-2">
+              {vendorToDelete?.status === 'inactive' ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleToggleStatus(vendorToDelete, 'active')
+                    setDeleteConfirmOpen(false)
+                    setVendorToDelete(null)
+                  }}
+                  disabled={deleting || Boolean(deactivatingId)}
+                  className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                >
+                  {deactivatingId === vendorToDelete?.id ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                  )}
+                  Re-activate Vendor
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleDirectDeactivate(vendorToDelete)}
+                  disabled={deleting || Boolean(deactivatingId)}
+                  className="flex items-center gap-1.5 rounded-lg bg-amber-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-amber-700 disabled:opacity-50 transition-colors"
+                >
+                  {deactivatingId === vendorToDelete?.id && (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  )}
+                  Set Inactive (Hide Records)
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting || Boolean(deactivatingId)}
+                className="flex items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-rose-700 disabled:opacity-50 transition-colors"
+              >
+                {deleting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5" />
+                )}
+                Delete Permanently
+              </button>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }
