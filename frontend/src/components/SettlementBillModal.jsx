@@ -367,6 +367,11 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
               </div>
             </div>
 
+            {/* Remarks (Positioned below Net Payable & above Debit/Credit Note) */}
+            <div className="text-[10px] text-[#0b3558] font-bold bg-[#f8fafc] border border-slate-300 p-1.5 rounded-xs">
+              <strong>Remarks:</strong> {settlement.remarks || (isCredit ? 'Auto-generated Credit Note posted to vendor ledger' : 'Auto-generated Debit Note posted to vendor ledger')}
+            </div>
+
             {/* SECTION 2: DEBIT / CREDIT NOTE */}
             <div className="space-y-2 pt-1">
               <div className="bg-[#0b3558] text-white text-center font-bold text-xs tracking-widest py-1 uppercase rounded-xs">
@@ -482,19 +487,6 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
                     <span>Rs. {Number(rebateTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
-              </div>
-
-              <div className="text-[9px] text-[#0b3558] font-bold">
-                <strong>Remarks:</strong> {(() => {
-                  const r = existingNote?.remarks || settlement.remarks
-                  if (isCredit && (!r || r.toLowerCase().includes('debit'))) {
-                    return 'Auto-generated Credit Note posted to vendor ledger'
-                  }
-                  if (!isCredit && (!r || r.toLowerCase().includes('credit'))) {
-                    return 'Auto-generated Debit Note posted to vendor ledger'
-                  }
-                  return r || `Auto-generated ${noteLabel} posted to vendor ledger`
-                })()}
               </div>
             </div>
 
