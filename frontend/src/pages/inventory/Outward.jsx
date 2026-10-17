@@ -39,45 +39,23 @@ function useMasterData() {
     Promise.all([
       api.get('/vendors?per_page=200').catch(() => ({ data: [] })),
       api.get('/items?all=true').catch(() => api.get('/items?per_page=200').catch(() => ({ data: [] }))),
-      api.get('/products?all=true').catch(() => api.get('/products?per_page=200').catch(() => ({ data: [] }))),
       api.get('/branches?per_page=200').catch(() => ({ data: [] })),
       api.get('/lots?per_page=500').catch(() => ({ data: [] })),
       api.get('/units?all=true').catch(() => api.get('/units').catch(() => ({ data: [] }))),
-    ]).then(([v, i, p, b, l, u]) => {
+    ]).then(([v, i, b, l, u]) => {
       setVendors(extractList(v.data ?? v))
 
       const rawItems = extractList(i.data ?? i)
-      const rawProducts = extractList(p.data ?? p)
+      const formattedItems = rawItems.map((item) => ({
+        ...item,
+        id: item.id,
+        name: item.name || item.item_name,
+        code: item.code || item.item_code,
+        unit_id: item.unit_id || item.unit?.id,
+        unit: item.unit,
+      }))
 
-      // Ensure all master items and products are accessible
-      const mergedItems = [
-        ...rawItems.map((item) => ({
-          ...item,
-          id: item.id,
-          name: item.name || item.item_name || item.product_name,
-          code: item.code || item.item_code,
-          unit_id: item.unit_id || item.unit?.id,
-          unit: item.unit,
-        })),
-        ...rawProducts
-          .filter(
-            (prod) =>
-              !rawItems.some(
-                (it) =>
-                  (it.name && it.name.toLowerCase() === (prod.product_name || prod.name || '').toLowerCase())
-              )
-          )
-          .map((prod) => ({
-            ...prod,
-            id: prod.id,
-            name: prod.product_name || prod.name,
-            code: prod.product_code || prod.code,
-            unit_id: prod.unit_id,
-            unit: prod.unit || { code: 'MT', name: 'Metric Ton' },
-          })),
-      ]
-
-      setItems(mergedItems)
+      setItems(formattedItems)
       setBranches(extractList(b.data ?? b))
       setLots(extractList(l.data ?? l))
       setUnits(extractList(u.data ?? u))

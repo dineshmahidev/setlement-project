@@ -29,7 +29,6 @@ export default function Dashboard() {
   const [error, setError] = useState('')
   const [fromDate, setFromDate] = useState(() => monthStart())
   const [toDate, setToDate] = useState(() => today())
-  const [invKpis, setInvKpis] = useState(null)
 
   const fetchDashboard = async () => {
     setLoading(true)
@@ -49,20 +48,8 @@ export default function Dashboard() {
     }
   }
 
-  const fetchInventoryKpis = async () => {
-    try {
-      const res = await api.get('/inventory/dashboard-kpis', {
-        params: { from_date: fromDate, to_date: toDate },
-      })
-      setInvKpis(res.data)
-    } catch {
-      setInvKpis(null)
-    }
-  }
-
   useEffect(() => {
     fetchDashboard()
-    fetchInventoryKpis()
   }, [fromDate, toDate])
 
   if (loading && !data) {

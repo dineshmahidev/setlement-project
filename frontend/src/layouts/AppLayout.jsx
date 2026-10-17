@@ -32,7 +32,7 @@ import {
 const SETTLEMENT_NAVIGATION = [
   { label: 'Dashboard', to: '/panel', icon: LayoutDashboard, perm: null, end: true },
   { label: 'Vendors', to: '/panel/vendors', icon: Users2, perm: 'vendors.view' },
-  { label: 'Items', to: '/panel/products', icon: Package, perm: 'products.view' },
+  { label: 'Products', to: '/panel/products', icon: Package, perm: 'products.view' },
   { label: 'Settlements', to: '/panel/settlements', icon: Scale, perm: 'settlements.view' },
   { label: 'Vendor Ledger', to: '/panel/vendor-ledger', icon: BookOpen, perm: 'vendors.view' },
 ]

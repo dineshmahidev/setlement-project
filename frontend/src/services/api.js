@@ -26,7 +26,7 @@ function resolveBaseUrl() {
   if (local) {
     const localBase = trimSlash(import.meta.env.VITE_LOCAL_API_URL)
     if (localBase) return localBase
-    return `http://${hostname || '127.0.0.1'}:8000/api`
+    return `http://${hostname || '127.0.0.1'}:8001/api`
   }
 
   return PRODUCTION_API
