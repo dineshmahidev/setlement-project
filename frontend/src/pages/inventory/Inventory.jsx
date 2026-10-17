@@ -815,7 +815,7 @@ export function CurrentStock() {
   const { branches, items } = useMasters()
   const [selBranch, setSelBranch] = useState('')
   const [selItem, setSelItem] = useState('')
-  const [hideZeroStock, setHideZeroStock] = useState(false)
+  const [hideZeroStock, setHideZeroStock] = useState(true)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -828,13 +828,7 @@ export function CurrentStock() {
       })
       let data = Array.isArray(res.data) ? res.data : res.data.data || []
       if (hideZeroStock) {
-        data = data.filter(
-          (r) =>
-            Math.abs(Number(r.available || 0)) > 0.0001 ||
-            Math.abs(Number(r.total_in || 0)) > 0.0001 ||
-            Math.abs(Number(r.total_out || 0)) > 0.0001 ||
-            Math.abs(Number(r.opening || 0)) > 0.0001,
-        )
+        data = data.filter((r) => Math.abs(Number(r.available || 0)) > 0.0001)
       }
       if (selItem) data = data.filter((r) => String(r.item_id) === String(selItem))
       if (search) {
@@ -963,15 +957,15 @@ export function CurrentStock() {
             ))}
           </Select>
         </div>
-        <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 shadow-2xs hover:border-[#C9A227] hover:bg-amber-50 transition-all select-none">
-          <input
-            type="checkbox"
-            checked={hideZeroStock}
-            onChange={(e) => setHideZeroStock(e.target.checked)}
-            className="rounded text-[#0b3558] focus:ring-[#C9A227]"
-          />
-          <span>Hide Zero Stock</span>
-        </label>
+        <div className="w-48">
+          <Select
+            value={hideZeroStock ? 'hide' : 'show'}
+            onChange={(e) => setHideZeroStock(e.target.value === 'hide')}
+          >
+            <option value="hide">Hide Zero Stock</option>
+            <option value="show">Show Zero Stock</option>
+          </Select>
+        </div>
       </div>
 
       <DataTable

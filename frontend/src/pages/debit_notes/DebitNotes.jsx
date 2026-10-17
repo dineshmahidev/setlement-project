@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import api, { apiErrorMessage, openPdf } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import { Plus, Search, FileText, Printer, Edit3, Ban, Calendar, Building } from 'lucide-react'
@@ -8,10 +8,12 @@ import { extractList, formatDate } from '../../utils/helpers'
 
 export default function DebitNotes() {
   const { branchId } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [debitNotes, setDebitNotes] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [typeFilter, setTypeFilter] = useState(searchParams.get('type') || '')
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
 
@@ -28,6 +30,7 @@ export default function DebitNotes() {
         params: {
           search: search || undefined,
           status: statusFilter || undefined,
+          transaction_type: typeFilter || undefined,
           from_date: fromDate || undefined,
           to_date: toDate || undefined,
         },
@@ -43,7 +46,17 @@ export default function DebitNotes() {
 
   useEffect(() => {
     fetchDebitNotes()
-  }, [search, statusFilter, fromDate, toDate])
+  }, [search, statusFilter, typeFilter, fromDate, toDate])
+
+  useEffect(() => {
+    const params = {}
+    searchParams.forEach((value, key) => {
+      if (value) params[key] = value
+    })
+    if (typeFilter) params.type = typeFilter
+    else delete params.type
+    setSearchParams(params, { replace: true })
+  }, [typeFilter])
 
   const handlePrintPdf = async (dn) => {
     try {
@@ -119,6 +132,16 @@ export default function DebitNotes() {
             onChange={(e) => setToDate(e.target.value)}
             className="rounded-lg border border-slate-200 bg-[#fdfbf7] px-2.5 py-1.5 text-xs text-slate-700"
           />
+
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="rounded-lg border border-slate-200 bg-[#fdfbf7] px-3 py-1.5 text-xs font-medium text-slate-700 focus:border-[#0b3558] focus:bg-white focus:outline-none"
+          >
+            <option value="">All Types</option>
+            <option value="debit">Debit</option>
+            <option value="credit">Credit</option>
+          </select>
 
           <select
             value={statusFilter}

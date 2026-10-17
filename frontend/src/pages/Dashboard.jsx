@@ -139,7 +139,7 @@ export default function Dashboard() {
 
         {/* Card 2: Total Debit */}
         <Link
-          to="/panel/debit-notes"
+          to="/panel/debit-notes?type=debit"
           className="group rounded-2xl bg-amber-600 p-5 text-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between cursor-pointer border border-amber-500/40"
         >
           <div>
@@ -171,7 +171,7 @@ export default function Dashboard() {
 
         {/* Card 3: Total Credit */}
         <Link
-          to="/panel/debit-notes"
+          to="/panel/debit-notes?type=credit"
           className="group rounded-2xl bg-emerald-600 p-5 text-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between cursor-pointer border border-emerald-500/40"
         >
           <div>

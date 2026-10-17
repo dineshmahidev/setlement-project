@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import api, { apiErrorMessage } from '../../services/api'
+import api, { apiErrorMessage, openPdf } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import {
@@ -11,7 +11,7 @@ import {
   Select,
 } from '../../components'
 import { formatMoney, formatNumber, extractList, qs } from '../../utils/helpers'
-import { RefreshCw, Layers } from 'lucide-react'
+import { RefreshCw, Layers, FileText, X } from 'lucide-react'
 
 function useMasterData() {
   const [items, setItems] = useState([])
@@ -38,6 +38,52 @@ function useMasterData() {
   return { items, branches }
 }
 
+function computeDateRange(preset) {
+  const now = new Date()
+  const toYmd = (d) => {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+
+  if (preset === 'today') {
+    const dStr = toYmd(now)
+    return { from: dStr, to: dStr }
+  }
+  if (preset === 'yesterday') {
+    const yest = new Date(now)
+    yest.setDate(yest.getDate() - 1)
+    return { from: toYmd(yest), to: toYmd(yest) }
+  }
+  if (preset === 'this_week') {
+    const d = new Date(now)
+    const day = d.getDay()
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1)
+    const monday = new Date(d.setDate(diff))
+    return { from: toYmd(monday), to: toYmd(now) }
+  }
+  if (preset === 'this_month') {
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
+    return { from: toYmd(firstDay), to: toYmd(now) }
+  }
+  if (preset === 'last_month') {
+    const firstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const lastDay = new Date(now.getFullYear(), now.getMonth(), 0)
+    return { from: toYmd(firstDay), to: toYmd(lastDay) }
+  }
+  if (preset === 'this_fy') {
+    const y = now.getFullYear()
+    const m = now.getMonth() + 1
+    const fyStartYear = m >= 4 ? y : y - 1
+    return { from: `${fyStartYear}-04-01`, to: `${fyStartYear + 1}-03-31` }
+  }
+  if (preset === 'all') {
+    return { from: '', to: '' }
+  }
+  return null
+}
+
 export default function Lots() {
   const toast = useToast()
   const { branchId } = useAuth()
@@ -49,6 +95,41 @@ export default function Lots() {
   const [selItem, setSelItem] = useState('')
   const [selBranch, setSelBranch] = useState('')
   const [viewing, setViewing] = useState(null)
+  const [duration, setDuration] = useState('all')
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
+
+  function handleDurationChange(preset) {
+    setDuration(preset)
+    if (preset !== 'custom') {
+      const range = computeDateRange(preset)
+      if (range) {
+        setFromDate(range.from)
+        setToDate(range.to)
+      }
+    }
+  }
+
+  function resetFilters() {
+    setDuration('all')
+    setFromDate('')
+    setToDate('')
+    setSelItem('')
+    setSelBranch('')
+    setSearch('')
+  }
+
+  function handleExportPdf() {
+    const params = {
+      date_from: fromDate || undefined,
+      date_to: toDate || undefined,
+      item_id: selItem || undefined,
+      branch_id: selBranch || branchId || undefined,
+      search: search || undefined,
+    }
+    const fileSuffix = fromDate && toDate ? `${fromDate}_to_${toDate}` : (fromDate ? `from_${fromDate}` : (toDate ? `to_${toDate}` : 'all'))
+    openPdf(`/lots/pdf${qs(params)}`, `Lots_Stock_Report_${fileSuffix}.pdf`)
+  }
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -94,7 +175,20 @@ export default function Lots() {
         title="Lots / Stock"
         subtitle="Lot-wise available stock and movements"
         icon={Layers}
-        actions={<Button variant="secondary" onClick={load} loading={loading}><RefreshCw className="h-3.5 w-3.5" /> Refresh</Button>}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleExportPdf}
+              className="border-indigo-200 bg-indigo-50/70 text-indigo-700 hover:bg-indigo-100 text-xs font-bold shadow-xs"
+              title="Download / Print Lot-wise Stock Report PDF for selected duration"
+            >
+              <FileText className="h-3.5 w-3.5 mr-1.5 text-indigo-600" /> Get PDF Report
+            </Button>
+            <Button variant="secondary" onClick={load} loading={loading}><RefreshCw className="h-3.5 w-3.5" /> Refresh</Button>
+          </div>
+        }
       />
 
       {/* KPI ribbon - Solid Colors */}
@@ -123,6 +217,28 @@ export default function Lots() {
           <option value="">All godowns</option>
           {branches.map((b) => <option key={b.id} value={b.id}>{b.branch_name || b.name}</option>)}
         </Select>
+        <Select value={duration} onChange={(e) => handleDurationChange(e.target.value)} className="max-w-[180px]">
+          <option value="all">All Dates</option>
+          <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
+          <option value="this_week">This Week</option>
+          <option value="this_month">This Month</option>
+          <option value="last_month">Last Month</option>
+          <option value="this_fy">This Financial Year</option>
+          <option value="custom">Custom Range</option>
+        </Select>
+        <Input type="date" value={fromDate} onChange={(e) => { setFromDate(e.target.value); setDuration('custom') }} className="max-w-[160px]" aria-label="From date" />
+        <span className="text-xs text-slate-400">to</span>
+        <Input type="date" value={toDate} onChange={(e) => { setToDate(e.target.value); setDuration('custom') }} className="max-w-[160px]" aria-label="To date" />
+        {(duration !== 'all' || fromDate || toDate || search || selItem || selBranch) && (
+          <Button
+            variant="ghost"
+            onClick={resetFilters}
+            className="text-xs font-semibold text-slate-500 hover:text-slate-800"
+          >
+            <X className="h-3.5 w-3.5 mr-1" /> Reset
+          </Button>
+        )}
       </div>
 
       <DataTable
