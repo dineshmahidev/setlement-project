@@ -1,6 +1,7 @@
 import { cloneElement, isValidElement, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Seo from '../website/components/Seo'
 
 // Shriee Laxmi Group Corporate Website Imports
 import WebsiteLayout from '../website/layouts/WebsiteLayout'
@@ -214,6 +215,7 @@ function CompanyShell({ children }) {
 export default function AppRoutes() {
   return (
     <BrowserRouter>
+      <Seo />
       <Routes>
         {/* SHRIEE LAXMI GROUP Corporate Website Routes */}
         <Route path="/" element={<WebsiteLayout />}>

@@ -84,6 +84,7 @@ export default function Navbar({ onOpenEnquiry }) {
             <div className="hidden md:flex items-center gap-2.5">
               <Link
                 to="/panel/login"
+                rel="nofollow"
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200/90 bg-white text-slate-800 text-xs font-extrabold hover:border-[#C9A227] hover:text-[#0B1A2D] shadow-2xs transition-all"
                 title="Management App Portal"
               >
@@ -191,6 +192,7 @@ export default function Navbar({ onOpenEnquiry }) {
 
               <Link
                 to="/panel/login"
+                rel="nofollow"
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 font-extrabold text-xs hover:border-[#C9A227] hover:text-[#0B1A2D] transition-colors"
               >

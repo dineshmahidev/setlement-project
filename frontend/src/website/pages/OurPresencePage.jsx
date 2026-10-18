@@ -4,6 +4,16 @@ import api from '../../services/api'
 
 const DEFAULT_LOCATIONS = [
   {
+    id: 'laxmi-kng',
+    slug: 'laxmi-traders-kangeyam',
+    tag: 'PROCESSING PLANT',
+    name: 'LAXMI TRADERS — Kangeyam',
+    address: 'Kangeyam, Tiruchirappalli District, Tamil Nadu',
+    gstin: '33BWLKP6363A3ZN',
+    mapUrl: 'https://maps.google.com/maps?q=Kangeyam,%20Tiruchirappalli&t=&z=13&ie=UTF8&iwloc=&output=embed',
+    directMapLink: 'https://www.google.com/maps/search/?api=1&query=Kangeyam,+Tiruchirappalli',
+  },
+  {
     id: 'laxmi',
     slug: 'laxmi-traders',
     tag: 'TRADING HUB',
@@ -77,7 +87,7 @@ export default function OurPresencePage() {
           </span>
           <h1 className="text-4xl sm:text-6xl font-black text-[#071426]">Our Presence</h1>
           <p className="text-sm sm:text-base text-slate-600 max-w-2xl leading-relaxed">
-            Headquartered in Tiruchirappalli, Tamil Nadu, with dedicated trading hubs in Ariyamangalam and Manapparai / Usilampatti.
+            Headquartered in Tiruchirappalli, Tamil Nadu, with dedicated hubs in Kangeyam, Ariyamangalam and Manapparai / Usilampatti.
           </p>
         </div>
       </section>
@@ -86,7 +96,7 @@ export default function OurPresencePage() {
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {LOCATIONS.map((loc) => {
+            {locations.map((loc) => {
               const isSelected = selectedHub.id === loc.id
               return (
                 <div

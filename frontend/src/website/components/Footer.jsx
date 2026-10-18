@@ -47,6 +47,7 @@ export default function Footer({ onOpenEnquiry }) {
               </button>
               <Link
                 to="/panel/login"
+                rel="nofollow"
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-700 bg-slate-900/80 text-xs font-semibold text-slate-300 hover:text-white hover:border-[#C9A227]/40 transition-colors"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-[#C9A227]" />
@@ -159,7 +160,7 @@ export default function Footer({ onOpenEnquiry }) {
             <Link to="/contact" className="hover:text-white transition-colors">
               Terms & Conditions
             </Link>
-            <Link to="/panel/login" className="text-[#E0BD55] hover:underline">
+            <Link to="/panel/login" rel="nofollow" className="text-[#E0BD55] hover:underline">
               Management Portal
             </Link>
           </div>

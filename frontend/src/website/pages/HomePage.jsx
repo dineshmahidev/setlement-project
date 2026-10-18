@@ -623,7 +623,7 @@ export default function HomePage() {
                       Building Trust. Growing Together.
                     </h3>
                     <p className="text-xs text-slate-600 mt-1 max-w-lg">
-                      Headquartered in Tiruchirappalli — connecting suppliers and regional markets across Tamil Nadu.
+                      Headquartered in Tiruchirappalli, with hubs in Kangeyam — connecting suppliers and regional markets across Tamil Nadu.
                     </p>
                   </div>
 
@@ -662,7 +662,7 @@ export default function HomePage() {
                     HEADQUARTERED IN TAMIL NADU
                   </span>
                   <p className="text-xs text-slate-700 mt-0.5">
-                    Central distribution & sourcing hubs in Tiruchirappalli
+                    Central distribution & sourcing hubs in Kangeyam & Tiruchirappalli
                   </p>
                 </div>
               </div>
@@ -682,7 +682,7 @@ export default function HomePage() {
               </h2>
 
               <p className="text-slate-600 text-sm leading-relaxed">
-                Shriee Laxmi Group is a growing business group based in Tiruchirappalli, Tamil Nadu. Our businesses operate across trading and feed-related segments, with a common focus on dependable supply, customer relationships and sustainable growth.
+                Shriee Laxmi Group is a growing business group based in Kangeyam and Tiruchirappalli, Tamil Nadu. Our businesses operate across trading and feed-related segments, with a common focus on dependable supply, customer relationships and sustainable growth.
               </p>
 
               {/* 3 Highlights */}
