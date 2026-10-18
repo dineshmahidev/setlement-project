@@ -63,6 +63,18 @@ export default function Companies() {
             ),
         },
         { key: 'status', label: 'Status', status: true },
+        {
+          key: 'sort_order',
+          label: 'Order',
+          render: (r) => (
+            <span className="inline-flex items-center gap-1 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-xs font-bold text-slate-600">
+              {r.sort_order ?? '—'}
+              {Number(r.sort_order) === 1 && (
+                <span className="rounded bg-amber-100 px-1 text-[9px] font-black uppercase text-amber-800">Default</span>
+              )}
+            </span>
+          ),
+        },
       ]}
       fields={[
         { name: 'code', label: 'Company Code', required: true, disabledOnEdit: true },
@@ -130,6 +142,12 @@ export default function Companies() {
           type: 'select',
           default: 'ACTIVE',
           options: STATUSES,
+        },
+        {
+          name: 'sort_order',
+          label: 'Switch Order / Default (1 = first in switcher = default company)',
+          type: 'number',
+          hint: 'Companies are listed in the navbar switcher by this number. Order 1 becomes the default company on login.',
         },
       ]}
       transformOut={(form) => ({ ...form })}

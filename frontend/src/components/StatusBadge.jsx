@@ -6,6 +6,8 @@ const styles = {
   posted: 'bg-[#071426] text-[#E0BD55] border-[#071426] font-extrabold shadow-2xs',
   active: 'bg-emerald-50 text-emerald-800 border-emerald-300/80 font-bold',
   cancelled: 'bg-rose-50 text-rose-800 border-rose-200 font-bold',
+  debit: 'bg-amber-50 text-amber-900 border-amber-300 font-bold',
+  credit: 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold',
   inactive: 'bg-slate-100 text-slate-600 border-slate-200 font-semibold',
   archived: 'bg-slate-100 text-slate-600 border-slate-200 font-semibold',
   'out of stock': 'bg-rose-50/90 text-rose-700 border-rose-200/90 font-black shadow-2xs',

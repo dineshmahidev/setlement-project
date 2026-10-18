@@ -38,7 +38,6 @@ export default function Vendors() {
   const [gstFeedback, setGstFeedback] = useState('')
 
   const [formData, setFormData] = useState({
-    vendor_code: '',
     vendor_name: '',
     business_name: '',
     address: '',
@@ -84,7 +83,6 @@ export default function Vendors() {
   const openCreateModal = () => {
     setEditingVendor(null)
     setFormData({
-      vendor_code: 'VEND-' + Math.floor(100 + Math.random() * 900),
       vendor_name: '',
       business_name: '',
       address: '',
@@ -112,7 +110,6 @@ export default function Vendors() {
   const openEditModal = (vendor) => {
     setEditingVendor(vendor)
     setFormData({
-      vendor_code: vendor.vendor_code || '',
       vendor_name: vendor.vendor_name || '',
       business_name: vendor.business_name || '',
       address: vendor.address || '',
@@ -378,7 +375,6 @@ export default function Vendors() {
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-[#0e4470] bg-[#0b3558] text-[11px] font-semibold uppercase tracking-wider text-white">
-                  <th className="py-3.5 px-4">Code</th>
                   <th className="py-3.5 px-4">Vendor & Trade Name</th>
                   <th className="py-3.5 px-4">Location</th>
                   <th className="py-3.5 px-4">Tax IDs (GST / PAN)</th>
@@ -391,7 +387,6 @@ export default function Vendors() {
                 {(Array.isArray(vendors) ? vendors : []).map((v) => {
                   return (
                     <tr key={v.id} className="hover:bg-[#fbf5ea]/60 transition-colors">
-                      <td className="py-3 px-4 font-mono font-bold text-[#0b3558]">{v.vendor_code}</td>
                       <td className="py-3 px-4">
                         <span className="font-bold text-slate-900 block">{v.vendor_name}</span>
                         {v.business_name && (
@@ -532,36 +527,19 @@ export default function Vendors() {
             {gstFeedback && <p className="text-[11px] text-[#0b3558] mt-2 font-medium">{gstFeedback}</p>}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
-                Vendor Code <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.vendor_code}
-                onChange={(e) => setFormData({ ...formData, vendor_code: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none"
-                placeholder="e.g. VEND-001"
-              />
-              {formErrors.vendor_code && <p className="text-[11px] text-red-500 mt-1">{formErrors.vendor_code[0]}</p>}
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
-                Vendor / Company Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.vendor_name}
-                onChange={(e) => setFormData({ ...formData, vendor_name: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none font-semibold"
-                placeholder="e.g. S.K. Sathana Traders"
-              />
-              {formErrors.vendor_name && <p className="text-[11px] text-red-500 mt-1">{formErrors.vendor_name[0]}</p>}
-            </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              Vendor / Company Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.vendor_name}
+              onChange={(e) => setFormData({ ...formData, vendor_name: e.target.value })}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none font-semibold"
+              placeholder="e.g. S.K. Sathana Traders"
+            />
+            {formErrors.vendor_name && <p className="text-[11px] text-red-500 mt-1">{formErrors.vendor_name[0]}</p>}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">

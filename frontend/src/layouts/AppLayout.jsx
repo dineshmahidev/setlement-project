@@ -50,12 +50,12 @@ const INVENTORY_NAVIGATION = [
   { id: 'inventory-overview', label: 'Inventory Dashboard', to: '/panel/inventory', icon: Package, perm: 'inventory.view', end: true },
   { id: 'inward', label: 'Inward (Receipt)', to: '/panel/inventory/inward', icon: PlusCircle, perm: 'inventory.view' },
   { id: 'outward', label: 'Outward / Dispatch', to: '/panel/inventory/outward', icon: MinusCircle, perm: 'inventory.view' },
-  { id: 'lots', label: 'Lots / Stock', to: '/panel/inventory/lots', icon: Boxes, perm: 'inventory.view' },
-  { id: 'items', label: 'Items', to: '/panel/inventory/items', icon: Package, perm: 'inventory.view' },
-  { id: 'units', label: 'Units', to: '/panel/inventory/units', icon: Scale, perm: 'inventory.view' },
+  { id: 'lots', label: 'Lotwise Stock', to: '/panel/inventory/lots', icon: Boxes, perm: 'inventory.view' },
   { id: 'current-stock', label: 'Current Items Stock', to: '/panel/inventory?tab=current-stock', icon: Boxes, perm: 'inventory.view' },
   { id: 'transfer', label: 'Stock Transfer', to: '/panel/inventory?tab=transfer', icon: ArrowRightLeft, perm: 'inventory.view' },
   { id: 'ledger', label: 'Stock Ledger', to: '/panel/inventory?tab=ledger', icon: BookOpen, perm: 'inventory.view' },
+  { id: 'items', label: 'Items', to: '/panel/inventory/items', icon: Package, perm: 'inventory.view' },
+  { id: 'units', label: 'Units', to: '/panel/inventory/units', icon: Scale, perm: 'inventory.view' },
 ]
 
 function SuperAdminBranchSelector({ branches, branchId, setBranchId, user, companyName = 'SHRIEE LAXMI GROUP' }) {

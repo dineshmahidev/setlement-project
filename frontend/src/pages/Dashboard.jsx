@@ -18,7 +18,7 @@ import {
   FileSpreadsheet,
   Package,
 } from 'lucide-react'
-import { PageSpinner, StatusBadge } from '../components'
+import { PageSpinner } from '../components'
 
 import { today, monthStart, formatDate, formatMoney } from '../utils/helpers'
 
@@ -241,7 +241,6 @@ export default function Dashboard() {
                 <th className="py-3 px-4 text-center">Oil %</th>
                 <th className="py-3 px-4 text-right">Bran Value</th>
                 <th className="py-3 px-4 text-right">Net Payable</th>
-                <th className="py-3 px-4 text-center">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -265,14 +264,11 @@ export default function Dashboard() {
                     <td className="py-3 px-4 text-right font-bold text-[#0b3558]">
                       ₹{Number(s.net_payable).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                     </td>
-                    <td className="py-3 px-4 text-center">
-                      <StatusBadge status={s.status} />
-                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={8} className="py-6 text-center text-xs text-slate-400">
+                  <td colSpan={7} className="py-6 text-center text-xs text-slate-400">
                     No settlement records found. Click "New Settlement Bill" to create one.
                   </td>
                 </tr>

@@ -3,14 +3,6 @@ import api from '../../services/api'
 import CrudPage from '../masters/CrudPage'
 import { useAuth } from '../../context/AuthContext'
 
-const MATERIAL_TYPES = [
-  { value: 'Raw', label: 'Raw' },
-  { value: 'Boiled', label: 'Boiled' },
-  { value: 'Silky', label: 'Silky' },
-  { value: 'Brown', label: 'Brown' },
-  { value: 'Other', label: 'Other' },
-]
-
 export default function Items() {
   const { can } = useAuth()
   const [categories, setCategories] = useState([])
@@ -47,7 +39,6 @@ export default function Items() {
       deleteSuccessMessage="Item deleted successfully"
       searchPlaceholder="Search items…"
       columns={[
-        { key: 'code', label: 'Code' },
         { key: 'name', label: 'Item Name' },
         { key: 'material_type', label: 'Type' },
         {
@@ -60,13 +51,6 @@ export default function Items() {
       ]}
       fields={[
         { name: 'name', label: 'Item Name', required: true, placeholder: 'e.g. Sona Masoori, Bran, etc.' },
-        {
-          name: 'material_type',
-          label: 'Material / Item Type',
-          type: 'select',
-          default: 'Raw',
-          options: MATERIAL_TYPES,
-        },
         {
           name: 'unit_id',
           label: 'Unit',

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import api, { apiErrorMessage, openPdf } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
@@ -263,6 +264,17 @@ export default function Outward() {
     }
   }
 
+  // Deep-link: /inventory/outward?edit={id} opens the entry for editing (used from lot movement actions)
+  const [searchParams, setSearchParams] = useSearchParams()
+  useEffect(() => {
+    const editId = searchParams.get('edit')
+    if (editId) {
+      openEdit({ id: editId })
+      setSearchParams({}, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   function setItemField(idx, key, value) {
     setFormItems((itemsList) => {
       const next = itemsList.map((it, i) => {
@@ -462,7 +474,7 @@ export default function Outward() {
     setActionLoading(true)
     try {
       await api.delete(`/outward/${deleteTarget.id}`)
-      toast.success('Dispatch entry deleted & stock restored')
+      toast.success('Outward entry moved to trash')
       setDeleteTarget(null)
       load()
     } catch (err) {
@@ -1304,7 +1316,7 @@ export default function Outward() {
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="Delete Dispatch Entry"
-        message={`Are you sure you want to delete dispatch entry ${deleteTarget?.entry_number}? Any deducted stock will be reversed and restored to lots automatically.`}
+        message={`Are you sure you want to move dispatch entry ${deleteTarget?.entry_number} to trash? It will be hidden from lists and reports. You can restore it from Trash later.`}
         confirmText="Yes, Delete"
         cancelText="No, Keep"
         variant="danger"

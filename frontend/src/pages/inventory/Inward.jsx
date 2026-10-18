@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import api, { apiErrorMessage, openPdf } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
@@ -63,6 +64,44 @@ function useMasterData() {
 }
 
 const emptyItem = () => ({ item_id: '', lot_number: '', quantity: '', unit_id: '', oil_pct: '', rate: '', amount: '' })
+
+/** Lot number field with suggestions of existing lots (filter-as-type, click to select, free text for new). */
+function LotSuggest({ value, onChange, lots, placeholder = 'LOT-1' }) {
+  const [open, setOpen] = useState(false)
+  const q = String(value || '').toLowerCase()
+  const matches = (q
+    ? lots.filter((l) => String(l.lot_number || '').toLowerCase().includes(q))
+    : lots
+  ).slice(0, 8)
+  return (
+    <div className="relative">
+      <Input
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setOpen(true) }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        placeholder={placeholder}
+        className="!text-sm !font-bold font-mono"
+      />
+      {open && matches.length > 0 && (
+        <ul className="absolute left-0 right-0 z-30 mt-1 max-h-44 w-full overflow-auto rounded-md border border-slate-200 bg-white py-1 shadow-lg">
+          {matches.map((l) => (
+            <li
+              key={l.id}
+              onMouseDown={(e) => { e.preventDefault(); onChange(String(l.lot_number)); setOpen(false) }}
+              className="flex cursor-pointer justify-between gap-2 px-2.5 py-1.5 text-xs hover:bg-amber-50"
+            >
+              <span className="font-mono font-bold text-slate-800">{l.lot_number}</span>
+              <span className="truncate text-slate-500">
+                {l.item?.name || ''} · avail {formatNumber(l.available_qty)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
 
 function computeDateRange(preset) {
   const now = new Date()
@@ -160,6 +199,15 @@ export default function Inward() {
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({ date: today(), branch_id: branchId || '', party_id: '', load_reference: '', remarks: '' })
   const [formItems, setFormItems] = useState([emptyItem()])
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // Existing lots for the lot-field suggestions
+  const [allLots, setAllLots] = useState([])
+  useEffect(() => {
+    api.get('/lots?per_page=500')
+      .then((res) => setAllLots(extractList(res.data)))
+      .catch(() => setAllLots([]))
+  }, [])
 
   const [viewing, setViewing] = useState(null)
   const [confirmTarget, setConfirmTarget] = useState(null)
@@ -173,7 +221,7 @@ export default function Inward() {
     setActionLoading(true)
     try {
       await api.delete(`/inward/${deleteTarget.id}`)
-      toast.success('Inward entry deleted & stock reversed')
+      toast.success('Inward entry moved to trash')
       setDeleteTarget(null)
       load()
     } catch (err) {
@@ -244,6 +292,16 @@ export default function Inward() {
       toast.error(apiErrorMessage(err, 'Failed to load inward entry for editing'))
     }
   }
+
+  // Deep-link: /inventory/inward?edit={id} opens the entry for editing (used from lot movement actions)
+  useEffect(() => {
+    const editId = searchParams.get('edit')
+    if (editId) {
+      openEdit({ id: editId })
+      setSearchParams({}, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function setItemField(idx, key, value) {
     setFormItems((itemsList) => {
@@ -648,12 +706,11 @@ export default function Inward() {
                             ))}
                           </Select>
                         </td>
-                        <td className="px-2 py-2 min-w-[120px]">
-                          <Input
+                        <td className="px-2 py-2 min-w-[160px] relative">
+                          <LotSuggest
                             value={it.lot_number}
-                            onChange={(e) => setItemField(idx, 'lot_number', e.target.value)}
-                            placeholder="LOT-1"
-                            className="!text-sm !font-bold font-mono"
+                            onChange={(v) => setItemField(idx, 'lot_number', v)}
+                            lots={allLots.filter((l) => !it.item_id || String(l.item_id) === String(it.item_id))}
                           />
                         </td>
                         <td className="px-2 py-2 w-28">
@@ -997,7 +1054,7 @@ export default function Inward() {
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="Delete Inward Entry"
-        message={`Are you sure you want to delete inward entry ${deleteTarget?.entry_number}? Any created lots and stock will be reversed automatically.`}
+        message={`Are you sure you want to move inward entry ${deleteTarget?.entry_number} to trash? It will be hidden from lists and reports. You can restore it from Trash later.`}
         confirmText="Yes, Delete"
         cancelText="No, Keep It"
         variant="danger"

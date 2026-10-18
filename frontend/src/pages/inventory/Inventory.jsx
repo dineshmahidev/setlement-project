@@ -35,7 +35,7 @@ import {
   Select,
   StatusBadge,
 } from '../../components'
-import { formatDate, formatNumber, today } from '../../utils/helpers'
+import { formatDate, formatNumber, today, extractList } from '../../utils/helpers'
 
 function FormField({ label, required, className, children }) {
   return (
@@ -1302,6 +1302,30 @@ export function StockTransfer() {
   const [saving, setSaving] = useState(false)
   const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }))
 
+  // Open lots for the selected From godown (drives the Lot Number dropdown)
+  const [lots, setLots] = useState([])
+  useEffect(() => {
+    let cancelled = false
+    if (!form.from_branch_id) {
+      setLots([])
+      return
+    }
+    api
+      .get(`/lots?per_page=500&status=OPEN&branch_id=${form.from_branch_id}`)
+      .then((res) => {
+        if (cancelled) return
+        setLots(extractList(res.data).filter((l) => Number(l.available_qty) > 0))
+      })
+      .catch(() => {
+        if (!cancelled) setLots([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [form.from_branch_id])
+  const visibleLots = lots.filter((l) => !form.item_id || String(l.item_id) === String(form.item_id))
+  const selectedTransferLot = lots.find((l) => l.lot_number === form.lot_number)
+
   // Posted Transfers Table State
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
@@ -1573,7 +1597,11 @@ export function StockTransfer() {
             </FormField>
 
             <FormField label="From Godown" required>
-              <Select value={form.from_branch_id} onChange={(e) => setF('from_branch_id', e.target.value)} required>
+              <Select
+                value={form.from_branch_id}
+                onChange={(e) => setForm((f) => ({ ...f, from_branch_id: e.target.value, lot_number: '' }))}
+                required
+              >
                 <option value="">Select From Godown…</option>
                 {branches.map((b) => (
                   <option key={b.id} value={b.id}>{b.name || b.branch_name}</option>
@@ -1600,6 +1628,7 @@ export function StockTransfer() {
                     ...f,
                     item_id: itId,
                     unit_id: selectedItem?.unit_id || selectedItem?.unit?.id || f.unit_id || '',
+                    lot_number: '',
                   }))
                 }}
                 required
@@ -1627,6 +1656,7 @@ export function StockTransfer() {
                 type="number"
                 step="0.001"
                 min="0"
+                max={selectedTransferLot ? selectedTransferLot.available_qty : undefined}
                 value={form.quantity}
                 onChange={(e) => setF('quantity', e.target.value)}
                 placeholder="0.000"
@@ -1635,11 +1665,27 @@ export function StockTransfer() {
             </FormField>
 
             <FormField label="Lot Number">
-              <Input
-                value={form.lot_number}
-                onChange={(e) => setF('lot_number', e.target.value)}
-                placeholder="Optional lot no"
-              />
+              <Select
+                value={form.lot_number || ''}
+                onChange={(e) => {
+                  const lot = lots.find((l) => l.lot_number === e.target.value)
+                  setForm((f) => ({
+                    ...f,
+                    lot_number: e.target.value,
+                    item_id: lot ? String(lot.item_id) : f.item_id,
+                    unit_id: lot
+                      ? String(lot.unit_id || lot.item?.unit_id || lot.item?.unit?.id || f.unit_id || '')
+                      : f.unit_id,
+                  }))
+                }}
+              >
+                <option value="">Select lot…</option>
+                {visibleLots.map((l) => (
+                  <option key={l.id} value={l.lot_number}>
+                    {l.lot_number} — {l.item?.name || `#${l.item_id}`} (avail {formatNumber(l.available_qty)})
+                  </option>
+                ))}
+              </Select>
             </FormField>
 
             <FormField label="Remarks">
