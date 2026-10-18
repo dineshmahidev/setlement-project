@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import api, { apiErrorMessage, openPdf } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
@@ -88,7 +89,10 @@ function computeDateRange(preset) {
 
 export default function Lots() {
   const toast = useToast()
-  const { branchId } = useAuth()
+  const { branchId, activeCompany } = useAuth()
+  const navigate = useNavigate()
+  const { slug } = useParams()
+  const panelBase = slug ? `/panel/${slug}` : activeCompany?.slug ? `/panel/${activeCompany.slug}` : '/panel'
   const { items, branches } = useMasterData()
   const [rows, setRows] = useState([])
   const [summary, setSummary] = useState(null)
@@ -441,7 +445,11 @@ export default function Lots() {
                                       <Download className="h-3.5 w-3.5" />
                                     </button>
                                     <a
-                                      href={`/panel/inventory/${baseType}?edit=${m.reference_id}`}
+                                      href={`${panelBase}/inventory/${baseType}?edit=${m.reference_id}`}
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        navigate(`${panelBase}/inventory/${baseType}?edit=${m.reference_id}`)
+                                      }}
                                       title="Edit entry"
                                       className="inline-flex p-1 rounded text-amber-600 hover:text-amber-800 hover:bg-amber-50"
                                     >

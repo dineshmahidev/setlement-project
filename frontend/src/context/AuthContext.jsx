@@ -97,10 +97,18 @@ export function AuthProvider({ children }) {
         return next
       })
     } catch {
-      setToken(null)
-      setUser(null)
+      // A superseded refresh must never kill the session (StrictMode mounts
+      // refresh() twice; the older one would otherwise nuke auth state and
+      // bounce a valid session to the login page).
+      if (seq === refreshSeq.current) {
+        setToken(null)
+        setUser(null)
+      }
     } finally {
-      setLoading(false)
+      // Only the latest in-flight refresh may clear the loading gate;
+      // otherwise the stale one flips loading=false with user still null and
+      // <Protected> navigates to /panel/login before /me resolves.
+      if (seq === refreshSeq.current) setLoading(false)
     }
   }, [])
 

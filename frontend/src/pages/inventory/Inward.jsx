@@ -308,6 +308,10 @@ export default function Inward() {
       const next = itemsList.map((it, i) => (i === idx ? { ...it, [key]: value } : it))
       const cur = next[idx]
       if (key === 'item_id' && value) {
+        // Item swapped in this line → drop the previous item's lot number
+        if (itemsList[idx].item_id && String(itemsList[idx].item_id) !== String(value)) {
+          cur.lot_number = ''
+        }
         const matchedItem = items.find((x) => String(x.id) === String(value))
         if (matchedItem) {
           cur.unit_id = matchedItem.unit_id || matchedItem.unit?.id || ''
