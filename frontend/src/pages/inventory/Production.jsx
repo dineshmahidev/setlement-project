@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import api, { apiErrorMessage, openPdf } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
@@ -12,9 +13,10 @@ import {
   Select,
   StatusBadge,
   Textarea,
+  ConfirmDialog,
 } from '../../components'
 import { formatNumber, formatDate, today, extractList, qs } from '../../utils/helpers'
-import { Plus, Trash2, Eye, RefreshCw, Factory, Printer } from 'lucide-react'
+import { Plus, Trash2, Eye, RefreshCw, Factory, Printer, Edit2 } from 'lucide-react'
 
 function useMasterData() {
   const [vendors, setVendors] = useState([])
@@ -47,7 +49,7 @@ function useMasterData() {
     })
   }, [])
 
-  return { vendors, items, branches, lots }
+  return { vendors, items, branches, lots, setLots }
 }
 
 const emptyInput = () => ({ lot_id: '', item_id: '', quantity: '' })
@@ -55,13 +57,18 @@ const emptyInput = () => ({ lot_id: '', item_id: '', quantity: '' })
 export default function Production() {
   const toast = useToast()
   const { branchId } = useAuth()
-  const { vendors, items, branches, lots } = useMasterData()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { vendors, items, branches, lots, setLots } = useMasterData()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('')
 
   const [modalOpen, setModalOpen] = useState(false)
+  const [editingBatch, setEditingBatch] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+
   const [form, setForm] = useState({
     date: today(),
     party_id: '',
@@ -94,6 +101,7 @@ export default function Production() {
   }, [load])
 
   function openCreate() {
+    setEditingBatch(null)
     setForm({
       date: today(),
       party_id: '',
@@ -107,6 +115,72 @@ export default function Production() {
     setOutputQty('')
     setModalOpen(true)
   }
+
+  async function openEdit(row) {
+    try {
+      const res = await api.get(`/production/${row.id}`)
+      const data = res.data.data || res.data
+      setEditingBatch(data)
+
+      // Merge any closed/consumed input lots into master lots list
+      if (data.inputs && data.inputs.length > 0) {
+        setLots((prevLots) => {
+          const map = new Map(prevLots.map((l) => [String(l.id), l]))
+          data.inputs.forEach((inp) => {
+            if (inp.lot && !map.has(String(inp.lot.id))) {
+              map.set(String(inp.lot.id), {
+                ...inp.lot,
+                id: inp.lot.id,
+                item: inp.item || inp.lot.item,
+                branch_id: inp.lot.branch_id || data.source_branch_id,
+                available_qty: Number(inp.lot.available_qty || 0),
+              })
+            }
+          })
+          return Array.from(map.values())
+        })
+      }
+
+      setForm({
+        date: data.date ? String(data.date).slice(0, 10) : today(),
+        party_id: data.party_id ? String(data.party_id) : '',
+        source_branch_id: data.source_branch_id ? String(data.source_branch_id) : '',
+        dest_branch_id: data.dest_branch_id ? String(data.dest_branch_id) : '',
+        output_item_id: data.output_item_id ? String(data.output_item_id) : '',
+        output_lot_number: data.output_lot_number || '',
+        remarks: data.remarks || data.notes || '',
+      })
+
+      if (data.inputs && data.inputs.length > 0) {
+        setInputs(
+          data.inputs.map((inp) => ({
+            lot_id: inp.lot_id ? String(inp.lot_id) : '',
+            item_id: inp.item_id ? String(inp.item_id) : '',
+            quantity: inp.quantity != null ? String(inp.quantity) : '',
+          }))
+        )
+      } else {
+        setInputs([emptyInput()])
+      }
+
+      const outQty = data.outputs?.[0]?.quantity ?? data.output_total ?? data.output_total_qty ?? ''
+      setOutputQty(outQty ? String(outQty) : '')
+
+      setViewing(null)
+      setModalOpen(true)
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Failed to load batch for editing'))
+    }
+  }
+
+  // Deep-link support: /inventory/production?edit={id}
+  useEffect(() => {
+    const editId = searchParams.get('edit')
+    if (editId) {
+      openEdit({ id: editId })
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams])
 
   function setInputField(idx, key, value) {
     setInputs((arr) =>
@@ -124,6 +198,17 @@ export default function Production() {
     )
   }
 
+  const effectiveLotAvail = (lot) => {
+    let qty = Number(lot?.available_qty || 0)
+    if (editingBatch && lot) {
+      const origInput = editingBatch.inputs?.find((inRow) => String(inRow.lot_id) === String(lot.id))
+      if (origInput) {
+        qty += Number(origInput.quantity || 0)
+      }
+    }
+    return qty
+  }
+
   const totalInput = inputs.reduce((s, it) => s + Number(it.quantity || 0), 0)
 
   async function save(e) {
@@ -133,13 +218,17 @@ export default function Production() {
       toast.error('Add at least one input lot with quantity')
       return
     }
+    if (!form.dest_branch_id) {
+      toast.error('Select the destination godown — "All Godowns" is only a view filter')
+      return
+    }
     if (!form.output_item_id || !Number(outputQty)) {
       toast.error('Select output item and quantity')
       return
     }
     setSaving(true)
     try {
-      await api.post('/production', {
+      const payload = {
         date: form.date,
         party_id: form.party_id ? Number(form.party_id) : null,
         source_branch_id: form.source_branch_id ? Number(form.source_branch_id) : null,
@@ -161,14 +250,38 @@ export default function Production() {
             quantity: Number(outputQty),
           },
         ],
-      })
-      toast.success('Production batch created & stock mixed automatically!')
+      }
+
+      if (editingBatch) {
+        await api.put(`/production/${editingBatch.id}`, payload)
+        toast.success(`Production batch ${editingBatch.batch_number} updated successfully!`)
+      } else {
+        await api.post('/production', payload)
+        toast.success('Production batch created & stock mixed automatically!')
+      }
       setModalOpen(false)
+      setEditingBatch(null)
       load()
     } catch (err) {
-      toast.error(apiErrorMessage(err, 'Failed to create production batch'))
+      toast.error(apiErrorMessage(err, editingBatch ? 'Failed to update production batch' : 'Failed to create production batch'))
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function doDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      await api.delete(`/production/${deleteTarget.id}`)
+      toast.success(`Production batch ${deleteTarget.batch_number} moved to trash successfully!`)
+      setDeleteTarget(null)
+      if (viewing?.id === deleteTarget.id) setViewing(null)
+      load()
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Failed to delete production batch'))
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -181,7 +294,13 @@ export default function Production() {
     }
   }
 
-  const openLots = lots.filter((l) => Number(l.available_qty) > 0)
+  // Only lots that physically sit in the chosen source godown
+  const openLots = lots.filter(
+    (l) =>
+      form.source_branch_id &&
+      String(l.branch_id) === String(form.source_branch_id) &&
+      (effectiveLotAvail(l) > 0 || inputs.some((it) => String(it.lot_id) === String(l.id)))
+  )
 
   return (
     <div className="space-y-4">
@@ -270,9 +389,18 @@ export default function Production() {
             label: 'Actions',
             align: 'right',
             render: (r) => (
-              <div className="flex justify-end gap-1.5">
-                <Button size="sm" variant="secondary" onClick={() => openView(r)}>
+              <div className="flex justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                <Button size="sm" variant="secondary" onClick={() => openView(r)} title="View Details">
                   <Eye className="h-3 w-3" /> View
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => openEdit(r)}
+                  className="border-amber-200 bg-amber-50/70 text-amber-800 hover:bg-amber-100"
+                  title="Edit Production Batch"
+                >
+                  <Edit2 className="h-3 w-3" /> Edit
                 </Button>
                 <Button
                   size="sm"
@@ -282,6 +410,14 @@ export default function Production() {
                 >
                   <Printer className="h-3 w-3" /> PDF
                 </Button>
+                <Button
+                  size="sm"
+                  variant="danger"
+                  onClick={() => setDeleteTarget(r)}
+                  title="Delete Batch (Move to Trash)"
+                >
+                  <Trash2 className="h-3 w-3" /> Delete
+                </Button>
               </div>
             ),
           },
@@ -290,16 +426,25 @@ export default function Production() {
 
       <Modal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title="New Production Batch"
+        onClose={() => {
+          setModalOpen(false)
+          setEditingBatch(null)
+        }}
+        title={editingBatch ? `Edit Batch: ${editingBatch.batch_number}` : 'New Production Batch'}
         size="lg"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setModalOpen(false)}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setModalOpen(false)
+                setEditingBatch(null)
+              }}
+            >
               Cancel
             </Button>
             <Button onClick={save} loading={saving} form="prod-form">
-              Save & Mix
+              {editingBatch ? 'Update Batch' : 'Save & Mix'}
             </Button>
           </>
         }
@@ -330,7 +475,11 @@ export default function Production() {
             <FormField label="Source Godown">
               <Select
                 value={form.source_branch_id}
-                onChange={(e) => setForm({ ...form, source_branch_id: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, source_branch_id: e.target.value })
+                  // input lots of the old source godown are invalid — clear them
+                  setInputs((arr) => arr.map((it) => ({ ...it, lot_id: '', item_id: '' })))
+                }}
               >
                 <option value="">Select…</option>
                 {branches.map((b) => (
@@ -389,7 +538,7 @@ export default function Production() {
                           <option value="">Select lot…</option>
                           {openLots.map((l) => (
                             <option key={l.id} value={l.id}>
-                              {l.lot_number} — {l.item?.name || `#${l.item_id}`} (avail {formatNumber(l.available_qty)})
+                              {l.lot_number} — {l.item?.name || `#${l.item_id}`} (avail {formatNumber(effectiveLotAvail(l))})
                             </option>
                           ))}
                         </Select>
@@ -409,7 +558,8 @@ export default function Production() {
                           <button
                             type="button"
                             onClick={() => setInputs((f) => f.filter((_, i) => i !== idx))}
-                            className="text-rose-500 hover:text-rose-700"
+                            className="text-rose-500 hover:text-rose-700 p-1"
+                            title="Remove input lot"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
@@ -442,15 +592,28 @@ export default function Production() {
                 step="0.001"
                 value={outputQty}
                 onChange={(e) => setOutputQty(e.target.value)}
+                placeholder="0.000"
               />
             </FormField>
             <FormField label="Output Lot No">
               <Input
                 value={form.output_lot_number}
                 onChange={(e) => setForm({ ...form, output_lot_number: e.target.value })}
-                placeholder="PRD-OUT-1"
+                placeholder="Auto-generated if blank"
               />
             </FormField>
+          </div>
+
+          <div className="flex items-center justify-between text-xs px-3 py-2 text-slate-600 bg-slate-50 rounded-lg border border-slate-200">
+            <div>
+              Total Input: <span className="font-bold text-slate-800">{formatNumber(totalInput)}</span>
+            </div>
+            <div>
+              Output Qty: <span className="font-bold text-slate-800">{formatNumber(Number(outputQty) || 0)}</span>
+            </div>
+            <div>
+              Wastage: <span className="font-bold text-amber-700">{formatNumber(Math.max(0, totalInput - (Number(outputQty) || 0)))}</span>
+            </div>
           </div>
 
           <FormField label="Narration">
@@ -470,18 +633,40 @@ export default function Production() {
         title={`Batch ${viewing?.batch_number || ''}`}
         size="lg"
         footer={
-          <>
-            <Button variant="secondary" onClick={() => setViewing(null)}>
-              Close
-            </Button>
-            <Button
-              onClick={() =>
-                openPdf(`/production/${viewing?.id}/pdf`, `Production_${viewing?.batch_number}.pdf`)
-              }
-            >
-              <Printer className="h-3.5 w-3.5" /> Print / Download PDF
-            </Button>
-          </>
+          <div className="flex w-full items-center justify-between">
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  const target = viewing
+                  openEdit(target)
+                }}
+                className="border-amber-200 bg-amber-50/70 text-amber-800 hover:bg-amber-100"
+              >
+                <Edit2 className="h-3.5 w-3.5" /> Edit Batch
+              </Button>
+              <Button
+                variant="danger"
+                onClick={() => {
+                  setDeleteTarget(viewing)
+                }}
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Delete
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => setViewing(null)}>
+                Close
+              </Button>
+              <Button
+                onClick={() =>
+                  openPdf(`/production/${viewing?.id}/pdf`, `Production_${viewing?.batch_number}.pdf`)
+                }
+              >
+                <Printer className="h-3.5 w-3.5" /> Print / Download PDF
+              </Button>
+            </div>
+          </div>
         }
       >
         {viewing && (
@@ -544,6 +729,18 @@ export default function Production() {
           </div>
         )}
       </Modal>
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Delete Production Batch"
+        message={`Are you sure you want to move production batch "${deleteTarget?.batch_number}" to trash? Stock consumed from source lots will be restored, and generated output stock will be removed.`}
+        confirmText="Yes, Move to Trash"
+        cancelText="Cancel"
+        variant="danger"
+        loading={deleting}
+        onConfirm={doDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

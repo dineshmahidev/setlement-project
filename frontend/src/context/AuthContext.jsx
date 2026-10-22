@@ -18,6 +18,8 @@ export function AuthProvider({ children }) {
   const [companyId, setCompanyIdState] = useState(readStoredCompanyId)
   const [branchId, setBranchIdState] = useState(() => {
     const stored = localStorage.getItem('branch_id')
+    // "All godowns" is stored as an explicit 'all' sentinel — state stays null.
+    if (stored === 'all') return null
     return stored ? Number(stored) : null
   })
   // Monotonic sequence so a slow/stale /me response can never overwrite a newer company switch.
@@ -80,6 +82,13 @@ export function AuthProvider({ children }) {
       if (currentCompany?.id) {
         setCompanyIdState(Number(currentCompany.id))
         setCompanyId(currentCompany.id)
+      }
+
+      // Explicit "All godowns" selection must survive reloads — skip the
+      // default-branch fallback while the 'all' sentinel is stored.
+      if (localStorage.getItem('branch_id') === 'all') {
+        setBranchIdState(null)
+        return
       }
 
       const allowedBranchIds = (userData?.branches || []).map((b) => Number(b.id))
@@ -158,7 +167,8 @@ export function AuthProvider({ children }) {
 
   const setBranchId = useCallback((id) => {
     setBranchIdState(id)
-    if (id == null) localStorage.removeItem('branch_id')
+    // null = "All godowns" → persist an explicit sentinel so refresh() keeps it.
+    if (id == null) localStorage.setItem('branch_id', 'all')
     else localStorage.setItem('branch_id', String(id))
   }, [])
 

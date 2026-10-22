@@ -186,7 +186,7 @@ export default function Inward() {
     const params = {
       from_date: fromDate || undefined,
       to_date: toDate || undefined,
-      branch_id: branchFilter || undefined,
+      branch_id: branchFilter || branchId || undefined,
       party_id: partyFilter || undefined,
       search: search || undefined,
     }
@@ -201,13 +201,25 @@ export default function Inward() {
   const [formItems, setFormItems] = useState([emptyItem()])
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // Existing lots for the lot-field suggestions
+  // Existing lots for the lot-field suggestions — scoped to the form's godown only
   const [allLots, setAllLots] = useState([])
   useEffect(() => {
-    api.get('/lots?per_page=500')
-      .then((res) => setAllLots(extractList(res.data)))
-      .catch(() => setAllLots([]))
-  }, [])
+    let cancelled = false
+    if (!form.branch_id) {
+      setAllLots([])
+      return
+    }
+    api.get(`/lots?per_page=500&branch_id=${form.branch_id}`)
+      .then((res) => {
+        if (!cancelled) setAllLots(extractList(res.data))
+      })
+      .catch(() => {
+        if (!cancelled) setAllLots([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [form.branch_id])
 
   const [viewing, setViewing] = useState(null)
   const [confirmTarget, setConfirmTarget] = useState(null)
@@ -238,7 +250,7 @@ export default function Inward() {
         search: search || undefined,
         from_date: fromDate || undefined,
         to_date: toDate || undefined,
-        branch_id: branchFilter || undefined,
+        branch_id: branchFilter || branchId || undefined,
         party_id: partyFilter || undefined,
         per_page: 100,
       })}`)
@@ -249,7 +261,7 @@ export default function Inward() {
     } finally {
       setLoading(false)
     }
-  }, [search, fromDate, toDate, branchFilter, partyFilter, toast])
+  }, [search, fromDate, toDate, branchFilter, branchId, partyFilter, toast])
 
   useEffect(() => { load() }, [load])
 
@@ -328,6 +340,10 @@ export default function Inward() {
 
   async function save(e) {
     e.preventDefault()
+    if (!form.branch_id) {
+      toast.error('Select a godown for this entry — "All Godowns" is only a view filter, a receipt must go into one specific godown.')
+      return
+    }
     const validItems = formItems.filter((it) => it.item_id && Number(it.quantity) > 0)
     if (validItems.length === 0) {
       toast.error('Add at least one item with quantity')
@@ -514,7 +530,7 @@ export default function Inward() {
               onChange={(e) => setBranchFilter(e.target.value)}
               className="text-xs font-semibold"
             >
-              <option value="">All Godowns</option>
+              <option value="">{branchId ? 'As per godown switch' : 'All Godowns'}</option>
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>{b.branch_name || b.name}</option>
               ))}
@@ -642,11 +658,15 @@ export default function Inward() {
             <FormField label="Godown" required>
               <Select
                 value={form.branch_id}
-                onChange={(e) => setForm({ ...form, branch_id: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, branch_id: e.target.value })
+                  // lot numbers of the old godown are invalid — clear them
+                  setFormItems((rows) => rows.map((r) => ({ ...r, lot_number: '' })))
+                }}
                 required
                 className="!text-base !font-bold !py-2.5"
               >
-                <option value="">Select…</option>
+                <option value="">{branchId ? 'Select…' : 'Select specific godown…'}</option>
                 {branches.map((b) => <option key={b.id} value={b.id}>{b.branch_name || b.name}</option>)}
               </Select>
             </FormField>

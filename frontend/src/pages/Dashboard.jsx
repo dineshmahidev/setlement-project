@@ -108,30 +108,30 @@ export default function Dashboard() {
         {/* Card 1: Total Settlements */}
         <Link
           to="/panel/settlements"
-          className="group rounded-2xl bg-[#0b3558] p-5 text-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between border border-[#b37d14]/30 cursor-pointer"
+          className="group rounded-2xl bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between border border-violet-200/70 cursor-pointer"
         >
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#faedcd] flex items-center gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-violet-500 flex items-center gap-1.5">
                 Total Settlements
-                <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-[#d69e2e]" />
+                <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-violet-400" />
               </span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#07233b] text-[#d69e2e] shrink-0 border border-[#b37d14]/20">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-violet-600 shrink-0 border border-violet-200/70">
                 <Scale className="w-5 h-5" />
               </div>
             </div>
             <div className="mt-4 flex items-baseline gap-2">
-              <span className="text-3xl font-black tracking-tight text-white">
+              <span className="text-3xl font-black tracking-tight text-slate-900">
                 {cards.total_settlements ?? cards.today_settlements ?? 0}
               </span>
-              <span className="text-xs font-medium text-slate-200">bills</span>
+              <span className="text-xs font-medium text-slate-500">bills</span>
             </div>
           </div>
-          <div className="mt-4 flex items-center justify-between pt-3 border-t border-white/10">
-            <span className="inline-flex items-center rounded-md bg-[#07233b]/80 px-2.5 py-1 text-[11px] font-bold text-[#faedcd] truncate max-w-full">
+          <div className="mt-4 flex items-center justify-between pt-3 border-t border-slate-100">
+            <span className="inline-flex items-center rounded-md bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-700 truncate max-w-full">
               ₹{Number(cards.total_settlement_value ?? cards.today_settlement_value ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
             </span>
-            <span className="text-[11px] font-semibold text-slate-300 group-hover:text-white flex items-center gap-1 transition-colors">
+            <span className="text-[11px] font-semibold text-slate-400 group-hover:text-violet-600 flex items-center gap-1 transition-colors">
               View all <ChevronRight className="w-3.5 h-3.5" />
             </span>
           </div>
@@ -140,30 +140,30 @@ export default function Dashboard() {
         {/* Card 2: Total Debit */}
         <Link
           to="/panel/debit-notes?type=debit"
-          className="group rounded-2xl bg-amber-600 p-5 text-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between cursor-pointer border border-amber-500/40"
+          className="group rounded-2xl bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between cursor-pointer border border-rose-200/70"
         >
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-100 flex items-center gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-rose-500 flex items-center gap-1.5">
                 Total Debit Notes
-                <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-white" />
+                <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-rose-400" />
               </span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-700/80 text-white shrink-0">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100 text-rose-600 shrink-0 border border-rose-200/70">
                 <ArrowDownRight className="w-5 h-5" />
               </div>
             </div>
             <div className="mt-4 flex items-baseline gap-2">
-              <span className="text-3xl font-black tracking-tight text-white">
+              <span className="text-3xl font-black tracking-tight text-slate-900">
                 {cards.total_debit_count ?? cards.pending_debit_notes ?? 0}
               </span>
-              <span className="text-xs font-medium text-amber-100">notes</span>
+              <span className="text-xs font-medium text-slate-500">notes</span>
             </div>
           </div>
-          <div className="mt-4 flex items-center justify-between pt-3 border-t border-white/15">
-            <span className="inline-flex items-center rounded-md bg-amber-700/70 px-2.5 py-1 text-[11px] font-bold text-white truncate max-w-full">
+          <div className="mt-4 flex items-center justify-between pt-3 border-t border-slate-100">
+            <span className="inline-flex items-center rounded-md bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 truncate max-w-full">
               ₹{Number(cards.total_debit_value ?? cards.total_receivable ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
             </span>
-            <span className="text-[11px] font-semibold text-amber-100 group-hover:text-white flex items-center gap-1 transition-colors">
+            <span className="text-[11px] font-semibold text-slate-400 group-hover:text-rose-600 flex items-center gap-1 transition-colors">
               View debit <ChevronRight className="w-3.5 h-3.5" />
             </span>
           </div>
@@ -172,30 +172,30 @@ export default function Dashboard() {
         {/* Card 3: Total Credit */}
         <Link
           to="/panel/debit-notes?type=credit"
-          className="group rounded-2xl bg-emerald-600 p-5 text-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between cursor-pointer border border-emerald-500/40"
+          className="group rounded-2xl bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between cursor-pointer border border-lime-300/80"
         >
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-100 flex items-center gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-lime-600 flex items-center gap-1.5">
                 Total Credit Notes
-                <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-white" />
+                <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-lime-500" />
               </span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-700/80 text-white shrink-0">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-lime-100 text-lime-700 shrink-0 border border-lime-200/80">
                 <ArrowUpRight className="w-5 h-5" />
               </div>
             </div>
             <div className="mt-4 flex items-baseline gap-2">
-              <span className="text-3xl font-black tracking-tight text-white">
+              <span className="text-3xl font-black tracking-tight text-slate-900">
                 {cards.total_credit_count ?? 0}
               </span>
-              <span className="text-xs font-medium text-emerald-100">notes</span>
+              <span className="text-xs font-medium text-slate-500">notes</span>
             </div>
           </div>
-          <div className="mt-4 flex items-center justify-between pt-3 border-t border-white/15">
-            <span className="inline-flex items-center rounded-md bg-emerald-700/70 px-2.5 py-1 text-[11px] font-bold text-white truncate max-w-full">
+          <div className="mt-4 flex items-center justify-between pt-3 border-t border-slate-100">
+            <span className="inline-flex items-center rounded-md bg-lime-100 px-2.5 py-1 text-[11px] font-bold text-lime-800 truncate max-w-full">
               ₹{Number(cards.total_credit_value ?? cards.total_payable ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
             </span>
-            <span className="text-[11px] font-semibold text-emerald-100 group-hover:text-white flex items-center gap-1 transition-colors">
+            <span className="text-[11px] font-semibold text-slate-400 group-hover:text-lime-600 flex items-center gap-1 transition-colors">
               View credit <ChevronRight className="w-3.5 h-3.5" />
             </span>
           </div>

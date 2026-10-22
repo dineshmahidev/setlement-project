@@ -26,7 +26,8 @@ const TABS = [
   { id: 'all', label: 'All Items', icon: Layers },
   { id: 'inward', label: 'Inward Receipts', icon: Package },
   { id: 'outward', label: 'Outward Dispatches', icon: Package },
-  { id: 'production', label: 'Mixing / Batches', icon: ArrowRightLeft },
+  { id: 'stock_transfer', label: 'Stock Transfers', icon: ArrowRightLeft },
+  { id: 'production', label: 'Mixing / Batches', icon: Layers },
   { id: 'settlement', label: 'Settlements', icon: Scale },
   { id: 'debit_note', label: 'Debit Notes', icon: FileText },
   { id: 'invoice', label: 'Invoices', icon: Receipt },
@@ -38,6 +39,7 @@ const TABS = [
 const TYPE_CONFIG = {
   inward: { label: 'Inward', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
   outward: { label: 'Outward', color: 'bg-amber-100 text-amber-800 border-amber-300' },
+  stock_transfer: { label: 'Transfer', color: 'bg-sky-100 text-sky-800 border-sky-300' },
   production: { label: 'Mixing', color: 'bg-purple-100 text-purple-800 border-purple-300' },
   settlement: { label: 'Settlement', color: 'bg-blue-100 text-blue-800 border-blue-300' },
   debit_note: { label: 'Debit Note', color: 'bg-orange-100 text-orange-800 border-orange-300' },

@@ -14,7 +14,7 @@ import {
   Select,
 } from '../../components'
 import { formatMoney, formatNumber, extractList, qs } from '../../utils/helpers'
-import { RefreshCw, Layers, FileText, X, Trash2, Download, Pencil } from 'lucide-react'
+import { RefreshCw, Layers, FileText, X, Trash2, Download, Pencil, ArrowUpRight, Boxes, IndianRupee } from 'lucide-react'
 
 function useMasterData() {
   const [items, setItems] = useState([])
@@ -100,6 +100,7 @@ export default function Lots() {
   const [search, setSearch] = useState('')
   const [selItem, setSelItem] = useState('')
   const [selBranch, setSelBranch] = useState('')
+  const [selLot, setSelLot] = useState('')
   const [viewing, setViewing] = useState(null)
   const [viewFrom, setViewFrom] = useState('')
   const [viewTo, setViewTo] = useState('')
@@ -143,6 +144,7 @@ export default function Lots() {
     setToDate('')
     setSelItem('')
     setSelBranch('')
+    setSelLot('')
     setSearch('')
     setShowZero(false)
   }
@@ -207,9 +209,17 @@ export default function Lots() {
   }
 
   const isZeroStock = (r) => Number(r.available_qty ?? 0) <= 0
+  const lotOptions = [...new Set(rows.map((r) => r.lot_number).filter(Boolean))].sort()
+  const lotRows = selLot ? rows.filter((r) => r.lot_number === selLot) : rows
   // Hide 0-stock lots unless "Show 0-stock" is ticked
-  const visibleRows = showZero ? rows : rows.filter((r) => !isZeroStock(r))
-  const zeroStockCount = rows.filter(isZeroStock).length
+  const visibleRows = showZero ? lotRows : lotRows.filter((r) => !isZeroStock(r))
+  const zeroStockCount = lotRows.filter(isZeroStock).length
+  const scopeGodownLabel = selBranch
+    ? branches.find((b) => String(b.id) === String(selBranch))?.branch_name || 'Selected godown'
+    : 'All godowns'
+  const scopeItemLabel = selItem
+    ? items.find((i) => String(i.id) === String(selItem))?.name || 'Selected item'
+    : 'All items'
 
   const tot = summary?.totals || {}
 
@@ -235,28 +245,124 @@ export default function Lots() {
         }
       />
 
-      {/* KPI ribbon - Solid Colors */}
+      {/* KPI ribbon — Settlement Dashboard stat-card style */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-        <div className="rounded-xl bg-[#0b3558] p-3.5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
-          <span className="text-[10px] font-bold uppercase text-[#faedcd] tracking-wider block">Open Lots</span>
-          <div className="text-xl font-black text-white mt-0.5">{formatNumber(tot.lots ?? visibleRows.length)}</div>
+        {/* Card 1: Open Lots */}
+        <div className="group rounded-2xl bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between border border-indigo-200/70">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-500 flex items-center gap-1.5">
+                Open Lots
+                <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-indigo-400" />
+              </span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 shrink-0 border border-indigo-200/70">
+                <Layers className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="text-3xl font-black tracking-tight text-slate-900">{formatNumber(tot.lots ?? visibleRows.length)}</span>
+              <span className="text-xs font-medium text-slate-500">lots</span>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-between pt-3 border-t border-slate-100">
+            <span className="inline-flex items-center rounded-md bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700 truncate max-w-full">
+              {visibleRows.length} shown
+            </span>
+            <span className="text-[11px] font-semibold text-slate-400 group-hover:text-indigo-600 transition-colors truncate max-w-[55%] text-right">
+              {scopeGodownLabel}
+            </span>
+          </div>
         </div>
-        <div className="rounded-xl bg-emerald-600 p-3.5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
-          <span className="text-[10px] font-bold uppercase text-emerald-100 tracking-wider block">Available Qty</span>
-          <div className="text-xl font-black text-white mt-0.5">{formatNumber(tot.total_qty ?? 0)} MT</div>
+
+        {/* Card 2: Available Qty */}
+        <div className="group rounded-2xl bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between border border-lime-300/80">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-lime-600 flex items-center gap-1.5">
+                Available Qty
+                <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-lime-500" />
+              </span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-lime-100 text-lime-700 shrink-0 border border-lime-200/80">
+                <Boxes className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="text-3xl font-black tracking-tight text-slate-900">{formatNumber(tot.total_qty ?? 0)}</span>
+              <span className="text-xs font-medium text-slate-500">MT</span>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-between pt-3 border-t border-slate-100">
+            <span className="inline-flex items-center rounded-md bg-lime-100 px-2.5 py-1 text-[11px] font-bold text-lime-800 truncate max-w-full">
+              {rows.length} loaded
+            </span>
+            <span className="text-[11px] font-semibold text-slate-400 group-hover:text-lime-600 transition-colors">
+              On hand
+            </span>
+          </div>
         </div>
-        <div className="rounded-xl bg-[#b37d14] p-3.5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
-          <span className="text-[10px] font-bold uppercase text-amber-100 tracking-wider block">Stock Value</span>
-          <div className="text-xl font-black text-white mt-0.5">{formatMoney(tot.total_value ?? 0)}</div>
+
+        {/* Card 3: Stock Value */}
+        <div className="group rounded-2xl bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between border border-amber-300/70">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-600 flex items-center gap-1.5">
+                Stock Value
+                <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-amber-500" />
+              </span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700 shrink-0 border border-amber-200/80">
+                <IndianRupee className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="text-3xl font-black tracking-tight text-slate-900">{formatMoney(tot.total_value ?? 0)}</span>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-between pt-3 border-t border-slate-100">
+            <span className="inline-flex items-center rounded-md bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700 truncate max-w-full">
+              {scopeItemLabel}
+            </span>
+            <span className="text-[11px] font-semibold text-slate-400 group-hover:text-amber-600 transition-colors">
+              Valuation
+            </span>
+          </div>
         </div>
-        <div className="rounded-xl bg-slate-500 p-3.5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
-          <span className="text-[10px] font-bold uppercase text-slate-200 tracking-wider block">Zero-Stock Lots</span>
-          <div className="text-xl font-black text-white mt-0.5">{formatNumber(zeroStockCount)}</div>
+
+        {/* Card 4: Zero-Stock Lots */}
+        <div className="group rounded-2xl bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between border border-rose-200/70">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-rose-500 flex items-center gap-1.5">
+                Zero-Stock Lots
+                <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-rose-400" />
+              </span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100 text-rose-600 shrink-0 border border-rose-200/70">
+                <Trash2 className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="text-3xl font-black tracking-tight text-slate-900">{formatNumber(zeroStockCount)}</span>
+              <span className="text-xs font-medium text-slate-500">lots</span>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-between pt-3 border-t border-slate-100">
+            <span className="inline-flex items-center rounded-md bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 truncate max-w-full">
+              {showZero ? 'Visible' : 'Hidden'}
+            </span>
+            <span className="text-[11px] font-semibold text-slate-400 group-hover:text-rose-600 transition-colors">
+              Trash ready
+            </span>
+          </div>
         </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <Input placeholder="Search lot number…" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
+        <Select value={selLot} onChange={(e) => setSelLot(e.target.value)} className="max-w-[200px]" aria-label="Lot dropdown">
+          <option value="">All lots ({lotOptions.length})</option>
+          {lotOptions.map((ln) => (
+            <option key={ln} value={ln}>{ln}</option>
+          ))}
+        </Select>
         <Select value={selItem} onChange={(e) => setSelItem(e.target.value)} className="max-w-[200px]">
           <option value="">All items</option>
           {items.map((i) => <option key={i.id} value={i.id}>{i.name || i.product_name} {i.code ? `(${i.code})` : ''}</option>)}
@@ -284,7 +390,7 @@ export default function Lots() {
           onChange={(e) => setShowZero(e.target.checked)}
           className="ml-1 text-xs font-semibold"
         />
-        {(duration !== 'all' || fromDate || toDate || search || selItem || selBranch || showZero) && (
+        {(duration !== 'all' || fromDate || toDate || search || selItem || selBranch || selLot || showZero) && (
           <Button
             variant="ghost"
             onClick={resetFilters}

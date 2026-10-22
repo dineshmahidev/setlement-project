@@ -5,17 +5,11 @@ import { useAuth } from '../../context/AuthContext'
 
 export default function Items() {
   const { can } = useAuth()
-  const [categories, setCategories] = useState([])
   const [units, setUnits] = useState([])
 
   useEffect(() => {
-    Promise.all([
-      api.get('/categories?all=true').catch(() => api.get('/categories').catch(() => ({ data: [] }))),
-      api.get('/units?all=true').catch(() => api.get('/units').catch(() => ({ data: [] }))),
-    ]).then(([c, u]) => {
-      const cl = Array.isArray(c.data) ? c.data : c.data?.data || []
+    api.get('/units?all=true').catch(() => api.get('/units').catch(() => ({ data: [] }))).then((u) => {
       const ul = Array.isArray(u.data) ? u.data : u.data?.data || []
-      setCategories(cl.map((x) => ({ value: x.id, label: x.name })))
       setUnits(ul.map((x) => ({ value: x.id, label: `${x.name} (${x.code})` })))
     })
   }, [])
@@ -55,15 +49,9 @@ export default function Items() {
           name: 'unit_id',
           label: 'Unit',
           type: 'select',
+          required: true,
           options: units,
           placeholder: 'Select Unit',
-        },
-        {
-          name: 'category_id',
-          label: 'Category',
-          type: 'select',
-          options: categories,
-          placeholder: 'Select Category (Optional)',
         },
         { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Optional remarks' },
         {
@@ -79,7 +67,6 @@ export default function Items() {
       ]}
       transformOut={(form) => ({
         ...form,
-        category_id: form.category_id ? Number(form.category_id) : null,
         unit_id: form.unit_id ? Number(form.unit_id) : null,
       })}
     />

@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import api from '../services/api'
 import { resolveCompanyLogo } from '../utils/helpers'
 import {
   LayoutDashboard,
@@ -18,7 +19,6 @@ import {
   Boxes,
   PlusCircle,
   MinusCircle,
-  ArrowRightLeft,
   Globe,
   Search,
   Check,
@@ -27,6 +27,8 @@ import {
   ShieldCheck,
   TrendingUp,
   Crown,
+  Factory,
+  ArrowRightLeft,
 } from 'lucide-react'
 
 const SETTLEMENT_NAVIGATION = [
@@ -50,18 +52,60 @@ const INVENTORY_NAVIGATION = [
   { id: 'inventory-overview', label: 'Inventory Dashboard', to: '/panel/inventory', icon: Package, perm: 'inventory.view', end: true },
   { id: 'inward', label: 'Inward (Receipt)', to: '/panel/inventory/inward', icon: PlusCircle, perm: 'inventory.view' },
   { id: 'outward', label: 'Outward / Dispatch', to: '/panel/inventory/outward', icon: MinusCircle, perm: 'inventory.view' },
+  { id: 'production', label: 'Mixing / Production', to: '/panel/inventory/production', icon: Factory, perm: 'inventory.view' },
+  { id: 'transfer', label: 'Stock Transfer', to: '/panel/inventory?tab=transfer', icon: ArrowRightLeft, perm: 'inventory.view' },
   { id: 'lots', label: 'Lotwise Stock', to: '/panel/inventory/lots', icon: Boxes, perm: 'inventory.view' },
   { id: 'current-stock', label: 'Current Items Stock', to: '/panel/inventory?tab=current-stock', icon: Boxes, perm: 'inventory.view' },
-  { id: 'transfer', label: 'Stock Transfer', to: '/panel/inventory?tab=transfer', icon: ArrowRightLeft, perm: 'inventory.view' },
   { id: 'ledger', label: 'Stock Ledger', to: '/panel/inventory?tab=ledger', icon: BookOpen, perm: 'inventory.view' },
   { id: 'items', label: 'Items', to: '/panel/inventory/items', icon: Package, perm: 'inventory.view' },
   { id: 'units', label: 'Units', to: '/panel/inventory/units', icon: Scale, perm: 'inventory.view' },
 ]
 
+const navItemCls = (isActive) =>
+  `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-semibold transition-all duration-150 ${
+    isActive
+      ? 'bg-[#C6F432] text-slate-950 font-extrabold shadow-lg shadow-lime-400/20'
+      : 'text-slate-400 hover:bg-white/10 hover:text-white'
+  }`
+
+const sectionLabelCls =
+  'px-3 pt-1 pb-1 flex items-center justify-between select-none pointer-events-none'
+
 function SuperAdminBranchSelector({ branches, branchId, setBranchId, user, companyName = 'SHRIEE LAXMI GROUP' }) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [summary, setSummary] = useState(null)
   const dropdownRef = useRef(null)
+
+  const fetchSummary = useCallback(() => {
+    // Consolidated stock across every godown (no branch_id → company-wide totals).
+    api
+      .get('/lots/summary')
+      .then((res) => setSummary(res.data))
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    fetchSummary()
+  }, [fetchSummary])
+
+  // Retry whenever the switcher opens so totals never stay missing.
+  useEffect(() => {
+    if (open) fetchSummary()
+  }, [open, fetchSummary])
+
+  const fmtQty = (n) => Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 3 })
+  const fmtValue = (n) => `₹${Math.round(Number(n || 0)).toLocaleString('en-IN')}`
+
+  // Per-godown combined stock (sum of by_item rows per branch) from the same call.
+  const branchTotals = {}
+  for (const row of summary?.by_item || []) {
+    const key = row.branch_id
+    if (!branchTotals[key]) branchTotals[key] = { qty: 0, value: 0 }
+    branchTotals[key].qty += Number(row.available_qty) || 0
+    branchTotals[key].value += Number(row.stock_value) || 0
+  }
+  const combined = summary?.totals || null
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -96,21 +140,21 @@ function SuperAdminBranchSelector({ branches, branchId, setBranchId, user, compa
         type="button"
         onClick={() => isMulti && setOpen(!open)}
         className={`flex items-center gap-2 px-2 py-1 text-xs sm:text-sm font-bold text-[#0B1A2D] transition-colors rounded-lg ${
-          isMulti ? 'hover:text-amber-700 hover:bg-slate-100/80 cursor-pointer' : 'cursor-default'
+          isMulti ? 'hover:text-violet-700 hover:bg-slate-100/80 cursor-pointer' : 'cursor-default'
         }`}
       >
-        <Building2 className="w-4 h-4 text-[#C9A227] shrink-0" />
+        <Building2 className="w-4 h-4 text-violet-500 shrink-0" />
         <span className="truncate max-w-[240px] sm:max-w-[340px] tracking-tight">
           {selectedBranch
             ? `${companyName} - ${selectedBranch.branch_name || selectedBranch.name}`
             : branchId
             ? `${companyName} - Godown #${branchId}`
-            : `${companyName} - ALL GODOWNS`}
+            : `${companyName} - ALL GODOWNS${combined ? ` (${fmtQty(combined.total_qty)} MT)` : ''}`}
         </span>
         {isMulti && (
           <ChevronDown
             className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-200 ${
-              open ? 'rotate-180 text-amber-700' : ''
+              open ? 'rotate-180 text-violet-700' : ''
             }`}
           />
         )}
@@ -118,11 +162,11 @@ function SuperAdminBranchSelector({ branches, branchId, setBranchId, user, compa
 
       {/* Popover Glass Menu */}
       {open && isMulti && (
-        <div className="absolute left-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white/95 backdrop-blur-xl border-2 border-amber-300/80 shadow-2xl z-50 p-4 space-y-3 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute left-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white/95 backdrop-blur-xl border border-violet-200/80 shadow-2xl z-50 p-4 space-y-3 animate-in fade-in zoom-in-95 duration-150">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-amber-100 pb-2.5">
+          <div className="flex items-center justify-between border-b border-violet-100 pb-2.5">
             <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-400 text-slate-950 font-black">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#C6F432] text-slate-950 font-black">
                 <Crown className="w-4 h-4 text-slate-950" />
               </div>
               <div>
@@ -134,7 +178,7 @@ function SuperAdminBranchSelector({ branches, branchId, setBranchId, user, compa
                 </p>
               </div>
             </div>
-            <span className="rounded-full bg-amber-100 border border-amber-300 px-2 py-0.5 text-[9px] font-black text-amber-900">
+            <span className="rounded-full bg-violet-100 border border-violet-300 px-2 py-0.5 text-[9px] font-black text-violet-800">
               SUPER ADMIN ACCESS
             </span>
           </div>
@@ -147,7 +191,7 @@ function SuperAdminBranchSelector({ branches, branchId, setBranchId, user, compa
               placeholder="Search godown name, code or city..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 bg-slate-50/80 pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:border-[#C9A227] focus:bg-white focus:outline-none"
+              className="w-full rounded-xl border border-slate-300 bg-slate-50/80 pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:border-violet-400 focus:bg-white focus:outline-none"
             />
           </div>
 
@@ -159,21 +203,25 @@ function SuperAdminBranchSelector({ branches, branchId, setBranchId, user, compa
             }}
             className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${
               branchId === null
-                ? 'border-amber-400 bg-gradient-to-r from-amber-100/90 to-amber-50 shadow-2xs font-bold text-amber-950'
+                ? 'border-violet-300 bg-violet-50 shadow-2xs font-bold text-violet-900'
                 : 'border-slate-200 bg-slate-50/60 hover:bg-slate-100 text-slate-700'
             }`}
           >
             <div className="flex items-center gap-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 text-amber-300 font-black">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 text-lime-300 font-black">
                 <Globe className="w-3.5 h-3.5" />
               </div>
               <div>
                 <div className="text-xs font-extrabold text-[#0B1A2D]">All Godowns (Consolidated)</div>
-                <div className="text-[10px] text-slate-500">Live combined stock across all branches</div>
+                <div className="text-[10px] text-slate-500">
+                  {combined
+                    ? `Combined stock: ${fmtQty(combined.total_qty)} MT • ${fmtValue(combined.total_value)}`
+                    : 'Live combined stock across all branches'}
+                </div>
               </div>
             </div>
             {branchId === null && (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-slate-950 font-black">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#C6F432] text-slate-950 font-black">
                 <Check className="w-3.5 h-3.5" />
               </span>
             )}
@@ -199,13 +247,13 @@ function SuperAdminBranchSelector({ branches, branchId, setBranchId, user, compa
                     }}
                     className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${
                       isSelected
-                        ? 'border-amber-400 bg-gradient-to-r from-amber-100/90 to-amber-50 shadow-2xs font-bold text-amber-950'
+                        ? 'border-violet-300 bg-violet-50 shadow-2xs font-bold text-violet-900'
                         : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-slate-800 font-bold shrink-0">
-                        <Building2 className="w-3.5 h-3.5 text-[#C9A227]" />
+                        <Building2 className="w-3.5 h-3.5 text-violet-500" />
                       </div>
                       <div className="min-w-0">
                         <div className="text-xs font-extrabold text-[#0B1A2D] truncate">
@@ -218,8 +266,14 @@ function SuperAdminBranchSelector({ branches, branchId, setBranchId, user, compa
                       </div>
                     </div>
 
+                    {branchTotals[b.id] && (
+                      <span className="text-[10px] font-bold text-slate-500 shrink-0 mr-1">
+                        {fmtQty(branchTotals[b.id].qty)} MT
+                      </span>
+                    )}
+
                     {isSelected && (
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-slate-950 font-black shrink-0">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#C6F432] text-slate-950 font-black shrink-0">
                         <Check className="w-3.5 h-3.5" />
                       </span>
                     )}
@@ -261,7 +315,7 @@ function CompanySwitcher({ companies = [], activeCompany, onSelect }) {
         type="button"
         onClick={() => isMulti && setOpen(!open)}
         className={`flex items-center gap-2.5 rounded-xl px-2.5 py-1 text-xs font-bold text-[#0B1A2D] transition-all sm:text-sm border border-slate-200/90 bg-white shadow-2xs ${
-          isMulti ? 'cursor-pointer hover:border-amber-400 hover:bg-amber-50/40' : 'cursor-default'
+          isMulti ? 'cursor-pointer hover:border-violet-400 hover:bg-violet-50/50' : 'cursor-default'
         }`}
         title={isMulti ? 'Switch active company' : label}
       >
@@ -279,24 +333,24 @@ function CompanySwitcher({ companies = [], activeCompany, onSelect }) {
           <span className="max-w-[150px] truncate tracking-tight sm:max-w-[220px] font-extrabold text-xs text-[#0B1A2D] leading-tight">
             {label}
           </span>
-          <span className="text-[9px] font-bold text-amber-700 uppercase tracking-wider leading-none mt-0.5">
+          <span className="text-[9px] font-bold text-violet-700 uppercase tracking-wider leading-none mt-0.5">
             {activeCompany?.short_name || 'Active Company'}
           </span>
         </div>
         {isMulti && (
           <ChevronDown
             className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-200 ${
-              open ? 'rotate-180 text-amber-700' : ''
+              open ? 'rotate-180 text-violet-700' : ''
             }`}
           />
         )}
       </button>
 
       {open && isMulti && (
-        <div className="absolute left-0 z-50 mt-2 w-80 rounded-2xl border-2 border-amber-300/80 bg-white/95 p-4 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 sm:w-96">
-          <div className="flex items-center justify-between border-b border-amber-100 pb-2.5">
+        <div className="absolute left-0 z-50 mt-2 w-80 rounded-2xl border border-violet-200/80 bg-white/95 p-4 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 sm:w-96">
+          <div className="flex items-center justify-between border-b border-violet-100 pb-2.5">
             <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-400 font-black text-slate-950">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#C6F432] font-black text-slate-950">
                 <Briefcase className="w-4 h-4 text-slate-950" />
               </div>
               <div>
@@ -319,7 +373,7 @@ function CompanySwitcher({ companies = [], activeCompany, onSelect }) {
                   }}
                   className={`flex cursor-pointer items-center justify-between rounded-xl border p-2.5 transition-all ${
                     isSelected
-                      ? 'border-amber-400 bg-gradient-to-r from-amber-100/90 to-amber-50 font-bold text-amber-950 shadow-2xs'
+                      ? 'border-violet-300 bg-violet-50 font-bold text-violet-900 shadow-2xs'
                       : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                   }`}
                 >
@@ -343,7 +397,7 @@ function CompanySwitcher({ companies = [], activeCompany, onSelect }) {
                     </div>
                   </div>
                   {isSelected && (
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-400 font-black text-slate-950">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#C6F432] font-black text-slate-950">
                       <Check className="w-3.5 h-3.5" />
                     </span>
                   )}
@@ -377,7 +431,7 @@ export default function AppLayout() {
   const isInventorySection = location.pathname.includes('/inventory')
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-[#FFF5F7] via-[#F8FAFC] to-[#F0F7FF] font-sans text-slate-800">
+    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-[#EADFFF] via-[#F7F2FF] to-[#E3D6FF] font-sans text-slate-800">
       {/* Mobile backdrop */}
       {sidebarOpen && (
         <div
@@ -388,13 +442,13 @@ export default function AppLayout() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 lg:w-68 flex-col bg-white/95 backdrop-blur-md border-r border-slate-200/90 shadow-xs transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${
+        className={`fixed top-2 bottom-2 left-2 z-50 flex w-64 lg:w-68 flex-col rounded-[26px] bg-[#14151C] ring-1 ring-white/10 shadow-2xl shadow-black/40 overflow-hidden transition-transform duration-200 ease-in-out lg:static lg:m-2 lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        {/* Brand Header (Clean White Background with Prominent Company Logo) */}
-        <div className="flex h-16 items-center gap-2.5 border-b border-slate-200/90 px-3.5 bg-white text-slate-900 shadow-2xs">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-50 border border-slate-200/90 p-1 shadow-2xs">
+        {/* Brand Header */}
+        <div className="flex h-16 items-center gap-2.5 border-b border-white/10 px-3.5">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 border border-white/15 p-1">
             <img
               src={currentCompanyLogo.startsWith('/') ? currentCompanyLogo : `/${currentCompanyLogo}`}
               alt={companyShort}
@@ -405,11 +459,11 @@ export default function AppLayout() {
             />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xs sm:text-sm font-black tracking-tight text-slate-900 flex items-center gap-1 truncate">
+            <h1 className="text-xs sm:text-sm font-black tracking-tight text-white flex items-center gap-1.5 truncate">
               {companyShort}
-              <span className="rounded bg-emerald-50 border border-emerald-300/80 px-1.5 py-0.2 text-[8px] font-black text-[#02492a] uppercase">PANEL</span>
+              <span className="rounded-md bg-[#C6F432] px-1.5 py-0.5 text-[8px] font-black text-slate-950 uppercase">PANEL</span>
             </h1>
-            <p className="text-[10.5px] font-semibold text-slate-500 truncate">
+            <p className="text-[10.5px] font-semibold text-slate-400 truncate">
               {isInventorySection
                 ? (activeCompany?.city ? `${activeCompany.city} • Godowns` : 'Inventory & Godowns')
                 : (activeCompany?.city || 'Company Panel')}
@@ -417,22 +471,22 @@ export default function AppLayout() {
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 lg:hidden cursor-pointer"
+            className="rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white lg:hidden cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-3 bg-slate-50/50">
+        <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-3">
           {/* SECTION 1: SETTLEMENT (Super Admin & Admin; Hidden for Branch Manager & Staff) */}
           {!isBranchManagerOrStaff && (
             <div className="space-y-1">
-              <div className="px-3 pt-1 pb-1 flex items-center justify-between select-none pointer-events-none">
+              <div className={sectionLabelCls}>
                 <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
                   Settlement
                 </span>
-                <div className="h-px w-10 bg-slate-200" />
+                <div className="h-px w-10 bg-white/10" />
               </div>
 
               {SETTLEMENT_NAVIGATION.filter((item) => !item.perm || can(item.perm)).map((item) => {
@@ -443,15 +497,9 @@ export default function AppLayout() {
                     to={navTo(item.to)}
                     end={item.end || item.to === '/panel'}
                     onClick={() => setSidebarOpen(false)}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-bold transition-all ${
-                        isActive
-                          ? 'bg-[#0B1A2D] text-white shadow-xs border-l-3 border-[#C9A227]'
-                          : 'text-slate-700 hover:bg-slate-200/70 hover:text-slate-950'
-                      }`
-                    }
+                    className={({ isActive }) => navItemCls(isActive)}
                   >
-                    <Icon className="w-4.5 h-4.5 shrink-0 text-[#C9A227]" strokeWidth={2.1} />
+                    <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={2.1} />
                     <span className="truncate flex-1">{item.label}</span>
                   </NavLink>
                 )
@@ -460,12 +508,12 @@ export default function AppLayout() {
           )}
 
           {/* SECTION 2: INVENTORY (All Roles: Super Admin, Admin, Branch Manager, Staff) */}
-          <div className="space-y-1 pt-2 border-t border-slate-200/70">
-            <div className="px-3 pt-1 pb-1 flex items-center justify-between select-none pointer-events-none">
-              <span className="text-[11px] font-black uppercase tracking-wider text-[#B78A16] flex items-center gap-1.5">
+          <div className="space-y-1 pt-2 border-t border-white/10">
+            <div className={sectionLabelCls}>
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                 Inventory
               </span>
-              <div className="h-px w-12 bg-amber-300" />
+              <div className="h-px w-12 bg-white/10" />
             </div>
 
             {INVENTORY_NAVIGATION.filter((item) => !item.perm || can(item.perm)).map((item) => {
@@ -486,13 +534,9 @@ export default function AppLayout() {
                   key={item.id || item.to}
                   to={fullHref}
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-bold transition-all ${
-                    isItemActive
-                      ? 'bg-gradient-to-r from-amber-400 via-amber-500 to-[#C9A227] text-slate-950 font-extrabold shadow-xs border-l-3 border-amber-300'
-                      : 'text-slate-700 hover:bg-amber-100/70 hover:text-amber-950'
-                  }`}
+                  className={navItemCls(isItemActive)}
                 >
-                  <Icon className={`w-4.5 h-4.5 shrink-0 ${isItemActive ? 'text-slate-950' : 'text-[#C9A227]'}`} strokeWidth={2.1} />
+                  <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={2.1} />
                   <span className="truncate flex-1">{item.label}</span>
                 </NavLink>
               )
@@ -501,25 +545,19 @@ export default function AppLayout() {
 
           {/* SECTION 3: USER MANAGEMENT FOR NORMAL ADMIN (Admin can access Users, but NOT other Master Admin modules) */}
           {isAdmin && (
-            <div className="space-y-1 pt-2 border-t border-slate-200/70">
-              <div className="px-3 pt-1 pb-1 flex items-center justify-between select-none pointer-events-none">
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                  <UserCheck className="w-3.5 h-3.5 text-[#0b3558]" />
+            <div className="space-y-1 pt-2 border-t border-white/10">
+              <div className={sectionLabelCls}>
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <UserCheck className="w-3.5 h-3.5 text-slate-500" />
                   User Management
                 </span>
               </div>
               <NavLink
                 to={navTo('/panel/users')}
                 onClick={() => setSidebarOpen(false)}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-bold transition-all ${
-                    isActive
-                      ? 'bg-[#0B1A2D] text-white shadow-xs border-l-3 border-[#C9A227]'
-                      : 'text-slate-700 hover:bg-slate-200/70 hover:text-slate-950'
-                  }`
-                }
+                className={({ isActive }) => navItemCls(isActive)}
               >
-                <UserCheck className="w-4.5 h-4.5 shrink-0 text-[#C9A227]" strokeWidth={2.1} />
+                <UserCheck className="w-[18px] h-[18px] shrink-0" strokeWidth={2.1} />
                 <span className="truncate flex-1">Users & Staff</span>
               </NavLink>
             </div>
@@ -527,13 +565,13 @@ export default function AppLayout() {
 
           {/* SECTION 4: MASTER ADMIN ONLY (Confidential: Godowns, Companies, CMS, Users, Settings) */}
           {isSuperAdmin && (
-            <div className="space-y-1 pt-2 border-t border-slate-200/70">
-              <div className="px-3 pt-1 pb-1 flex items-center justify-between select-none pointer-events-none">
-                <span className="text-[11px] font-black uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+            <div className="space-y-1 pt-2 border-t border-white/10">
+              <div className={sectionLabelCls}>
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
                   Master Admin
                 </span>
-                <span className="rounded bg-amber-100 border border-amber-300 px-1 py-0.2 text-[8px] font-black text-amber-900 uppercase">
+                <span className="rounded-md bg-amber-400/15 border border-amber-400/40 px-1 py-0.2 text-[8px] font-black text-amber-300 uppercase">
                   CONFIDENTIAL
                 </span>
               </div>
@@ -545,15 +583,9 @@ export default function AppLayout() {
                     key={item.to}
                     to={navTo(item.to)}
                     onClick={() => setSidebarOpen(false)}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-bold transition-all ${
-                        isActive
-                          ? 'bg-[#0B1A2D] text-white shadow-xs border-l-3 border-[#C9A227]'
-                          : 'text-slate-700 hover:bg-amber-100/60 hover:text-amber-950'
-                      }`
-                    }
+                    className={({ isActive }) => navItemCls(isActive)}
                   >
-                    <Icon className="w-4.5 h-4.5 shrink-0 text-[#C9A227]" strokeWidth={2.1} />
+                    <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={2.1} />
                     <span className="truncate flex-1">{item.label}</span>
                   </NavLink>
                 )
@@ -563,43 +595,37 @@ export default function AppLayout() {
 
           {/* VERY LAST ITEM: TRASH (SUPER ADMIN ONLY) */}
           {isSuperAdmin && (
-            <div className="pt-2 border-t border-slate-200/80">
+            <div className="pt-2 border-t border-white/10">
               <NavLink
                 to={navTo('/panel/trash')}
                 onClick={() => setSidebarOpen(false)}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-bold transition-all ${
-                    isActive
-                      ? 'bg-rose-900 text-white shadow-xs border-l-3 border-rose-400'
-                      : 'text-slate-700 hover:bg-rose-50 hover:text-rose-700'
-                  }`
-                }
+                className={({ isActive }) => navItemCls(isActive)}
               >
-                <Trash2 className="w-4.5 h-4.5 shrink-0 text-rose-500" strokeWidth={2.1} />
+                <Trash2 className="w-[18px] h-[18px] shrink-0" strokeWidth={2.1} />
                 <span className="truncate flex-1">Trash</span>
               </NavLink>
             </div>
           )}
         </nav>
 
-        {/* User Card Footer */}
-        <div className="border-t border-slate-200 p-3 bg-white/90">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0B1A2D] text-[11px] font-extrabold text-[#E0BD55] border border-amber-300/40">
+        {/* User Card Footer — lime accent card */}
+        <div className="border-t border-white/10 p-3">
+          <div className="flex items-center justify-between gap-2 rounded-2xl bg-[#C6F432] p-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#14151C] text-[11px] font-extrabold text-[#C6F432]">
                 {displayName ? displayName.slice(0, 2).toUpperCase() : 'LG'}
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-bold text-[#0B1A2D] truncate">{displayName}</p>
-                <p className="text-[10px] text-slate-500 truncate">{user?.role?.label || 'Administrator'}</p>
+                <p className="text-xs font-extrabold text-slate-950 truncate">{displayName}</p>
+                <p className="text-[10px] font-semibold text-slate-700 truncate">{user?.role?.label || 'Administrator'}</p>
               </div>
             </div>
             <button
               onClick={() => logout()}
               title="Sign out"
-              className="rounded-lg p-1.5 text-white bg-rose-600 hover:bg-rose-700 shadow-2xs transition-colors cursor-pointer"
+              className="rounded-xl p-2 text-[#C6F432] bg-[#14151C] hover:bg-slate-800 shadow-xs transition-colors cursor-pointer shrink-0"
             >
-              <LogOut className="w-4 h-4 text-white" />
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -607,8 +633,8 @@ export default function AppLayout() {
 
       {/* Main Container */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden text-slate-800">
-        {/* Top Navbar */}
-        <header className="flex h-14 items-center justify-between border-b border-slate-200/80 bg-white/80 backdrop-blur-md px-4 lg:px-6 shadow-2xs z-20">
+        {/* Top Navbar — blends with page background */}
+        <header className="flex h-14 items-center justify-between px-4 lg:px-8 z-20">
           <div className="flex items-center gap-2.5">
             <button
               type="button"
@@ -644,18 +670,24 @@ export default function AppLayout() {
               <span className="text-xs font-bold text-[#0B1A2D]">{displayName}</span>
               <span className="text-[10px] text-slate-500">{displayEmail}</span>
             </div>
-            <button
-              onClick={() => logout()}
-              className="flex items-center gap-1.5 rounded-lg border border-red-600 bg-red-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-red-700 hover:border-red-700 active:scale-95 transition-all cursor-pointer"
-            >
-              <LogOut className="w-3.5 h-3.5 text-white" />
-              <span className="hidden sm:inline text-xs font-bold">Logout</span>
-            </button>
+            <div className="relative h-9 w-9 shrink-0 rounded-full overflow-hidden bg-[#C6F432] ring-2 ring-white shadow-md" title={`${displayName} — click sidebar footer to logout`}>
+              <span className="absolute inset-0 flex items-center justify-center text-[11px] font-extrabold text-slate-950">
+                {displayName ? displayName.slice(0, 2).toUpperCase() : 'LG'}
+              </span>
+              <img
+                src={`https://api.dicebear.com/7.x/micah/svg?seed=${encodeURIComponent(displayEmail || displayName || 'user')}&backgroundColor=c6f432,ddd6fe,a78bfa`}
+                alt={displayName}
+                className="absolute inset-0 h-full w-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none'
+                }}
+              />
+            </div>
           </div>
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto p-3.5 lg:p-5">
+        <main id="panel-main" className="flex-1 overflow-y-auto px-4 py-5 lg:px-8 lg:py-7">
           <Outlet />
         </main>
       </div>

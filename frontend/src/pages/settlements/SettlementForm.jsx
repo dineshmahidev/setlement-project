@@ -459,10 +459,9 @@ export default function SettlementForm() {
     e.preventDefault()
     setErrors({})
 
-    // Client-side validation to prevent ghost required field issues
-    const activeBranchId = formData.branch_id || branchId || (branchesList[0]?.id)
+    // Client-side validation (Settlements are company-level, branch is auto-resolved)
+    const activeBranchId = formData.branch_id || branchId || (branchesList[0]?.id) || null
     const validationErrors = {}
-    if (!activeBranchId) validationErrors.branch_id = ['Branch is required']
     if (!formData.vendor_id) validationErrors.vendor_id = ['Vendor is required']
     if (!formData.settlement_date) validationErrors.settlement_date = ['Settlement date is required']
     if (!formData.net_weight_mt || Number(formData.net_weight_mt) <= 0) validationErrors.net_weight_mt = ['Net weight must be greater than 0']
@@ -480,7 +479,7 @@ export default function SettlementForm() {
 
     const payload = {
       ...formData,
-      branch_id: activeBranchId,
+      branch_id: activeBranchId || undefined,
       net_weight_mt: parseFloat(formData.net_weight_mt) || 0,
       jute_bag: parseFloat(formData.jute_bag) || 0,
       pp_bag: parseFloat(formData.pp_bag) || 0,
@@ -553,7 +552,7 @@ export default function SettlementForm() {
           </Link>
           <div>
             <h1 className="text-2xl font-black tracking-tight text-[#0b3558]">
-              {isEdit ? `Edit Settlement Bill #${formData.settlement_number}` : 'New Agro Settlement Bill'}
+              {isEdit ? `Edit Settlement Bill #${formData.settlement_number}` : 'New Settlement Bill'}
             </h1>
             <p className="text-xs font-semibold text-slate-500">
               Automated Oil Valuation, Bran Value, Quality Tests & Debit Note Reversal

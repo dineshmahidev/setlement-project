@@ -61,7 +61,8 @@ function companyHeaders() {
   const headers = {}
   const branchId = localStorage.getItem('branch_id')
   const companyId = getCompanyId()
-  if (branchId) headers['X-Branch-Id'] = branchId
+  // 'all' = "All godowns" (consolidated) — never send it as a branch header.
+  if (branchId && branchId !== 'all') headers['X-Branch-Id'] = branchId
   if (companyId) headers['X-Company-Id'] = companyId
   return headers
 }

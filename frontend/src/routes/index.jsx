@@ -2,6 +2,7 @@ import { cloneElement, isValidElement, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Seo from '../website/components/Seo'
+import AuthLoader from '../components/AuthLoader'
 
 // Shriee Laxmi Group Corporate Website Imports
 import WebsiteLayout from '../website/layouts/WebsiteLayout'
@@ -50,32 +51,14 @@ import AuditLogs from '../pages/audit/AuditLogs'
 
 function Protected({ children }) {
   const { user, loading } = useAuth()
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#FAFAFC]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#C9A227] border-t-transparent"></div>
-          <span className="text-xs font-bold text-slate-600">Authenticating session...</span>
-        </div>
-      </div>
-    )
-  }
+  if (loading) return <AuthLoader label="Authenticating session…" />
   if (!user) return <Navigate to="/panel/login" replace />
   return children
 }
 
 function RequireSuperAdmin({ children }) {
   const { user, isSuperAdmin, loading } = useAuth()
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#FAFAFC]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#C9A227] border-t-transparent"></div>
-          <span className="text-xs font-bold text-slate-600">Verifying security clearance...</span>
-        </div>
-      </div>
-    )
-  }
+  if (loading) return <AuthLoader label="Verifying security clearance…" />
   if (!user) return <Navigate to="/panel/login" replace />
   if (!isSuperAdmin) return <Navigate to="/panel" replace />
   return children
@@ -83,16 +66,7 @@ function RequireSuperAdmin({ children }) {
 
 function RequireAdminOrSuperAdmin({ children }) {
   const { user, isSuperAdmin, isAdmin, loading } = useAuth()
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#FAFAFC]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#C9A227] border-t-transparent"></div>
-          <span className="text-xs font-bold text-slate-600">Verifying access...</span>
-        </div>
-      </div>
-    )
-  }
+  if (loading) return <AuthLoader label="Verifying access…" />
   if (!user) return <Navigate to="/panel/login" replace />
   if (!isSuperAdmin && !isAdmin) return <Navigate to="/panel/inventory" replace />
   return children
@@ -100,7 +74,7 @@ function RequireAdminOrSuperAdmin({ children }) {
 
 function RequireSettlementAccess({ children }) {
   const { user, isBranchManagerOrStaff, loading } = useAuth()
-  if (loading) return null
+  if (loading) return <AuthLoader label="Checking module access…" />
   if (!user) return <Navigate to="/panel/login" replace />
   // Branch Manager and Staff are restricted to Inventory section only
   if (isBranchManagerOrStaff) {
@@ -111,13 +85,7 @@ function RequireSettlementAccess({ children }) {
 
 function Guest({ children }) {
   const { loading } = useAuth()
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#FAFAFC]">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#C9A227] border-t-transparent"></div>
-      </div>
-    )
-  }
+  if (loading) return <AuthLoader label="Preparing sign-in…" />
   return children
 }
 
@@ -125,13 +93,7 @@ function Guest({ children }) {
 function PanelHome() {
   const { slug } = useParams()
   const { activeCompany, isBranchManagerOrStaff, loading } = useAuth()
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#FAFAFC]">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#C9A227] border-t-transparent"></div>
-      </div>
-    )
-  }
+  if (loading) return <AuthLoader label="Loading company workspace…" />
 
   // Branch Manager and Staff are redirected directly to Inventory
   if (isBranchManagerOrStaff) {

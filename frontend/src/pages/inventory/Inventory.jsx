@@ -22,12 +22,16 @@ import {
   Plus,
   ArrowRightLeft,
   Filter,
+  Edit2,
+  Trash2,
+  ChevronRight,
 } from 'lucide-react'
 import api, { apiErrorMessage, openPdf } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import {
   Button,
+  ConfirmDialog,
   DataTable,
   Input,
   Modal,
@@ -189,52 +193,52 @@ export function PartyStockDashboard() {
           </button>
         </div>
 
-        {/* Compact Metric Summary Cards - Solid Colors (3 Cards) */}
+        {/* Compact Metric Summary Cards - Soft pastel (3 Cards) */}
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="rounded-xl bg-teal-700 p-3.5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
-            <div className="flex items-center justify-between text-[11px] text-teal-100 font-bold uppercase tracking-wider">
+          <div className="rounded-xl bg-white p-3.5 shadow-sm border border-violet-200/70 transition-transform hover:-translate-y-0.5">
+            <div className="flex items-center justify-between text-[11px] text-violet-500 font-bold uppercase tracking-wider">
               <span>Stock In</span>
-              <ArrowUpRight className="h-4 w-4 text-white" />
+              <ArrowUpRight className="h-4 w-4 text-violet-500" />
             </div>
             <div className="mt-1 flex items-baseline gap-1.5">
-              <span className="text-xl font-extrabold text-white">
+              <span className="text-xl font-extrabold text-slate-900">
                 {formatNumber(summaryData.summary.total_inlet_mt || 0)}
               </span>
-              <span className="text-xs font-bold text-teal-200">MT</span>
+              <span className="text-xs font-bold text-violet-400">MT</span>
             </div>
-            <p className="text-[11px] text-teal-100 font-medium mt-0.5">
+            <p className="text-[11px] text-slate-500 font-medium mt-0.5">
               {formatNumber(summaryData.summary.total_inlet_bags || 0)} Bags Imported
             </p>
           </div>
 
-          <div className="rounded-xl bg-rose-600 p-3.5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
-            <div className="flex items-center justify-between text-[11px] text-rose-100 font-bold uppercase tracking-wider">
+          <div className="rounded-xl bg-white p-3.5 shadow-sm border border-rose-200/70 transition-transform hover:-translate-y-0.5">
+            <div className="flex items-center justify-between text-[11px] text-rose-500 font-bold uppercase tracking-wider">
               <span>Stock Out</span>
-              <ArrowDownRight className="h-4 w-4 text-white" />
+              <ArrowDownRight className="h-4 w-4 text-rose-500" />
             </div>
             <div className="mt-1 flex items-baseline gap-1.5">
-              <span className="text-xl font-extrabold text-white">
+              <span className="text-xl font-extrabold text-slate-900">
                 {formatNumber(summaryData.summary.total_outlet_mt || 0)}
               </span>
-              <span className="text-xs font-bold text-rose-200">MT</span>
+              <span className="text-xs font-bold text-rose-400">MT</span>
             </div>
-            <p className="text-[11px] text-rose-100 font-medium mt-0.5">
+            <p className="text-[11px] text-slate-500 font-medium mt-0.5">
               {formatNumber(summaryData.summary.total_outlet_bags || 0)} Bags Exported
             </p>
           </div>
 
-          <div className="rounded-xl bg-[#b37d14] p-3.5 text-white shadow-sm transition-transform hover:-translate-y-0.5">
-            <div className="flex items-center justify-between text-[11px] text-amber-100 font-bold uppercase tracking-wider">
+          <div className="rounded-xl bg-white p-3.5 shadow-sm border border-lime-300/80 transition-transform hover:-translate-y-0.5">
+            <div className="flex items-center justify-between text-[11px] text-lime-600 font-bold uppercase tracking-wider">
               <span>Stock Balance</span>
-              <Layers className="h-4 w-4 text-white" />
+              <Layers className="h-4 w-4 text-lime-500" />
             </div>
             <div className="mt-1 flex items-baseline gap-1.5">
-              <span className="text-xl font-black text-white">
+              <span className="text-xl font-black text-slate-900">
                 {formatNumber(summaryData.summary.net_holding_mt || 0)}
               </span>
-              <span className="text-xs font-bold text-amber-200">MT</span>
+              <span className="text-xs font-bold text-lime-500">MT</span>
             </div>
-            <p className="text-[11px] text-amber-100 font-bold mt-0.5">
+            <p className="text-[11px] text-slate-500 font-bold mt-0.5">
               {formatNumber(summaryData.summary.net_holding_bags || 0)} Bags Remaining
             </p>
           </div>
@@ -897,35 +901,104 @@ export function CurrentStock() {
         }
       />
 
-      {/* KPI Mini-Metrics Ribbon - Solid Colors */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="rounded-2xl bg-[#0b3558] p-4 text-white shadow-sm flex items-center gap-3 transition-transform hover:-translate-y-0.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#07233b] text-[#d69e2e] shrink-0">
-            <Package className="h-5 w-5" />
-          </div>
+      {/* Metric Cards - 3 Core Cards in Settlement Dashboard Style */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {/* Card 1: Total Commodities */}
+        <div
+          onClick={() => {
+            setHideZeroStock(false)
+            setSelItem('')
+          }}
+          className="group rounded-2xl bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between border border-violet-200/70 cursor-pointer"
+        >
           <div>
-            <span className="text-[10px] font-black uppercase text-[#faedcd] tracking-wider">Total Commodities</span>
-            <div className="text-lg font-black text-white">{totalItemsCount} <span className="text-xs font-semibold text-slate-300">Items Listed</span></div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-violet-500 flex items-center gap-1.5">
+                Total Commodities
+                <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-violet-400" />
+              </span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-violet-600 shrink-0 border border-violet-200/70">
+                <Boxes className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="text-3xl font-black tracking-tight text-slate-900">
+                {totalItemsCount}
+              </span>
+              <span className="text-xs font-medium text-slate-500">items</span>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-between pt-3 border-t border-slate-100">
+            <span className="inline-flex items-center rounded-md bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-700 truncate max-w-full">
+              Total In: {formatNumber(totIn)} MT
+            </span>
+            <span className="text-[11px] font-semibold text-slate-400 group-hover:text-violet-600 flex items-center gap-1 transition-colors">
+              All items <ChevronRight className="w-3.5 h-3.5" />
+            </span>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-emerald-600 p-4 text-white shadow-sm flex items-center gap-3 transition-transform hover:-translate-y-0.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-700 text-white shrink-0">
-            <CheckCircle2 className="h-5 w-5" />
-          </div>
+        {/* Card 2: In Stock Available */}
+        <div
+          onClick={() => setHideZeroStock(true)}
+          className="group rounded-2xl bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between border border-emerald-200/70 cursor-pointer"
+        >
           <div>
-            <span className="text-[10px] font-black uppercase text-emerald-100 tracking-wider">In Stock Available</span>
-            <div className="text-lg font-black text-white">{availableCount} <span className="text-xs font-semibold text-emerald-100">Ready for Dispatch</span></div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1.5">
+                In Stock Available
+                <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-emerald-500" />
+              </span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 shrink-0 border border-emerald-200/70">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="text-3xl font-black tracking-tight text-slate-900">
+                {availableCount}
+              </span>
+              <span className="text-xs font-medium text-slate-500">active items</span>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-between pt-3 border-t border-slate-100">
+            <span className="inline-flex items-center rounded-md bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 truncate max-w-full">
+              Available: {formatNumber(totAvail)} MT
+            </span>
+            <span className="text-[11px] font-semibold text-slate-400 group-hover:text-emerald-600 flex items-center gap-1 transition-colors">
+              Ready to dispatch <ChevronRight className="w-3.5 h-3.5" />
+            </span>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-rose-600 p-4 text-white shadow-sm flex items-center gap-3 transition-transform hover:-translate-y-0.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-700 text-white shrink-0">
-            <TrendingDown className="h-5 w-5" />
-          </div>
+        {/* Card 3: Zero Stock Level */}
+        <div
+          onClick={() => setHideZeroStock(false)}
+          className="group rounded-2xl bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between border border-rose-200/70 cursor-pointer"
+        >
           <div>
-            <span className="text-[10px] font-black uppercase text-rose-100 tracking-wider">Zero Stock Level</span>
-            <div className="text-lg font-black text-white">{outOfStockCount} <span className="text-xs font-semibold text-rose-100">Out of Stock</span></div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-rose-500 flex items-center gap-1.5">
+                Zero Stock Level
+                <ArrowDownRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-rose-400" />
+              </span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100 text-rose-600 shrink-0 border border-rose-200/70">
+                <TrendingDown className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="text-3xl font-black tracking-tight text-slate-900">
+                {outOfStockCount}
+              </span>
+              <span className="text-xs font-medium text-slate-500">depleted items</span>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-between pt-3 border-t border-slate-100">
+            <span className="inline-flex items-center rounded-md bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 truncate max-w-full">
+              Total Out: {formatNumber(totOut)} MT
+            </span>
+            <span className="text-[11px] font-semibold text-slate-400 group-hover:text-rose-600 flex items-center gap-1 transition-colors">
+              Needs restock <ChevronRight className="w-3.5 h-3.5" />
+            </span>
           </div>
         </div>
       </div>
@@ -1348,12 +1421,163 @@ export function StockTransfer() {
     date_to: '',
   })
 
+  // View Details Modal State
+  const [viewTransfer, setViewTransfer] = useState(null)
+  const openView = async (r) => {
+    setViewTransfer(r)
+    try {
+      const res = await api.get(`/inventory/transfers/${r.id}`)
+      if (res.data?.data) {
+        setViewTransfer(res.data.data)
+      }
+    } catch {
+      // keep current row data
+    }
+  }
+
+  // Edit Transfer State
+  const [editingTransfer, setEditingTransfer] = useState(null)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [editSaving, setEditSaving] = useState(false)
+  const [editForm, setEditForm] = useState({
+    date: today(),
+    from_branch_id: '',
+    to_branch_id: '',
+    item_id: '',
+    unit_id: '',
+    quantity: '',
+    vehicle_number: '',
+    lot_number: '',
+    remarks: '',
+  })
+  const setEditF = (k, v) => setEditForm((f) => ({ ...f, [k]: v }))
+  const [editLots, setEditLots] = useState([])
+
+  useEffect(() => {
+    if (!editModalOpen || !editForm.from_branch_id) {
+      setEditLots([])
+      return
+    }
+    let cancelled = false
+    api
+      .get(`/lots?per_page=500&status=OPEN&branch_id=${editForm.from_branch_id}`)
+      .then((res) => {
+        if (cancelled) return
+        setEditLots(extractList(res.data))
+      })
+      .catch(() => {
+        if (!cancelled) setEditLots([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [editModalOpen, editForm.from_branch_id])
+
+  const openEdit = (r) => {
+    setEditingTransfer(r)
+    setEditForm({
+      date: r.date ? String(r.date).slice(0, 10) : today(),
+      from_branch_id: String(r.from_branch_id || ''),
+      to_branch_id: String(r.to_branch_id || ''),
+      item_id: String(r.item_id || ''),
+      unit_id: String(r.unit_id || r.item?.unit_id || ''),
+      quantity: r.quantity !== undefined ? String(r.quantity) : '',
+      vehicle_number: r.vehicle?.vehicle_number || r.vehicle_number || '',
+      lot_number: r.lot_number || '',
+      remarks: r.remarks || '',
+    })
+    setEditModalOpen(true)
+  }
+
+  const effectiveEditLotAvail = (lot) => {
+    let qty = Number(lot?.available_qty || 0)
+    if (
+      editingTransfer &&
+      lot &&
+      String(lot.lot_number) === String(editingTransfer.lot_number) &&
+      String(lot.branch_id) === String(editingTransfer.from_branch_id)
+    ) {
+      qty += Number(editingTransfer.quantity || 0)
+    }
+    return qty
+  }
+
+  async function submitEdit(e) {
+    e.preventDefault()
+    if (!editForm.from_branch_id || !editForm.to_branch_id) {
+      toast.error('Select From and To godowns')
+      return
+    }
+    if (String(editForm.from_branch_id) === String(editForm.to_branch_id)) {
+      toast.error('From and To branches must differ')
+      return
+    }
+    if (!Number(editForm.quantity)) {
+      toast.error('Enter valid transfer quantity')
+      return
+    }
+    setEditSaving(true)
+    try {
+      const matchedLot = editLots.find((l) => l.lot_number === editForm.lot_number)
+      await api.put(`/inventory/transfers/${editingTransfer.id}`, {
+        date: editForm.date,
+        source_branch_id: Number(editForm.from_branch_id),
+        dest_branch_id: Number(editForm.to_branch_id),
+        lot_id: matchedLot ? Number(matchedLot.id) : undefined,
+        lot_number: editForm.lot_number || undefined,
+        item_id: editForm.item_id ? Number(editForm.item_id) : undefined,
+        unit_id: editForm.unit_id ? Number(editForm.unit_id) : undefined,
+        quantity: Number(editForm.quantity),
+        vehicle_number: editForm.vehicle_number ? editForm.vehicle_number.trim() : undefined,
+        remarks: editForm.remarks ? editForm.remarks.trim() : undefined,
+      })
+      toast.success('Stock transfer updated and inventory reconciled.')
+      setEditModalOpen(false)
+      setEditingTransfer(null)
+      load()
+      if (form.from_branch_id) {
+        api
+          .get(`/lots?per_page=500&status=OPEN&branch_id=${form.from_branch_id}`)
+          .then((res) => setLots(extractList(res.data).filter((l) => Number(l.available_qty) > 0)))
+          .catch(() => {})
+      }
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Failed to update transfer'))
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
+  // Delete State & Handler
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      await api.delete(`/inventory/transfers/${deleteTarget.id}`)
+      toast.success('Stock transfer moved to trash and inventory restored.')
+      setDeleteTarget(null)
+      load()
+      if (form.from_branch_id) {
+        api
+          .get(`/lots?per_page=500&status=OPEN&branch_id=${form.from_branch_id}`)
+          .then((res) => setLots(extractList(res.data).filter((l) => Number(l.available_qty) > 0)))
+          .catch(() => {})
+      }
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Failed to delete transfer'))
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const res = await api.get('/inventory/transfers', {
         params: {
-          branch_id: filters.branch_id || undefined,
+          branch_id: filters.branch_id || branchId || undefined,
           item_id: filters.item_id || undefined,
           date_from: filters.date_from || undefined,
           date_to: filters.date_to || undefined,
@@ -1368,7 +1592,7 @@ export function StockTransfer() {
     } finally {
       setLoading(false)
     }
-  }, [filters, toast])
+  }, [filters, branchId, toast])
 
   useEffect(() => {
     load()
@@ -1396,23 +1620,34 @@ export function StockTransfer() {
 
   async function submit(e) {
     e.preventDefault()
+    if (!form.from_branch_id || !form.to_branch_id) {
+      toast.error('Select From and To godowns')
+      return
+    }
     if (form.from_branch_id === form.to_branch_id) {
       toast.error('From and To branches must differ')
       return
     }
+    if (!selectedTransferLot) {
+      toast.error('Select the lot to transfer — stock moves lot-to-lot between godowns')
+      return
+    }
+    if (!Number(form.quantity)) {
+      toast.error('Enter transfer quantity')
+      return
+    }
     setSaving(true)
     try {
-      await api.post('/inventory/transfer', {
-        ...form,
-        from_branch_id: Number(form.from_branch_id),
-        to_branch_id: Number(form.to_branch_id),
-        item_id: Number(form.item_id),
+      await api.post('/inventory/transfer-lot', {
+        date: form.date,
+        source_branch_id: Number(form.from_branch_id),
+        dest_branch_id: Number(form.to_branch_id),
+        lot_id: Number(selectedTransferLot.id),
         quantity: Number(form.quantity),
-        unit_id: form.unit_id ? Number(form.unit_id) : undefined,
+        reference: form.remarks ? form.remarks.trim() : null,
         vehicle_number: form.vehicle_number ? form.vehicle_number.trim() : undefined,
-        vehicle: form.vehicle_number ? form.vehicle_number.trim() : undefined,
       })
-      toast.success('Stock transfer posted successfully')
+      toast.success('Stock transferred between godowns')
       setForm((f) => ({ ...f, quantity: '', vehicle_number: '', lot_number: '', remarks: '' }))
       load()
     } catch (err) {
@@ -1538,6 +1773,49 @@ export function StockTransfer() {
       label: 'Status',
       render: (r) => <StatusBadge status={r.status || 'POSTED'} />,
     },
+    {
+      key: 'actions',
+      label: 'Actions',
+      align: 'right',
+      render: (r) => (
+        <div className="flex justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => openView(r)}
+            title="View Details"
+          >
+            <Eye className="h-3 w-3" /> View
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => openEdit(r)}
+            className="border-amber-200 bg-amber-50/70 text-amber-800 hover:bg-amber-100"
+            title="Edit Stock Transfer"
+          >
+            <Edit2 className="h-3 w-3" /> Edit
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => openPdf(`/inventory/transfers/${r.id}/pdf`, `Stock_Transfer_${r.transfer_number || r.id}.pdf`)}
+            title="Print Delivery Challan"
+          >
+            <Printer className="h-3 w-3" /> PDF
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => setDeleteTarget(r)}
+            className="border-rose-200 bg-rose-50/70 text-rose-700 hover:bg-rose-100"
+            title="Delete Transfer (Soft Delete)"
+          >
+            <Trash2 className="h-3 w-3" /> Delete
+          </Button>
+        </div>
+      ),
+    },
   ]
 
   return (
@@ -1583,7 +1861,7 @@ export function StockTransfer() {
             </button>
           </div>
 
-          <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+          <form id="transfer-form" onSubmit={submit} className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
             <FormField label="Date" required>
               <Input type="date" value={form.date} onChange={(e) => setF('date', e.target.value)} required />
             </FormField>
@@ -1664,7 +1942,7 @@ export function StockTransfer() {
               />
             </FormField>
 
-            <FormField label="Lot Number">
+            <FormField label="Lot Number" required>
               <Select
                 value={form.lot_number || ''}
                 onChange={(e) => {
@@ -1803,7 +2081,7 @@ export function StockTransfer() {
               value={filters.branch_id}
               onChange={(e) => setFilters((f) => ({ ...f, branch_id: e.target.value }))}
             >
-              <option value="">All Godowns</option>
+              <option value="">{branchId ? 'As per godown switch' : 'All Godowns'}</option>
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>{b.name || b.branch_name}</option>
               ))}
@@ -1964,6 +2242,369 @@ export function StockTransfer() {
           </div>
         </div>
       </Modal>
+
+      {/* View Transfer Details Modal */}
+      <Modal
+        open={Boolean(viewTransfer)}
+        onClose={() => setViewTransfer(null)}
+        title={
+          viewTransfer ? (
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-slate-900">Transfer {viewTransfer.transfer_number}</span>
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-200">
+                {viewTransfer.status || 'POSTED'}
+              </span>
+            </div>
+          ) : (
+            'Transfer Details'
+          )
+        }
+      >
+        {viewTransfer && (
+          <div className="space-y-4">
+            {/* Route Card */}
+            <div className="rounded-xl border border-sky-100 bg-gradient-to-r from-sky-50/50 via-slate-50 to-indigo-50/40 p-3.5">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                Inter-Godown Transfer Route
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1 rounded-lg bg-white p-2.5 shadow-2xs border border-slate-200">
+                  <div className="text-[10px] font-bold uppercase text-slate-400">From (Source)</div>
+                  <div className="text-sm font-bold text-slate-800">
+                    {viewTransfer.from_branch?.branch_name || viewTransfer.from_branch?.name || `#${viewTransfer.from_branch_id}`}
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Code: {viewTransfer.from_branch?.branch_code || '—'}{' '}
+                    {viewTransfer.from_branch?.city ? `• ${viewTransfer.from_branch?.city}` : ''}
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-center justify-center text-sky-600 px-1">
+                  <ArrowRightLeft className="h-5 w-5" />
+                  <span className="text-[9px] font-bold uppercase tracking-widest mt-0.5">Move</span>
+                </div>
+
+                <div className="flex-1 rounded-lg bg-white p-2.5 shadow-2xs border border-slate-200">
+                  <div className="text-[10px] font-bold uppercase text-slate-400">To (Destination)</div>
+                  <div className="text-sm font-bold text-slate-800">
+                    {viewTransfer.to_branch?.branch_name || viewTransfer.to_branch?.name || `#${viewTransfer.to_branch_id}`}
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Code: {viewTransfer.to_branch?.branch_code || '—'}{' '}
+                    {viewTransfer.to_branch?.city ? `• ${viewTransfer.to_branch?.city}` : ''}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Item & Lot Summary */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                <div className="text-[10px] font-bold uppercase text-slate-400">Date</div>
+                <div className="mt-1 text-sm font-semibold text-slate-800">{formatDate(viewTransfer.date)}</div>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                <div className="text-[10px] font-bold uppercase text-slate-400">Lot Number</div>
+                <div className="mt-1 text-xs font-mono font-bold text-slate-800">{viewTransfer.lot_number || '—'}</div>
+              </div>
+              <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-3 sm:col-span-2">
+                <div className="text-[10px] font-bold uppercase text-blue-600">Transferred Quantity</div>
+                <div className="mt-1 text-lg font-black text-blue-900">
+                  {formatNumber(viewTransfer.quantity)}{' '}
+                  <span className="text-xs font-semibold text-blue-700">
+                    {viewTransfer.unit?.code || viewTransfer.unit?.symbol || viewTransfer.item?.unit?.code || 'KG'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Product Card */}
+            <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-1.5">
+              <div className="text-[10px] font-bold uppercase text-slate-400">Product / Commodity</div>
+              <div className="text-sm font-bold text-slate-900">{viewTransfer.item?.name || `#${viewTransfer.item_id}`}</div>
+              {viewTransfer.item?.code && (
+                <div className="text-xs text-slate-500">Item Code: {viewTransfer.item.code}</div>
+              )}
+            </div>
+
+            {/* Transport & Metadata */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 text-xs space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Vehicle Number</span>
+                  <span className="font-semibold text-slate-800">
+                    {viewTransfer.vehicle?.vehicle_number || viewTransfer.vehicle_number || '—'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Driver Name / Mobile</span>
+                  <span className="font-semibold text-slate-800">
+                    {viewTransfer.driver_name || '—'} {viewTransfer.driver_mobile ? `(${viewTransfer.driver_mobile})` : ''}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Posted By</span>
+                  <span className="text-slate-700">{viewTransfer.creator?.name || 'System / Admin'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Created At</span>
+                  <span className="text-slate-700">{formatDate(viewTransfer.created_at)}</span>
+                </div>
+              </div>
+              {viewTransfer.remarks && (
+                <div className="pt-2 border-t border-slate-200/80">
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Remarks / Reference</span>
+                  <p className="mt-0.5 text-slate-700 italic">{viewTransfer.remarks}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-200">
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
+                  onClick={() => {
+                    const t = viewTransfer
+                    setViewTransfer(null)
+                    setDeleteTarget(t)
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Delete
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                  onClick={() => {
+                    const t = viewTransfer
+                    setViewTransfer(null)
+                    openEdit(t)
+                  }}
+                >
+                  <Edit2 className="h-3.5 w-3.5" /> Edit
+                </Button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() =>
+                    openPdf(
+                      `/inventory/transfers/${viewTransfer.id}/pdf`,
+                      `Stock_Transfer_${viewTransfer.transfer_number || viewTransfer.id}.pdf`
+                    )
+                  }
+                >
+                  <Printer className="h-3.5 w-3.5" /> Print Transfer Note
+                </Button>
+                <Button size="sm" onClick={() => setViewTransfer(null)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Edit Stock Transfer Modal */}
+      <Modal
+        open={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false)
+          setEditingTransfer(null)
+        }}
+        title={`Edit Stock Transfer ${editingTransfer?.transfer_number || ''}`}
+      >
+        {editingTransfer && (
+          <form onSubmit={submitEdit} className="space-y-4">
+            <div className="rounded-lg bg-amber-50/70 border border-amber-200 p-2.5 text-xs text-amber-900">
+              <p className="font-semibold">Inventory Reconciliation on Edit:</p>
+              <p className="text-amber-700 mt-0.5">
+                Saving changes will dynamically revert the previous transfer on both godowns and post updated movements without creating orphaned stock.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+              <FormField label="Date" required>
+                <Input
+                  type="date"
+                  value={editForm.date}
+                  onChange={(e) => setEditF('date', e.target.value)}
+                  required
+                />
+              </FormField>
+
+              <FormField label="Vehicle Number">
+                <Input
+                  value={editForm.vehicle_number}
+                  onChange={(e) => setEditF('vehicle_number', e.target.value)}
+                  placeholder="e.g. TN-38-AA-1234"
+                />
+              </FormField>
+
+              <FormField label="From Godown" required>
+                <Select
+                  value={editForm.from_branch_id}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, from_branch_id: e.target.value, lot_number: '' }))
+                  }
+                  required
+                >
+                  <option value="">Select From Godown…</option>
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name || b.branch_name}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+
+              <FormField label="To Godown" required>
+                <Select
+                  value={editForm.to_branch_id}
+                  onChange={(e) => setEditF('to_branch_id', e.target.value)}
+                  required
+                >
+                  <option value="">Select To Godown…</option>
+                  {branches
+                    .filter((b) => String(b.id) !== String(editForm.from_branch_id))
+                    .map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name || b.branch_name}
+                      </option>
+                    ))}
+                </Select>
+              </FormField>
+
+              <FormField label="Item / Product" required>
+                <Select
+                  value={editForm.item_id}
+                  onChange={(e) => {
+                    const itId = e.target.value
+                    const selectedItem = items.find((i) => String(i.id) === String(itId))
+                    setEditForm((f) => ({
+                      ...f,
+                      item_id: itId,
+                      unit_id: selectedItem?.unit_id || selectedItem?.unit?.id || f.unit_id || '',
+                      lot_number: '',
+                    }))
+                  }}
+                  required
+                >
+                  <option value="">Select Item…</option>
+                  {items.map((i) => (
+                    <option key={i.id} value={i.id}>
+                      {i.name}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+
+              <FormField label="Unit">
+                <Select value={editForm.unit_id} onChange={(e) => setEditF('unit_id', e.target.value)}>
+                  <option value="">Select Unit…</option>
+                  {units.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name} {u.code ? `(${u.code})` : ''}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+
+              <FormField label="Lot Number" required>
+                <Select
+                  value={editForm.lot_number || ''}
+                  onChange={(e) => {
+                    const lot = editLots.find((l) => l.lot_number === e.target.value)
+                    setEditForm((f) => ({
+                      ...f,
+                      lot_number: e.target.value,
+                      item_id: lot ? String(lot.item_id) : f.item_id,
+                      unit_id: lot
+                        ? String(lot.unit_id || lot.item?.unit_id || lot.item?.unit?.id || f.unit_id || '')
+                        : f.unit_id,
+                    }))
+                  }}
+                  required
+                >
+                  <option value="">Select lot…</option>
+                  {editingTransfer.lot_number &&
+                    !editLots.some((l) => l.lot_number === editingTransfer.lot_number) && (
+                      <option value={editingTransfer.lot_number}>
+                        {editingTransfer.lot_number} (Current Lot — Transfer Qty:{' '}
+                        {formatNumber(editingTransfer.quantity)})
+                      </option>
+                    )}
+                  {editLots
+                    .filter((l) => !editForm.item_id || String(l.item_id) === String(editForm.item_id))
+                    .map((l) => {
+                      const effAvail = effectiveEditLotAvail(l)
+                      return (
+                        <option key={l.id} value={l.lot_number}>
+                          {l.lot_number} — {l.item?.name || `#${l.item_id}`} (avail{' '}
+                          {formatNumber(effAvail)})
+                        </option>
+                      )
+                    })}
+                </Select>
+              </FormField>
+
+              <FormField label="Quantity" required>
+                <Input
+                  type="number"
+                  step="0.001"
+                  min="0.001"
+                  value={editForm.quantity}
+                  onChange={(e) => setEditF('quantity', e.target.value)}
+                  placeholder="0.000"
+                  required
+                />
+              </FormField>
+
+              <FormField label="Remarks" className="sm:col-span-2 md:col-span-1">
+                <Input
+                  value={editForm.remarks}
+                  onChange={(e) => setEditF('remarks', e.target.value)}
+                  placeholder="Reference / remarks"
+                />
+              </FormField>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setEditModalOpen(false)
+                  setEditingTransfer(null)
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" loading={editSaving}>
+                Save & Reconcile Stock
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Delete Stock Transfer"
+        message={`Are you sure you want to move stock transfer "${deleteTarget?.transfer_number}" to trash? The transferred quantity (${formatNumber(deleteTarget?.quantity)}) will be returned back to the source godown/lot and deducted from the destination godown/lot.`}
+        confirmText="Yes, Move to Trash"
+        cancelText="Cancel"
+        variant="danger"
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }
@@ -2011,14 +2652,16 @@ export function StockLedger() {
   const { items, branches } = useMasters()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState({ item_id: '', branch_id: '', date_from: '', date_to: '' })
+  const [filters, setFilters] = useState({ item_id: '', branch_id: '', date_from: '', date_to: '', lot_number: '' })
   const [exportModalOpen, setExportModalOpen] = useState(false)
   const [exportFilters, setExportFilters] = useState({
     branch_id: '',
     item_id: '',
     date_from: '',
     date_to: '',
+    lot_number: '',
   })
+  const [lotList, setLotList] = useState([])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -2029,6 +2672,7 @@ export function StockLedger() {
           item_id: filters.item_id || undefined,
           date_from: filters.date_from || undefined,
           date_to: filters.date_to || undefined,
+          lot_number: filters.lot_number || undefined,
         },
       })
       setRows(res.data.data || res.data || [])
@@ -2044,12 +2688,25 @@ export function StockLedger() {
     load()
   }, [load])
 
+  useEffect(() => {
+    let alive = true
+    api.get('/lots?per_page=500')
+      .then((res) => {
+        if (!alive) return
+        const data = res.data?.data || res.data || []
+        setLotList([...new Set(data.map((l) => l.lot_number).filter(Boolean))].sort())
+      })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [])
+
   function openExportModal() {
     setExportFilters({
       branch_id: filters.branch_id || branchId || '',
       item_id: filters.item_id || '',
       date_from: filters.date_from || '',
       date_to: filters.date_to || '',
+      lot_number: filters.lot_number || '',
     })
     setExportModalOpen(true)
   }
@@ -2060,6 +2717,7 @@ export function StockLedger() {
       ...(p.item_id && { item_id: p.item_id }),
       ...(p.date_from && { date_from: p.date_from }),
       ...(p.date_to && { date_to: p.date_to }),
+      ...(p.lot_number && { lot_number: p.lot_number }),
     })
     const filename = p.date_from && p.date_to
       ? `Stock_Ledger_${p.date_from}_to_${p.date_to}.pdf`
@@ -2077,6 +2735,11 @@ export function StockLedger() {
     latestByKey[k] = Number(r.closing_balance ?? 0)
   })
   const ledgerTotClosing = Object.values(latestByKey).reduce((s, v) => s + v, 0)
+  const ledgerInEntries = rows.filter((r) => Number(r.in ?? r.stock_in ?? 0) > 0).length
+  const ledgerOutEntries = rows.filter((r) => Number(r.out ?? r.stock_out ?? 0) > 0).length
+  const ledgerActiveStreams = Object.keys(latestByKey).length
+  const ledgerPeriodLabel = filters.date_from || filters.date_to ? 'Filtered period' : 'All time'
+  const lotOptions = [...new Set([...lotList, ...rows.map((r) => r.lot).filter((v) => v && v !== '—')])].sort()
 
   return (
     <div className="space-y-4">
@@ -2097,35 +2760,86 @@ export function StockLedger() {
         }
       />
 
-      {/* KPI Mini-Metrics Ribbon for Stock Ledger */}
+      {/* KPI Mini-Metrics Ribbon for Stock Ledger — Settlement Dashboard stat-card style */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="rounded-2xl bg-emerald-600 p-4 text-white shadow-sm flex items-center gap-3 transition-transform hover:-translate-y-0.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-700 text-white shrink-0">
-            <CheckCircle2 className="h-5 w-5" />
-          </div>
+        {/* Card 1: Total Stock In */}
+        <div className="group rounded-2xl bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between border border-violet-200/70">
           <div>
-            <span className="text-[10px] font-black uppercase text-emerald-100 tracking-wider">Total Stock In</span>
-            <div className="text-xl font-black text-white">{formatNumber(ledgerTotIn)} <span className="text-xs font-semibold text-emerald-100">Received</span></div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-violet-500 flex items-center gap-1.5">
+                Total Stock In
+                <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-violet-400" />
+              </span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-violet-600 shrink-0 border border-violet-200/70">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="text-3xl font-black tracking-tight text-slate-900">{formatNumber(ledgerTotIn)}</span>
+              <span className="text-xs font-medium text-slate-500">received</span>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-between pt-3 border-t border-slate-100">
+            <span className="inline-flex items-center rounded-md bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-700 truncate max-w-full">
+              {ledgerInEntries} entries
+            </span>
+            <span className="text-[11px] font-semibold text-slate-400 group-hover:text-violet-600 transition-colors">
+              {ledgerPeriodLabel}
+            </span>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-rose-600 p-4 text-white shadow-sm flex items-center gap-3 transition-transform hover:-translate-y-0.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-700 text-white shrink-0">
-            <TrendingDown className="h-5 w-5" />
-          </div>
+        {/* Card 2: Total Stock Out */}
+        <div className="group rounded-2xl bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between border border-rose-200/70">
           <div>
-            <span className="text-[10px] font-black uppercase text-rose-100 tracking-wider">Total Stock Out</span>
-            <div className="text-xl font-black text-white">{formatNumber(ledgerTotOut)} <span className="text-xs font-semibold text-rose-100">Dispatched</span></div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-rose-500 flex items-center gap-1.5">
+                Total Stock Out
+                <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-rose-400" />
+              </span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100 text-rose-600 shrink-0 border border-rose-200/70">
+                <TrendingDown className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="text-3xl font-black tracking-tight text-slate-900">{formatNumber(ledgerTotOut)}</span>
+              <span className="text-xs font-medium text-slate-500">dispatched</span>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-between pt-3 border-t border-slate-100">
+            <span className="inline-flex items-center rounded-md bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 truncate max-w-full">
+              {ledgerOutEntries} entries
+            </span>
+            <span className="text-[11px] font-semibold text-slate-400 group-hover:text-rose-600 transition-colors">
+              {ledgerPeriodLabel}
+            </span>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-[#0b3558] p-4 text-white shadow-sm flex items-center gap-3 transition-transform hover:-translate-y-0.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#07233b] text-[#d69e2e] shrink-0">
-            <Boxes className="h-5 w-5 text-[#C9A227]" />
-          </div>
+        {/* Card 3: Net Closing Total */}
+        <div className="group rounded-2xl bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between border border-lime-300/80">
           <div>
-            <span className="text-[10px] font-black uppercase text-[#faedcd] tracking-wider">Net Closing Total</span>
-            <div className="text-xl font-black text-white">{formatNumber(ledgerTotClosing)} <span className="text-xs font-semibold text-slate-300">Balance</span></div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-lime-600 flex items-center gap-1.5">
+                Net Closing Total
+                <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-lime-500" />
+              </span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-lime-100 text-lime-700 shrink-0 border border-lime-200/80">
+                <Boxes className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="text-3xl font-black tracking-tight text-slate-900">{formatNumber(ledgerTotClosing)}</span>
+              <span className="text-xs font-medium text-slate-500">balance</span>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-between pt-3 border-t border-slate-100">
+            <span className="inline-flex items-center rounded-md bg-lime-100 px-2.5 py-1 text-[11px] font-bold text-lime-800 truncate max-w-full">
+              {ledgerActiveStreams} active
+            </span>
+            <span className="text-[11px] font-semibold text-slate-400 group-hover:text-lime-600 transition-colors">
+              Latest closing
+            </span>
           </div>
         </div>
       </div>
@@ -2163,7 +2877,7 @@ export function StockLedger() {
         )}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div>
           <label className="mb-1 block text-xs font-semibold text-slate-700">Godown</label>
           <Select value={filters.branch_id} onChange={(e) => setFilters((f) => ({ ...f, branch_id: e.target.value }))}>
@@ -2179,6 +2893,15 @@ export function StockLedger() {
             <option value="">All items</option>
             {items.map((i) => (
               <option key={i.id} value={i.id}>{i.name}</option>
+            ))}
+          </Select>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-semibold text-slate-700">Lot</label>
+          <Select value={filters.lot_number} onChange={(e) => setFilters((f) => ({ ...f, lot_number: e.target.value }))}>
+            <option value="">All lots</option>
+            {lotOptions.map((ln) => (
+              <option key={ln} value={ln}>{ln}</option>
             ))}
           </Select>
         </div>
@@ -2237,16 +2960,29 @@ export function StockLedger() {
             key: 'type',
             label: 'Type',
             render: (r) => {
-              const isIn = ['STOCK_IN', 'TRANSFER_IN', 'ADJUSTMENT_IN', 'OPENING', 'PRODUCTION_OUT'].includes(r.type) || (Number(r.in ?? r.stock_in ?? 0) > 0)
-              const typeLabel = isIn ? 'STOCK IN' : 'STOCK OUT'
+              const t = String(r.type || '')
+              const labelMap = {
+                STOCK_IN: 'STOCK IN',
+                STOCK_OUT: 'STOCK OUT',
+                TRANSFER_IN: 'TRANSFER IN',
+                TRANSFER_OUT: 'TRANSFER OUT',
+                MIXING_IN: 'MIXING IN',
+                MIXING_OUT: 'MIXING OUT',
+                ADJUSTMENT_IN: 'ADJUSTMENT IN',
+                ADJUSTMENT_OUT: 'ADJUSTMENT OUT',
+                OPENING: 'OPENING',
+              }
+              const isIn = ['STOCK_IN', 'TRANSFER_IN', 'ADJUSTMENT_IN', 'OPENING', 'MIXING_IN', 'PRODUCTION_OUT'].includes(t)
+                || Number(r.in ?? r.stock_in ?? 0) > 0
+              let tone
+              if (t.startsWith('TRANSFER')) tone = 'bg-sky-50 text-sky-700 border border-sky-200'
+              else if (t.startsWith('MIXING') || t.startsWith('PRODUCTION')) tone = 'bg-violet-50 text-violet-700 border border-violet-200'
+              else tone = isIn
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                : 'bg-rose-50 text-rose-700 border border-rose-200'
+              const typeLabel = labelMap[t] || (isIn ? 'STOCK IN' : 'STOCK OUT')
               return (
-                <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                    isIn
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-rose-50 text-rose-700 border border-rose-200'
-                  }`}
-                >
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${tone}`}>
                   {typeLabel}
                 </span>
               )
@@ -2378,7 +3114,7 @@ export function StockLedger() {
             </FormField>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <FormField label="Godown / Branch">
               <Select
                 value={exportFilters.branch_id}
@@ -2399,6 +3135,18 @@ export function StockLedger() {
                 <option value="">All Items</option>
                 {items.map((i) => (
                   <option key={i.id} value={i.id}>{i.name}</option>
+                ))}
+              </Select>
+            </FormField>
+
+            <FormField label="Lot">
+              <Select
+                value={exportFilters.lot_number}
+                onChange={(e) => setExportFilters((f) => ({ ...f, lot_number: e.target.value }))}
+              >
+                <option value="">All Lots</option>
+                {lotOptions.map((ln) => (
+                  <option key={ln} value={ln}>{ln}</option>
                 ))}
               </Select>
             </FormField>

@@ -118,6 +118,11 @@ export default function CrudPage({
 
   async function save(e) {
     e.preventDefault()
+    const missing = fields.filter((f) => f.required && (form[f.name] === '' || form[f.name] == null))
+    if (missing.length > 0) {
+      toast.error(`Please fill: ${missing.map((f) => f.label).join(', ')}`)
+      return
+    }
     setSaving(true)
     try {
       let payload = { ...form }

@@ -297,3 +297,111 @@ table:not(.no-stripe) tbody > tr:hover {
 .hover-glow-emerald:hover {
   box-shadow: 0 0 25px rgba(2, 73, 42, 0.25);
 }
+
+/* ============================================================
+   Panel soft UI (reference style) — scoped to #panel-main only.
+   Unlayered rules intentionally win over inline Tailwind
+   utilities so every table/form picks up the same neat look.
+   Structure & content of pages stay untouched.
+   ============================================================ */
+
+/* ---- Tables: soft card rows, light uppercase header ---- */
+#panel-main table {
+  border-radius: 16px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+#panel-main thead th {
+  background: #efe8fd;
+  color: #6d5a9e;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2d8fb;
+  white-space: nowrap;
+}
+#panel-main thead th:first-child {
+  border-top-left-radius: 14px;
+}
+#panel-main thead th:last-child {
+  border-top-right-radius: 14px;
+}
+#panel-main tbody td {
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+}
+#panel-main tbody tr:last-child td {
+  border-bottom: 0;
+}
+#panel-main tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 14px;
+}
+#panel-main tbody tr:last-child td:last-child {
+  border-bottom-right-radius: 14px;
+}
+#panel-main tbody tr:hover td {
+  background: #f8fafc;
+}
+
+/* ---- Form controls: rounded, soft border, violet focus ---- */
+#panel-main input:not([type='checkbox']):not([type='radio']),
+#panel-main select,
+#panel-main textarea {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+#panel-main input:not([type='checkbox']):not([type='radio']):hover,
+#panel-main select:hover,
+#panel-main textarea:hover {
+  border-color: #cbd5e1;
+}
+#panel-main input:not([type='checkbox']):not([type='radio']):focus,
+#panel-main select:focus,
+#panel-main textarea:focus {
+  outline: none;
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.18);
+}
+#panel-main input::placeholder,
+#panel-main textarea::placeholder {
+  color: #94a3b8;
+}
+#panel-main input:disabled,
+#panel-main select:disabled,
+#panel-main textarea:disabled {
+  background-color: #f8fafc;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* ---- Auth session loader animations ---- */
+@keyframes auth-shimmer {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(260%);
+  }
+}
+.animate-auth-shimmer {
+  animation: auth-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes auth-logo-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.07);
+  }
+}
+.animate-auth-logo {
+  animation: auth-logo-pulse 1.6s ease-in-out infinite;
+}

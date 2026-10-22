@@ -161,7 +161,7 @@ export default function Outward() {
     const params = {
       from_date: fromDate || undefined,
       to_date: toDate || undefined,
-      branch_id: branchFilter || undefined,
+      branch_id: branchFilter || branchId || undefined,
       party_id: partyFilter || undefined,
       search: search || undefined,
     }
@@ -194,7 +194,7 @@ export default function Outward() {
         search: search || undefined,
         from_date: fromDate || undefined,
         to_date: toDate || undefined,
-        branch_id: branchFilter || undefined,
+        branch_id: branchFilter || branchId || undefined,
         party_id: partyFilter || undefined,
         per_page: 100,
       })}`)
@@ -205,7 +205,7 @@ export default function Outward() {
     } finally {
       setLoading(false)
     }
-  }, [search, fromDate, toDate, branchFilter, partyFilter, toast])
+  }, [search, fromDate, toDate, branchFilter, branchId, partyFilter, toast])
 
   useEffect(() => {
     load()
@@ -378,12 +378,13 @@ export default function Outward() {
     })
   }
 
-  // Show available lots for selected item with available qty (scoped to chosen godown if selected)
+  // Show available lots for selected item — strictly the chosen godown's lots only
   const availableLotsFor = (itemId, currentLotId) =>
     lots.filter(
       (l) =>
         (!itemId || String(l.item_id) === String(itemId)) &&
-        (!form.branch_id || String(l.branch_id) === String(form.branch_id)) &&
+        form.branch_id &&
+        String(l.branch_id) === String(form.branch_id) &&
         (Number(l.available_qty) > 0 || (currentLotId && String(l.id) === String(currentLotId)))
     )
 
@@ -394,6 +395,10 @@ export default function Outward() {
 
   async function save(e) {
     e.preventDefault()
+    if (!form.branch_id) {
+      toast.error('Select a godown for this entry — "All Godowns" is only a view filter, a dispatch must go out of one specific godown.')
+      return
+    }
     const preparedItems = formItems.map((it) => {
       let itemId = it.item_id
       let unitId = it.unit_id
@@ -598,7 +603,7 @@ export default function Outward() {
               onChange={(e) => setBranchFilter(e.target.value)}
               className="text-xs font-semibold"
             >
-              <option value="">All Godowns</option>
+              <option value="">{branchId ? 'As per godown switch' : 'All Godowns'}</option>
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>{b.branch_name || b.name}</option>
               ))}
@@ -802,7 +807,19 @@ export default function Outward() {
             <FormField label="Godown" required>
               <Select
                 value={form.branch_id}
-                onChange={(e) => setForm({ ...form, branch_id: e.target.value })}
+                onChange={(e) => {
+                  const bid = e.target.value
+                  setForm({ ...form, branch_id: bid })
+                  // lots picked from another godown are invalid — drop them
+                  setFormItems((itemsList) =>
+                    itemsList.map((it) => {
+                      if (!it.lot_id) return it
+                      const lot = lots.find((l) => String(l.id) === String(it.lot_id))
+                      if (lot && String(lot.branch_id) === String(bid)) return it
+                      return { ...it, lot_id: '' }
+                    }),
+                  )
+                }}
                 required
                 className="!text-base !font-bold !py-2.5"
               >
