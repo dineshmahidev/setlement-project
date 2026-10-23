@@ -433,7 +433,7 @@ export default function SettlementForm() {
         lot_number: inv.lot_number || prev.lot_number,
         vehicle_number: inv.vehicle_number || prev.vehicle_number,
         net_weight_mt: parseFloat(inv.net_weight_mt) || prev.net_weight_mt,
-        contract_unit_rate: parseFloat(inv.rate) || prev.contract_unit_rate,
+        contract_unit_rate: prev.contract_unit_rate || parseFloat(inv.rate) || '',
         final_unit_rate: prev.final_unit_rate || parseFloat(inv.rate) || prev.contract_unit_rate,
         original_invoice_value: parseFloat(inv.taxable_amount) || prev.original_invoice_value,
         product_id: inv.product_id || prev.product_id,
@@ -608,7 +608,7 @@ export default function SettlementForm() {
               required
               items={vendorsList}
               value={formData.vendor_id}
-              onChange={(val) => setFormData({ ...formData, vendor_id: val })}
+              onChange={(val) => setFormData((prev) => ({ ...prev, vendor_id: val }))}
               onSelect={handleVendorSelect}
               displayKey="vendor_name"
               secondaryKey="vendor_code"
@@ -628,7 +628,7 @@ export default function SettlementForm() {
                 type="date"
                 required
                 value={formData.settlement_date}
-                onChange={(e) => setFormData({ ...formData, settlement_date: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, settlement_date: e.target.value }))}
                 className="w-full rounded-xl bg-[#f4f6f9] px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0b3558]"
               />
             </div>
@@ -638,7 +638,7 @@ export default function SettlementForm() {
               <input
                 type="text"
                 value={formData.lot_number}
-                onChange={(e) => setFormData({ ...formData, lot_number: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, lot_number: e.target.value }))}
                 placeholder="e.g. RB-G2/080803/26-27"
                 className="w-full rounded-xl bg-[#f4f6f9] px-3.5 py-2.5 text-xs font-mono font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0b3558]"
               />
@@ -649,7 +649,7 @@ export default function SettlementForm() {
               <input
                 type="text"
                 value={formData.po_number}
-                onChange={(e) => setFormData({ ...formData, po_number: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, po_number: e.target.value }))}
                 placeholder="e.g. PO-8921"
                 className="w-full rounded-xl bg-[#f4f6f9] px-3.5 py-2.5 text-xs font-mono font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0b3558]"
               />
@@ -660,7 +660,7 @@ export default function SettlementForm() {
               <input
                 type="text"
                 value={formData.vehicle_number}
-                onChange={(e) => setFormData({ ...formData, vehicle_number: e.target.value.toUpperCase() })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, vehicle_number: e.target.value.toUpperCase() }))}
                 placeholder="e.g. TN28AH3345"
                 className="w-full rounded-xl bg-[#f4f6f9] px-3.5 py-2.5 text-xs font-mono font-bold text-slate-900 uppercase focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0b3558]"
               />
@@ -674,14 +674,14 @@ export default function SettlementForm() {
                 <input
                   type="text"
                   value={formData.bill_number}
-                  onChange={(e) => setFormData({ ...formData, bill_number: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, bill_number: e.target.value }))}
                   placeholder="Bill No (e.g. 68)"
                   className="w-1/2 rounded-xl bg-[#f4f6f9] px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0b3558]"
                 />
                 <input
                   type="date"
                   value={formData.bill_date}
-                  onChange={(e) => setFormData({ ...formData, bill_date: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, bill_date: e.target.value }))}
                   className="w-1/2 rounded-xl bg-[#f4f6f9] px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0b3558]"
                 />
               </div>
@@ -692,7 +692,7 @@ export default function SettlementForm() {
                 label="Agro Product"
                 items={productsList}
                 value={formData.product_id}
-                onChange={(val) => setFormData({ ...formData, product_id: val })}
+                onChange={(val) => setFormData((prev) => ({ ...prev, product_id: val }))}
                 onSelect={handleProductSelect}
                 displayKey="product_name"
                 secondaryKey="product_code"
@@ -729,7 +729,7 @@ export default function SettlementForm() {
                   step="0.001"
                   required
                   value={formData.net_weight_mt ?? ''}
-                  onChange={(e) => setFormData({ ...formData, net_weight_mt: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, net_weight_mt: e.target.value }))}
                   placeholder="e.g. 35.500"
                   className="w-full rounded-xl bg-[#f4f6f9] px-3.5 py-2.5 text-sm font-black text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600"
                 />
@@ -741,7 +741,7 @@ export default function SettlementForm() {
                   type="number"
                   step="0.001"
                   value={formData.jute_bag ?? ''}
-                  onChange={(e) => setFormData({ ...formData, jute_bag: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, jute_bag: e.target.value }))}
                   placeholder="0.000"
                   className="w-full rounded-xl bg-[#f4f6f9] px-3.5 py-2.5 text-sm font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600"
                 />
@@ -753,7 +753,7 @@ export default function SettlementForm() {
                   type="number"
                   step="0.001"
                   value={formData.pp_bag ?? ''}
-                  onChange={(e) => setFormData({ ...formData, pp_bag: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, pp_bag: e.target.value }))}
                   placeholder="0.000"
                   className="w-full rounded-xl bg-[#f4f6f9] px-3.5 py-2.5 text-sm font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600"
                 />
@@ -770,7 +770,7 @@ export default function SettlementForm() {
                       type="number"
                       step="0.001"
                       value={formData.final_weight_mt !== '' && formData.final_weight_mt !== undefined ? formData.final_weight_mt : (calc.final_weight_mt > 0 ? Number(calc.final_weight_mt).toFixed(3) : '')}
-                      onChange={(e) => setFormData({ ...formData, final_weight_mt: e.target.value })}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, final_weight_mt: e.target.value }))}
                       placeholder="0.000"
                       className="w-32 rounded-lg bg-white px-2.5 py-1 text-base font-black font-mono text-emerald-950 focus:outline-none focus:ring-2 focus:ring-amber-300"
                       title="Directly editable Final Weight MT"
@@ -817,7 +817,7 @@ export default function SettlementForm() {
                   max="100"
                   required
                   value={formData.oil_content ?? ''}
-                  onChange={(e) => setFormData({ ...formData, oil_content: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, oil_content: e.target.value }))}
                   className="w-full rounded-lg bg-white px-3 py-2 text-base font-black text-[#78350f] focus:outline-none focus:ring-2 focus:ring-[#b37d14]"
                   placeholder="e.g. 25.52 or 13.10"
                 />
@@ -829,7 +829,7 @@ export default function SettlementForm() {
                 <input
                   type="text"
                   value={formData.ffa ?? ''}
-                  onChange={(e) => setFormData({ ...formData, ffa: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, ffa: e.target.value }))}
                   placeholder="PASS or 2.92"
                   className="w-full rounded-xl bg-[#f4f6f9] px-3 py-2 text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0b3558]"
                 />
@@ -840,7 +840,7 @@ export default function SettlementForm() {
                 <input
                   type="text"
                   value={formData.ss ?? ''}
-                  onChange={(e) => setFormData({ ...formData, ss: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, ss: e.target.value }))}
                   placeholder="PASS or 11.77"
                   className="w-full rounded-xl bg-[#f4f6f9] px-3 py-2 text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0b3558]"
                 />
@@ -851,7 +851,7 @@ export default function SettlementForm() {
                 <input
                   type="text"
                   value={formData.fibre ?? ''}
-                  onChange={(e) => setFormData({ ...formData, fibre: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, fibre: e.target.value }))}
                   placeholder="PASS or 32.79"
                   className="w-full rounded-xl bg-[#f4f6f9] px-3 py-2 text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0b3558]"
                 />
@@ -862,7 +862,7 @@ export default function SettlementForm() {
                 <input
                   type="text"
                   value={formData.moisture ?? ''}
-                  onChange={(e) => setFormData({ ...formData, moisture: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, moisture: e.target.value }))}
                   placeholder="PASS or 6.32"
                   className="w-full rounded-xl bg-[#f4f6f9] px-3 py-2 text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0b3558]"
                 />
@@ -897,7 +897,8 @@ export default function SettlementForm() {
                   type="number"
                   step="0.01"
                   value={formData.contract_unit_rate ?? ''}
-                  onChange={(e) => setFormData({ ...formData, contract_unit_rate: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, contract_unit_rate: e.target.value }))}
+                  onBlur={(e) => setFormData((prev) => ({ ...prev, contract_unit_rate: e.target.value }))}
                   className="w-28 rounded-xl bg-white/10 px-3 py-1.5 text-xs font-bold text-white focus:bg-white focus:text-slate-900 focus:outline-none"
                   placeholder="e.g. 1880.00"
                 />
@@ -913,7 +914,8 @@ export default function SettlementForm() {
                   step="0.01"
                   required
                   value={formData.final_unit_rate ?? ''}
-                  onChange={(e) => setFormData({ ...formData, final_unit_rate: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, final_unit_rate: e.target.value }))}
+                  onBlur={(e) => setFormData((prev) => ({ ...prev, final_unit_rate: e.target.value }))}
                   className="w-32 rounded-xl bg-white px-3 py-1.5 text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#d69e2e]"
                   placeholder="e.g. 1830.00"
                 />
@@ -989,7 +991,7 @@ export default function SettlementForm() {
                 type="number"
                 step="0.01"
                 value={formData.original_invoice_value ?? ''}
-                onChange={(e) => setFormData({ ...formData, original_invoice_value: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, original_invoice_value: e.target.value }))}
                 placeholder="0.00"
                 className="w-full rounded-xl bg-[#f4f6f9] px-3.5 py-2.5 text-xs font-black text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#b37d14]"
               />
@@ -1003,7 +1005,7 @@ export default function SettlementForm() {
                 type="number"
                 step="0.01"
                 value={formData.manual_adjustment ?? ''}
-                onChange={(e) => setFormData({ ...formData, manual_adjustment: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, manual_adjustment: e.target.value }))}
                 placeholder="0.00"
                 className="w-full rounded-xl bg-[#f4f6f9] px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#b37d14]"
               />
@@ -1014,7 +1016,7 @@ export default function SettlementForm() {
               <input
                 type="text"
                 value={formData.manual_adjustment_reason ?? ''}
-                onChange={(e) => setFormData({ ...formData, manual_adjustment_reason: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, manual_adjustment_reason: e.target.value }))}
                 placeholder="Audit explanation for adjustment"
                 className="w-full rounded-xl bg-[#f4f6f9] px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#b37d14]"
               />
@@ -1153,7 +1155,7 @@ export default function SettlementForm() {
                 type="number"
                 step="0.01"
                 value={formData.bag_amount ?? ''}
-                onChange={(e) => setFormData({ ...formData, bag_amount: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, bag_amount: e.target.value }))}
                 placeholder="0.00"
                 className="w-full rounded-xl bg-emerald-50/80 border border-emerald-300 px-3.5 py-2 text-xs font-bold text-emerald-800 placeholder-emerald-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs transition-all"
               />
@@ -1164,7 +1166,7 @@ export default function SettlementForm() {
                 type="number"
                 step="0.01"
                 value={formData.loading_charges ?? ''}
-                onChange={(e) => setFormData({ ...formData, loading_charges: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, loading_charges: e.target.value }))}
                 placeholder="0.00"
                 className="w-full rounded-xl bg-emerald-50/80 border border-emerald-300 px-3.5 py-2 text-xs font-bold text-emerald-800 placeholder-emerald-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs transition-all"
               />
@@ -1175,7 +1177,7 @@ export default function SettlementForm() {
                 type="number"
                 step="0.01"
                 value={formData.unloading_charges ?? ''}
-                onChange={(e) => setFormData({ ...formData, unloading_charges: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, unloading_charges: e.target.value }))}
                 placeholder="0.00"
                 className="w-full rounded-xl bg-red-50/80 border border-red-300 px-3.5 py-2 text-xs font-bold text-red-700 placeholder-red-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500 shadow-xs transition-all"
               />
@@ -1200,7 +1202,7 @@ export default function SettlementForm() {
                   min="0"
                   max="100"
                   value={formData.tds_rate ?? ''}
-                  onChange={(e) => setFormData({ ...formData, tds_rate: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, tds_rate: e.target.value }))}
                   placeholder="e.g. 0.10"
                   className="w-full rounded-lg bg-white px-2.5 py-1.5 text-xs font-black text-[#9a3412] focus:outline-none focus:ring-2 focus:ring-amber-500 border border-amber-300"
                 />
@@ -1211,7 +1213,7 @@ export default function SettlementForm() {
                   <button
                     key={rate}
                     type="button"
-                    onClick={() => setFormData({ ...formData, tds_rate: rate === '0.00' ? '' : rate })}
+                    onClick={() => setFormData((prev) => ({ ...prev, tds_rate: rate === '0.00' ? '' : rate }))}
                     className={`text-[9.5px] px-1.5 py-0.5 rounded font-bold transition-colors ${
                       formData.tds_rate === rate || (rate === '0.00' && !formData.tds_rate)
                         ? 'bg-[#9a3412] text-white'
@@ -1232,7 +1234,7 @@ export default function SettlementForm() {
                 type="number"
                 step="0.01"
                 value={formData.advance_paid ?? ''}
-                onChange={(e) => setFormData({ ...formData, advance_paid: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, advance_paid: e.target.value }))}
                 placeholder="0.00"
                 className="w-full rounded-xl bg-red-50/80 border border-red-300 px-3.5 py-2 text-xs font-bold text-red-700 placeholder-red-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500 shadow-xs transition-all"
               />
@@ -1243,7 +1245,7 @@ export default function SettlementForm() {
                 type="number"
                 step="0.01"
                 value={formData.lorry_freight ?? ''}
-                onChange={(e) => setFormData({ ...formData, lorry_freight: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, lorry_freight: e.target.value }))}
                 placeholder="0.00"
                 className="w-full rounded-xl bg-red-50/80 border border-red-300 px-3.5 py-2 text-xs font-bold text-red-700 placeholder-red-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500 shadow-xs transition-all"
               />
@@ -1263,7 +1265,7 @@ export default function SettlementForm() {
                       type="number"
                       step="0.01"
                       value={formData.other_charges ?? ''}
-                      onChange={(e) => setFormData({ ...formData, other_charges: e.target.value })}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, other_charges: e.target.value }))}
                       placeholder="0.00"
                       className={`w-full rounded-xl border px-3.5 py-2 text-xs font-bold focus:bg-white focus:outline-none focus:ring-2 shadow-xs transition-all ${otherStyle.input}`}
                     />
@@ -1277,7 +1279,7 @@ export default function SettlementForm() {
                 <input
                   type="checkbox"
                   checked={formData.is_interstate}
-                  onChange={(e) => setFormData({ ...formData, is_interstate: e.target.checked })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, is_interstate: e.target.checked }))}
                   className="rounded text-[#0b3558] focus:ring-0"
                 />
                 <span className="text-xs font-black text-slate-800">IGST Interstate Sale</span>
@@ -1318,7 +1320,7 @@ export default function SettlementForm() {
             <textarea
               rows={2}
               value={formData.remarks}
-              onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
+              onChange={(e) => setFormData((prev) => ({ ...prev, remarks: e.target.value }))}
               className="w-full rounded-xl bg-[#f4f6f9] px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0b3558]"
               placeholder="Any quality test remarks or settlement notes..."
             />

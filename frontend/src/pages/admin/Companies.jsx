@@ -1,4 +1,5 @@
 import CrudPage from '../masters/CrudPage'
+import CompanyLogo from '../../components/CompanyLogo'
 
 const STATUSES = [
   { value: 'ACTIVE', label: 'Active' },
@@ -19,21 +20,13 @@ export default function Companies() {
         {
           key: 'logo_transparent_path',
           label: 'Logo',
-          render: (r) => {
-            const logo = r.logo_transparent_path || r.logo_path || '/logos/laxmi_traders_transparent.png'
-            return (
-              <div className="flex items-center gap-2">
-                <img
-                  src={logo.startsWith('/') ? logo : `/${logo}`}
-                  alt={r.company_name}
-                  className="h-8 w-8 object-contain bg-white border border-slate-200 rounded p-1 shadow-2xs"
-                  onError={(e) => {
-                    e.currentTarget.src = '/logos/laxmi_traders_transparent.png'
-                  }}
-                />
+          render: (r) => (
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 bg-white p-1 shadow-2xs">
+                <CompanyLogo company={r} forceShow initialsClass="text-[9px]" />
               </div>
-            )
-          },
+            </div>
+          ),
         },
         { key: 'code', label: 'Code' },
         { key: 'company_name', label: 'Company Name' },
@@ -106,21 +99,11 @@ export default function Companies() {
           name: 'logo_transparent_path',
           label: 'Transparent Logo (Replaceable Picture)',
           type: 'image',
-          presets: [
-            { label: 'Laxmi Transparent', value: '/logos/laxmi_traders_transparent.png' },
-            { label: 'SM Transparent', value: '/logos/sm_traders_transparent.png' },
-            { label: 'Shree Feeds Transparent', value: '/logos/shree_feeds_transparent.png' },
-          ],
         },
         {
           name: 'logo_path',
           label: 'Solid Logo (Replaceable Picture)',
           type: 'image',
-          presets: [
-            { label: 'Laxmi Solid', value: '/logos/laxmi_traders.png' },
-            { label: 'SM Solid', value: '/logos/sm_traders.png' },
-            { label: 'Shree Feeds Solid', value: '/logos/shree_feeds.png' },
-          ],
         },
         {
           name: 'banner_path',

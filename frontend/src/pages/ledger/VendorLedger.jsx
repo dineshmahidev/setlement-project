@@ -53,9 +53,6 @@ export default function VendorLedger() {
         const res = await api.get('/vendors?all=true')
         const list = extractList(res)
         setVendorsList(list)
-        if (!selectedVendorId && list.length > 0) {
-          setSelectedVendorId(list[0].id)
-        }
       } catch (err) {
         console.error(err)
         setVendorsList([])
@@ -65,13 +62,12 @@ export default function VendorLedger() {
   }, [])
 
   const fetchLedger = async () => {
-    if (!selectedVendorId) return
     setLoading(true)
     setError('')
     try {
       const res = await api.get('/ledger', {
         params: {
-          vendor_id: selectedVendorId,
+          vendor_id: selectedVendorId || undefined,
           document_type: docTypeFilter || undefined,
           from_date: fromDate || undefined,
           to_date: toDate || undefined,
@@ -86,21 +82,18 @@ export default function VendorLedger() {
   }
 
   useEffect(() => {
-    if (selectedVendorId) {
-      fetchLedger()
-    }
+    fetchLedger()
   }, [selectedVendorId, docTypeFilter, fromDate, toDate])
 
   const handleExportPdf = async () => {
-    if (!selectedVendorId) return
     try {
       const params = new URLSearchParams({
-        vendor_id: selectedVendorId,
+        ...(selectedVendorId && { vendor_id: selectedVendorId }),
         ...(fromDate && { from_date: fromDate }),
         ...(toDate && { to_date: toDate }),
         ...(docTypeFilter && { document_type: docTypeFilter }),
       })
-      await openPdf(`/ledger/pdf?${params.toString()}`, `Vendor_Ledger_${selectedVendorId}.pdf`)
+      await openPdf(`/ledger/pdf?${params.toString()}`, `Vendor_Ledger_${selectedVendorId || 'All_Vendors'}.pdf`)
     } catch (err) {
       console.error(err)
     }
@@ -110,9 +103,10 @@ export default function VendorLedger() {
     if (!ledgerData?.entries?.length) return
     const vendor = ledgerData.vendor
     const headers = ['Date,Document No,Type,Description,Debit (₹),Credit (₹),Balance (₹)\n']
-    const rows = (Array.isArray(ledgerData.entries) ? ledgerData.entries : []).map((e) =>
-      `"${e.transaction_date}","${e.document_number || ''}","${e.document_type}","${e.description || ''}",${e.debit || 0},${e.credit || 0},${e.balance || 0}`
-    )
+    const rows = (Array.isArray(ledgerData.entries) ? ledgerData.entries : []).map((e) => {
+      const typeLabel = (Number(e.debit) || 0) > 0 ? 'DEBIT NOTE' : 'CREDIT NOTE'
+      return `"${e.transaction_date}","${e.document_number || ''}","${typeLabel}","${e.description || ''}",${e.debit || 0},${e.credit || 0},${e.balance || 0}`
+    })
     const blob = new Blob([headers.concat(rows).join('\n')], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -164,8 +158,16 @@ export default function VendorLedger() {
 
         <div className="flex flex-wrap items-center gap-2.5">
           <button
-            onClick={handleExportPdf}
+            onClick={() => setAdjModalOpen(true)}
             disabled={!selectedVendorId}
+            title={selectedVendorId ? 'Post a manual debit/credit adjustment' : 'Select a vendor first'}
+            className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-[#fbf5ea] hover:text-[#0b3558] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Plus className="w-4 h-4 text-emerald-600" />
+            New Adjustment
+          </button>
+          <button
+            onClick={handleExportPdf}
             className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-[#fbf5ea] hover:text-[#0b3558] disabled:opacity-50"
           >
             <Printer className="w-4 h-4 text-[#b37d14]" />
@@ -186,17 +188,18 @@ export default function VendorLedger() {
       <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs space-y-3">
         <div className="w-full">
           <Autocomplete
-            label="Select Vendor Account"
+            label="Select Vendor Account (leave empty for All Vendors)"
             items={vendorsList}
             value={selectedVendorId}
             onChange={(val) => {
               setSelectedVendorId(val)
-              setSearchParams({ vendor_id: val })
+              setSearchParams(val ? { vendor_id: val } : {})
             }}
             displayKey="vendor_name"
             secondaryKey="vendor_code"
             extraInfoKey="gstin"
-            placeholder="Search vendor name, code, GSTIN..."
+            placeholder="Search vendor name, code, GSTIN… or clear to see all"
+            clearable
           />
         </div>
 
@@ -247,20 +250,32 @@ export default function VendorLedger() {
       </div>
 
       {/* Vendor Profile & Balance Overview Header */}
-      {vendor && (
+      {ledgerData && (
         <div className="rounded-2xl bg-[#0b3558] border border-[#b37d14]/40 p-5 text-white shadow-lg">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-mono text-xs font-bold text-[#f7eedb] bg-[#07233b] px-2 py-0.5 rounded border border-[#b37d14]/50">
-                  {vendor.vendor_code}
-                </span>
-                <h2 className="text-lg font-bold text-white">{vendor.vendor_name}</h2>
+                {vendor ? (
+                  <span className="font-mono text-xs font-bold text-[#f7eedb] bg-[#07233b] px-2 py-0.5 rounded border border-[#b37d14]/50">
+                    {vendor.vendor_code}
+                  </span>
+                ) : (
+                  <span className="font-mono text-xs font-bold text-[#f7eedb] bg-[#07233b] px-2 py-0.5 rounded border border-[#b37d14]/50">
+                    ALL VENDORS
+                  </span>
+                )}
+                <h2 className="text-lg font-bold text-white">{vendor ? vendor.vendor_name : 'Company-wide Ledger Statement'}</h2>
               </div>
-              <p className="text-xs text-slate-300 mt-1">
-                {vendor.address ? `${vendor.address}, ` : ''}{vendor.city} | <strong>GSTIN:</strong> {vendor.gstin || 'N/A'} | <strong>PAN:</strong> {vendor.pan || 'N/A'}
-              </p>
-              {vendor.bank_name && (
+              {vendor ? (
+                <p className="text-xs text-slate-300 mt-1">
+                  {vendor.address ? `${vendor.address}, ` : ''}{vendor.city} | <strong>GSTIN:</strong> {vendor.gstin || 'N/A'} | <strong>PAN:</strong> {vendor.pan || 'N/A'}
+                </p>
+              ) : (
+                <p className="text-xs text-slate-300 mt-1">
+                  Showing every vendor ledger entry of the active company. Pick a vendor above to narrow it down.
+                </p>
+              )}
+              {vendor?.bank_name && (
                 <p className="text-[11px] text-slate-300/80 mt-0.5">
                   Bank: {vendor.bank_name} | A/C: {vendor.account_number} | IFSC: {vendor.ifsc}
                 </p>
@@ -268,6 +283,13 @@ export default function VendorLedger() {
             </div>
 
             <div className="flex items-center gap-6 bg-[#07233b]/80 backdrop-blur-xs p-3.5 rounded-xl border border-[#b37d14]/40 text-right">
+              <div>
+                <span className="text-[10.5px] uppercase tracking-wider text-slate-300 font-semibold block">Entries</span>
+                <span className="text-base font-bold text-white font-mono">
+                  {Number(ledgerData?.entry_count ?? entries.length).toLocaleString('en-IN')}
+                </span>
+              </div>
+              <div className="h-8 w-px bg-white/20" />
               <div>
                 <span className="text-[10.5px] uppercase tracking-wider text-slate-300 font-semibold block">Total Debited</span>
                 <span className="text-base font-bold text-[#faedcd] font-mono">
@@ -286,6 +308,13 @@ export default function VendorLedger() {
         </div>
       )}
 
+      {/* Fetch error — was declared but never rendered before */}
+      {error && !loading && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-xs font-semibold text-red-600">
+          {error}
+        </div>
+      )}
+
       {/* Ledger Table */}
       <div className="rounded-2xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
         {loading ? (
@@ -294,7 +323,9 @@ export default function VendorLedger() {
           </div>
         ) : entries.length === 0 ? (
           <div className="p-12 text-center text-slate-400 text-xs">
-            No transactions found for this vendor account.
+            {selectedVendorId
+              ? 'No transactions found for this vendor account.'
+              : 'No ledger entries found for this company.'}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -316,8 +347,8 @@ export default function VendorLedger() {
                     <td className="py-3 px-4 font-mono font-bold text-[#0b3558]">{entry.document_number || '-'}</td>
                     <td className="py-3 px-4">
                       <span className={`inline-block rounded px-2 py-0.5 text-[10.5px] font-bold uppercase border ${
-                        Number(entry.debit) > 0 
-                          ? 'bg-amber-50 border-amber-200 text-[#b37d14]' 
+                        Number(entry.debit) > 0
+                          ? 'bg-amber-50 border-amber-200 text-[#b37d14]'
                           : 'bg-sky-50 border-sky-200 text-[#0b3558]'
                       }`}>
                         {Number(entry.debit) > 0 ? 'DEBIT NOTE' : 'CREDIT NOTE'}
@@ -326,6 +357,11 @@ export default function VendorLedger() {
                     <td className="py-3 px-4 text-slate-700">
                       {entry.description}
                       {entry.lot_number && <span className="block text-[10px] text-slate-400">Lot: {entry.lot_number}</span>}
+                      {!selectedVendorId && entry.vendor && (
+                        <span className="block text-[10px] font-semibold text-[#0b3558]">
+                          {entry.vendor.vendor_name} ({entry.vendor.vendor_code})
+                        </span>
+                      )}
                     </td>
                     <td className="py-3 px-4 text-right font-mono font-bold text-[#b37d14]">
                       {Number(entry.debit) > 0 ? `₹${Number(entry.debit).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '-'}

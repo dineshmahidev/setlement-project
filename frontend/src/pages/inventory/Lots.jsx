@@ -14,6 +14,7 @@ import {
   Select,
 } from '../../components'
 import { formatMoney, formatNumber, extractList, qs } from '../../utils/helpers'
+import { useGodownSync } from '../../hooks/useGodownSync'
 import { RefreshCw, Layers, FileText, X, Trash2, Download, Pencil, ArrowUpRight, Boxes, IndianRupee } from 'lucide-react'
 
 function useMasterData() {
@@ -100,6 +101,8 @@ export default function Lots() {
   const [search, setSearch] = useState('')
   const [selItem, setSelItem] = useState('')
   const [selBranch, setSelBranch] = useState('')
+  // Two-way sync with the top-nav godown picker
+  const onSelBranchChange = useGodownSync(selBranch, setSelBranch)
   const [selLot, setSelLot] = useState('')
   const [viewing, setViewing] = useState(null)
   const [viewFrom, setViewFrom] = useState('')
@@ -143,7 +146,8 @@ export default function Lots() {
     setFromDate('')
     setToDate('')
     setSelItem('')
-    setSelBranch('')
+    // godown filter stays in sync with the nav picker — do not clear it here
+    setSelBranch(branchId == null ? '' : String(branchId))
     setSelLot('')
     setSearch('')
     setShowZero(false)
@@ -367,7 +371,7 @@ export default function Lots() {
           <option value="">All items</option>
           {items.map((i) => <option key={i.id} value={i.id}>{i.name || i.product_name} {i.code ? `(${i.code})` : ''}</option>)}
         </Select>
-        <Select value={selBranch} onChange={(e) => setSelBranch(e.target.value)} className="max-w-[200px]">
+        <Select value={selBranch} onChange={onSelBranchChange} className="max-w-[200px]">
           <option value="">All godowns</option>
           {branches.map((b) => <option key={b.id} value={b.id}>{b.branch_name || b.name}</option>)}
         </Select>

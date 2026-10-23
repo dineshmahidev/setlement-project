@@ -135,13 +135,38 @@ export function pick(obj, keys) {
   return out
 }
 
+/** Company logo URL from the DB/backend only. Returns null when the company
+ *  has no uploaded logo (or the "show logo on website" toggle is off) so
+ *  callers can render initials instead of guessing a hardcoded file path. */
 export function resolveCompanyLogo(company) {
-  if (!company) return '/logos/laxmi_traders_transparent.png'
-  if (company.logo_transparent_path) return company.logo_transparent_path
-  if (company.logo_path) return company.logo_path
-  const idStr = `${company.slug || ''} ${company.code || ''} ${company.company_name || ''} ${company.short_name || ''}`.toLowerCase()
-  if (idStr.includes('sm') || idStr.includes('s m')) return '/logos/sm_traders_transparent.png'
-  if (idStr.includes('feed') || idStr.includes('shriee') || idStr.includes('shree')) return '/logos/shree_feeds_transparent.png'
-  return '/logos/laxmi_traders_transparent.png'
+  if (!company) return null
+  if (company.show_logo_website === false) return null
+  return company.logo_transparent_path || company.logo_path || null
+}
+
+/** Raw logo path ignoring the website visibility toggle (used by admin master
+ *  grids where the stored asset itself must stay visible). */
+export function storedLogoPath(company) {
+  if (!company) return null
+  return company.logo_transparent_path || company.logo_path || null
+}
+
+/** Normalises a DB-stored logo value into a usable src (absolute paths and
+ *  data URIs pass through, relative uploads get a leading slash). */
+export function logoSrc(path) {
+  if (!path) return null
+  if (path.startsWith('/') || path.startsWith('data:') || path.startsWith('http')) return path
+  return `/${path}`
+}
+
+/** Initials used when the logo is hidden — first letter of the first two
+ *  words of the company name ("Laxmi Traders" → "LT"). Mirrors the backend
+ *  Company::getLogoInitialsAttribute. */
+export function companyInitials(company) {
+  const name = (company?.company_name || company?.short_name || '').trim()
+  const words = name.split(/\s+/).filter(Boolean)
+  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase()
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase()
+  return 'CO'
 }
 

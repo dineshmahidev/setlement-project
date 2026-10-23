@@ -14,6 +14,8 @@ import {
   Textarea,
 } from '../../components'
 import { formatMoney, formatNumber, formatDate, today, extractList, qs } from '../../utils/helpers'
+import { useGodownSync } from '../../hooks/useGodownSync'
+import CompanyLogo from '../../components/CompanyLogo'
 import { Plus, Trash2, RefreshCw, Truck, Printer, FileText, Filter, X, Calendar, Edit2 } from 'lucide-react'
 
 function FormField({ label, required, className, children }) {
@@ -136,6 +138,8 @@ export default function Outward() {
   const [toDate, setToDate] = useState('')
   const [branchFilter, setBranchFilter] = useState('')
   const [partyFilter, setPartyFilter] = useState('')
+  // Two-way sync with the top-nav godown picker
+  const onBranchFilterChange = useGodownSync(branchFilter, setBranchFilter)
 
   function handleDurationChange(preset) {
     setDuration(preset)
@@ -152,7 +156,8 @@ export default function Outward() {
     setDuration('all')
     setFromDate('')
     setToDate('')
-    setBranchFilter('')
+    // godown filter stays in sync with the nav picker — do not clear it here
+    setBranchFilter(branchId == null ? '' : String(branchId))
     setPartyFilter('')
     setSearch('')
   }
@@ -182,6 +187,12 @@ export default function Outward() {
     remarks: '',
   })
   const [formItems, setFormItems] = useState([emptyItem()])
+  // Form godown follows the nav picker (disabled while editing an existing entry)
+  const onFormBranchChange = useGodownSync(
+    form.branch_id,
+    (v) => setForm((f) => ({ ...f, branch_id: v })),
+    !editingEntry
+  )
 
   const [viewing, setViewing] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -600,10 +611,10 @@ export default function Outward() {
             <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">Godown</label>
             <Select
               value={branchFilter}
-              onChange={(e) => setBranchFilter(e.target.value)}
+              onChange={onBranchFilterChange}
               className="text-xs font-semibold"
             >
-              <option value="">{branchId ? 'As per godown switch' : 'All Godowns'}</option>
+              <option value="">All Godowns</option>
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>{b.branch_name || b.name}</option>
               ))}
@@ -809,7 +820,7 @@ export default function Outward() {
                 value={form.branch_id}
                 onChange={(e) => {
                   const bid = e.target.value
-                  setForm({ ...form, branch_id: bid })
+                  onFormBranchChange(bid)
                   // lots picked from another godown are invalid — drop them
                   setFormItems((itemsList) =>
                     itemsList.map((it) => {
@@ -1110,15 +1121,13 @@ export default function Outward() {
               {/* Header: Company Profile + Document Title Badge */}
               <div className="flex flex-col sm:flex-row justify-between items-start gap-4 border-b-2 border-[#0b3558] pb-4">
                 <div className="flex items-center gap-4">
-                  <img
-                    src={
-                      activeCompany?.logo_transparent_path ||
-                      activeCompany?.logo_path ||
-                      '/logos/laxmi_traders_transparent.png'
-                    }
-                    alt="Company Logo"
-                    className="h-14 w-14 object-contain shrink-0"
-                  />
+                  <div className="h-14 w-14 shrink-0 flex items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5">
+                    <CompanyLogo
+                      company={activeCompany}
+                      className="h-full w-full object-contain"
+                      initialsClass="text-lg"
+                    />
+                  </div>
                   <div>
                     <h1 className="text-xl font-bold text-[#0b3558] tracking-tight">
                       {activeCompany?.company_name || 'LAXMI TRADERS'}

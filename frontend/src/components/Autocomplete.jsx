@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Search, Check, ChevronDown, Loader2 } from 'lucide-react'
+import { Search, Check, ChevronDown, Loader2, X } from 'lucide-react'
 
 export default function Autocomplete({
   label,
@@ -15,6 +15,7 @@ export default function Autocomplete({
   required = false,
   error = '',
   disabled = false,
+  clearable = false,
   className = '',
 }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -103,10 +104,25 @@ export default function Autocomplete({
           }}
           disabled={disabled}
           placeholder={placeholder}
-          className={`w-full rounded-lg border bg-white px-3.5 py-2 text-sm text-slate-800 shadow-xs transition-colors focus:border-[#0b3558] focus:outline-none focus:ring-2 focus:ring-[#0b3558]/20 pr-9 ${
+          className={`w-full rounded-lg border bg-white px-3.5 py-2 text-sm text-slate-800 shadow-xs transition-colors focus:border-[#0b3558] focus:outline-none focus:ring-2 focus:ring-[#0b3558]/20 ${clearable && value ? 'pr-16' : 'pr-9'} ${
             error ? 'border-red-400 bg-red-50/20' : 'border-slate-300 hover:border-slate-400'
           } ${disabled ? 'bg-slate-100 cursor-not-allowed' : ''}`}
         />
+        {clearable && value ? (
+          <button
+            type="button"
+            aria-label="Clear selection"
+            onClick={() => {
+              onChange && onChange('')
+              onSelect && onSelect(null)
+              setSearchTerm('')
+              setIsOpen(false)
+            }}
+            className="absolute right-8 top-1.5 rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        ) : null}
         <div className="absolute right-3 top-2.5 text-slate-400 pointer-events-none">
           {loading ? <Loader2 className="w-4 h-4 animate-spin text-[#0b3558]" /> : <ChevronDown className="w-4 h-4" />}
         </div>

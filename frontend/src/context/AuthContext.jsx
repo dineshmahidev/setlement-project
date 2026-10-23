@@ -24,6 +24,10 @@ export function AuthProvider({ children }) {
   })
   // Monotonic sequence so a slow/stale /me response can never overwrite a newer company switch.
   const refreshSeq = useRef(0)
+  const retryRef = useRef(0)
+  // refresh() is memoised with [] deps — read live session state through refs
+  // instead of the (always stale) closure values.
+  const userRef = useRef(null)
 
   const applyCompany = useCallback((company, { keepBranch = false } = {}) => {
     setActiveCompanyState(company || null)
@@ -63,6 +67,8 @@ export function AuthProvider({ children }) {
 
       const userData = userRes.data.data || userRes.data.user || userRes.data
       setUser(userData)
+      userRef.current = userData
+      retryRef.current = 0
 
       const fetchedCompanies = Array.isArray(userData?.companies) ? userData.companies : []
       setCompanies(fetchedCompanies)
@@ -105,13 +111,26 @@ export function AuthProvider({ children }) {
         else localStorage.setItem('branch_id', String(next))
         return next
       })
-    } catch {
+    } catch (err) {
       // A superseded refresh must never kill the session (StrictMode mounts
       // refresh() twice; the older one would otherwise nuke auth state and
       // bounce a valid session to the login page).
       if (seq === refreshSeq.current) {
-        setToken(null)
-        setUser(null)
+        const status = err?.response?.status
+        // Only an actual auth failure may end the session. A 500 / network blip
+        // must NOT log the user out — keep the existing user and retry once.
+        if (status === 401 || status === 419) {
+          setToken(null)
+          setUser(null)
+          userRef.current = null
+        } else if (userRef.current === null) {
+          // First load with no user yet → retry so a transient server error
+          // doesn't leave the app stuck on the login screen.
+          retryRef.current += 1
+          if (retryRef.current <= 2) {
+            setTimeout(() => refresh(), 1500)
+          }
+        }
       }
     } finally {
       // Only the latest in-flight refresh may clear the loading gate;
@@ -133,6 +152,8 @@ export function AuthProvider({ children }) {
     const userData = res.data.data?.user || res.data.user
     setToken(token)
     setUser(userData)
+    userRef.current = userData
+    retryRef.current = 0
 
     const fetchedCompanies = Array.isArray(userData?.companies) ? userData.companies : []
     setCompanies(fetchedCompanies)
@@ -159,6 +180,7 @@ export function AuthProvider({ children }) {
     }
     setToken(null)
     setUser(null)
+    userRef.current = null
     setCompanyId(null)
     localStorage.removeItem('branch_id')
     setBranchIdState(null)

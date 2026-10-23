@@ -14,6 +14,8 @@ import {
   Textarea,
 } from '../../components'
 import { formatMoney, formatNumber, formatDate, today, extractList, qs } from '../../utils/helpers'
+import { useGodownSync } from '../../hooks/useGodownSync'
+import CompanyLogo from '../../components/CompanyLogo'
 import { Plus, Trash2, RefreshCw, Package, Printer, FileText, Filter, X, Calendar, Edit2 } from 'lucide-react'
 
 function FormField({ label, required, className, children }) {
@@ -161,6 +163,8 @@ export default function Inward() {
   const [toDate, setToDate] = useState('')
   const [branchFilter, setBranchFilter] = useState('')
   const [partyFilter, setPartyFilter] = useState('')
+  // Two-way sync with the top-nav godown picker
+  const onBranchFilterChange = useGodownSync(branchFilter, setBranchFilter)
 
   function handleDurationChange(preset) {
     setDuration(preset)
@@ -177,7 +181,8 @@ export default function Inward() {
     setDuration('all')
     setFromDate('')
     setToDate('')
-    setBranchFilter('')
+    // godown filter stays in sync with the nav picker — do not clear it here
+    setBranchFilter(branchId == null ? '' : String(branchId))
     setPartyFilter('')
     setSearch('')
   }
@@ -200,6 +205,12 @@ export default function Inward() {
   const [form, setForm] = useState({ date: today(), branch_id: branchId || '', party_id: '', load_reference: '', remarks: '' })
   const [formItems, setFormItems] = useState([emptyItem()])
   const [searchParams, setSearchParams] = useSearchParams()
+  // Form godown follows the nav picker (disabled while editing an existing entry)
+  const onFormBranchChange = useGodownSync(
+    form.branch_id,
+    (v) => setForm((f) => ({ ...f, branch_id: v })),
+    !editingEntry
+  )
 
   // Existing lots for the lot-field suggestions — scoped to the form's godown only
   const [allLots, setAllLots] = useState([])
@@ -527,10 +538,10 @@ export default function Inward() {
             <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">Godown</label>
             <Select
               value={branchFilter}
-              onChange={(e) => setBranchFilter(e.target.value)}
+              onChange={onBranchFilterChange}
               className="text-xs font-semibold"
             >
-              <option value="">{branchId ? 'As per godown switch' : 'All Godowns'}</option>
+              <option value="">All Godowns</option>
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>{b.branch_name || b.name}</option>
               ))}
@@ -659,7 +670,7 @@ export default function Inward() {
               <Select
                 value={form.branch_id}
                 onChange={(e) => {
-                  setForm({ ...form, branch_id: e.target.value })
+                  onFormBranchChange(e.target.value)
                   // lot numbers of the old godown are invalid — clear them
                   setFormItems((rows) => rows.map((r) => ({ ...r, lot_number: '' })))
                 }}
@@ -868,15 +879,13 @@ export default function Inward() {
               {/* Header: Company Profile + Document Title Badge */}
               <div className="flex flex-col sm:flex-row justify-between items-start gap-4 border-b-2 border-[#0b3558] pb-4">
                 <div className="flex items-center gap-4">
-                  <img
-                    src={
-                      activeCompany?.logo_transparent_path ||
-                      activeCompany?.logo_path ||
-                      '/logos/laxmi_traders_transparent.png'
-                    }
-                    alt="Company Logo"
-                    className="h-14 w-14 object-contain shrink-0"
-                  />
+                  <div className="h-14 w-14 shrink-0 flex items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5">
+                    <CompanyLogo
+                      company={activeCompany}
+                      className="h-full w-full object-contain"
+                      initialsClass="text-lg"
+                    />
+                  </div>
                   <div>
                     <h1 className="text-xl font-bold text-[#0b3558] tracking-tight">
                       {activeCompany?.company_name || 'LAXMI TRADERS'}

@@ -1,8 +1,27 @@
-import React from 'react'
-import { useOutletContext } from 'react-router-dom'
+import React, { useEffect, useState } from 'react'
 import FlipBusinessCard from '../components/FlipBusinessCard'
+import api from '../../services/api'
+import { logoSrc } from '../../utils/helpers'
 
 export default function OurBusinessesPage() {
+  const [cmsLogos, setCmsLogos] = useState({})
+
+  useEffect(() => {
+    api
+      .get('/public/cms')
+      .then((res) => {
+        const list = res.data?.data || []
+        setCmsLogos(
+          Object.fromEntries(
+            list.map((c) => [
+              (c.company_name || '').toUpperCase(),
+              c.show_logo_website === false ? '' : logoSrc(c.logo_transparent_path || c.logo_path),
+            ]),
+          ),
+        )
+      })
+      .catch(() => {})
+  }, [])
 
   return (
     <div className="pt-24 space-y-0 bg-[#FAFAFC] text-slate-800">
@@ -28,7 +47,7 @@ export default function OurBusinessesPage() {
               name="LAXMI TRADERS"
               category="Trading & Distribution"
               meaning="Growth, Trade & Business"
-              logo="/logos/laxmi_traders_transparent.png"
+              logo={cmsLogos['LAXMI TRADERS'] || ''}
               banner="/banners/laxmi_traders_banner.png"
               location="103, Bharathiyar Street, Ariyamangalam, Tiruchirappalli - 620010"
               gstin="33BWLKP6363A3ZN"
@@ -46,7 +65,7 @@ export default function OurBusinessesPage() {
               name="S M TRADERS"
               category="Trading & Warehousing"
               meaning="Godown, Grains & Farming"
-              logo="/logos/sm_traders_transparent.png"
+              logo={cmsLogos['S M TRADERS'] || ''}
               banner="/banners/sm_traders_banner.png"
               location="103/A, Bharathiyar Street, Ariyamangalam, Tiruchirappalli - 620010"
               gstin="33DTNPM3407G1ZQ"
@@ -64,7 +83,7 @@ export default function OurBusinessesPage() {
               name="SHRIEE FEEDS"
               category="Cattle & Poultry Feeds"
               meaning="Agriculture, Cattle & Poultry"
-              logo="/logos/shree_feeds_transparent.png"
+              logo={cmsLogos['SHRIEE FEEDS'] || ''}
               banner="/banners/shree_feeds_banner.png"
               location="Door No. 3/1044, Nandanar Metu Mill New Colony, Manapparai - 621306"
               gstin="33BOZPS3759G1Z5"

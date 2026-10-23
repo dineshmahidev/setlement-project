@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import { MapPin, ShieldCheck, ArrowRight, Building2, Truck, Phone, Mail, ExternalLink } from 'lucide-react'
 import api from '../../services/api'
+import { companyInitials, logoSrc } from '../../utils/helpers'
 
 export default function SMTradersPage() {
   const { onOpenEnquiry } = useOutletContext()
@@ -24,7 +25,7 @@ export default function SMTradersPage() {
   const mapUrl = cms?.map_url || 'https://maps.google.com/maps?q=Ariyamangalam,%20Tiruchirappalli&t=&z=13&ie=UTF8&iwloc=&output=embed'
 
   const bannerImg = cms?.banner_path ? (cms.banner_path.startsWith('/') ? cms.banner_path : '/' + cms.banner_path) : '/banners/sm_traders_banner.png'
-  const logoImg = cms?.logo_transparent_path ? (cms.logo_transparent_path.startsWith('/') ? cms.logo_transparent_path : '/' + cms.logo_transparent_path) : '/logos/sm_traders_transparent.png'
+  const logoImg = cms?.show_logo_website === false ? null : logoSrc(cms?.logo_transparent_path || cms?.logo_path)
 
   return (
     <div className="pt-20 space-y-0 bg-[#FAFAFC] text-slate-800">
@@ -44,11 +45,17 @@ export default function SMTradersPage() {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
             <div className="p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl">
-              <img
-                src={logoImg}
-                alt="SM Traders Logo"
-                className="h-20 sm:h-24 w-auto object-contain drop-shadow-md"
-              />
+              {logoImg ? (
+                <img
+                  src={logoImg}
+                  alt="SM Traders Logo"
+                  className="h-20 sm:h-24 w-auto object-contain drop-shadow-md"
+                />
+              ) : (
+                <span className="flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-2xl bg-amber-500/20 text-3xl font-black text-amber-300">
+                  {companyInitials({ company_name: cms?.company_name || 'SM Traders' })}
+                </span>
+              )}
             </div>
             <div className="space-y-2">
               <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-amber-500/20 backdrop-blur-md px-3.5 py-1 text-xs font-bold text-amber-300 uppercase tracking-wider">

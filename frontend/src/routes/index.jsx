@@ -41,6 +41,7 @@ import Outward from '../pages/inventory/Outward'
 import Production from '../pages/inventory/Production'
 import Transfer from '../pages/inventory/Transfer'
 import Companies from '../pages/admin/Companies'
+import LogoManagement from '../pages/admin/LogoManagement'
 import WebsiteCms from '../pages/cms/WebsiteCms'
 import LeadsTraffic from '../pages/leads/LeadsTraffic'
 import Trash from '../pages/trash/Trash'
@@ -117,6 +118,7 @@ const panelChildren = [
   // Restricted Confidential Routes: Super Admin / Master Admin Only
   <Route key="branches" path="branches" element={<RequireSuperAdmin><Branches /></RequireSuperAdmin>} />,
   <Route key="companies" path="companies" element={<RequireSuperAdmin><Companies /></RequireSuperAdmin>} />,
+  <Route key="logo-management" path="logo-management" element={<RequireSuperAdmin><LogoManagement /></RequireSuperAdmin>} />,
   <Route key="cms" path="cms" element={<RequireSuperAdmin><WebsiteCms /></RequireSuperAdmin>} />,
   <Route key="settings" path="settings" element={<RequireSuperAdmin><Settings /></RequireSuperAdmin>} />,
   <Route key="audit-logs" path="audit-logs" element={<RequireSuperAdmin><AuditLogs /></RequireSuperAdmin>} />,

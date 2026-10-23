@@ -40,6 +40,7 @@ import {
   StatusBadge,
 } from '../../components'
 import { formatDate, formatNumber, today, extractList } from '../../utils/helpers'
+import { useGodownSync } from '../../hooks/useGodownSync'
 
 function FormField({ label, required, className, children }) {
   return (
@@ -104,6 +105,8 @@ export function PartyStockDashboard() {
   })
   const [search, setSearch] = useState('')
   const [filterGodown, setFilterGodown] = useState('')
+  // Two-way sync with the top-nav godown picker
+  const onFilterGodownChange = useGodownSync(filterGodown, setFilterGodown)
   const [filterItem, setFilterItem] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
@@ -255,7 +258,7 @@ export function PartyStockDashboard() {
               <label className="text-xs font-semibold text-slate-700">Godown:</label>
               <select
                 value={filterGodown}
-                onChange={(e) => setFilterGodown(e.target.value)}
+                onChange={onFilterGodownChange}
                 className="rounded-lg border border-slate-300 bg-slate-50/80 px-2.5 py-1 text-xs font-semibold text-[#0B1A2D] focus:border-[#C9A227] focus:bg-white focus:outline-none"
               >
                 <option value="">All Godowns ({branches.length})</option>
@@ -818,6 +821,8 @@ export function CurrentStock() {
   const [search, setSearch] = useState('')
   const { branches, items } = useMasters()
   const [selBranch, setSelBranch] = useState('')
+  // Two-way sync with the top-nav godown picker
+  const onSelBranchChange = useGodownSync(selBranch, setSelBranch)
   const [selItem, setSelItem] = useState('')
   const [hideZeroStock, setHideZeroStock] = useState(true)
 
@@ -1015,7 +1020,7 @@ export function CurrentStock() {
           />
         </div>
         <div className="w-52">
-          <Select value={selBranch} onChange={(e) => setSelBranch(e.target.value)}>
+          <Select value={selBranch} onChange={onSelBranchChange}>
             <option value="">All Godowns / Branches</option>
             {branches.map((b) => (
               <option key={b.id} value={b.id}>{b.name || b.branch_name}</option>
@@ -1142,6 +1147,8 @@ export function StockIn() {
   const [saving, setSaving] = useState(false)
 
   const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+  // Form godown follows the top-nav godown picker (two-way)
+  const onBranchChange = useGodownSync(form.branch_id, (v) => setF('branch_id', v))
 
   async function submit(e) {
     e.preventDefault()
@@ -1172,7 +1179,7 @@ export function StockIn() {
           <Input type="date" value={form.date} onChange={(e) => setF('date', e.target.value)} required />
         </FormField>
         <FormField label="Branch / Godown" required>
-          <Select value={form.branch_id} onChange={(e) => setF('branch_id', e.target.value)} required>
+          <Select value={form.branch_id} onChange={onBranchChange} required>
             <option value="">Select…</option>
             {branches.map((b) => (
               <option key={b.id} value={b.id}>
@@ -1265,6 +1272,8 @@ export function StockOut() {
   const [saving, setSaving] = useState(false)
 
   const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+  // Form godown follows the top-nav godown picker (two-way)
+  const onBranchChange = useGodownSync(form.branch_id, (v) => setF('branch_id', v))
 
   async function submit(e) {
     e.preventDefault()
@@ -1295,7 +1304,7 @@ export function StockOut() {
           <Input type="date" value={form.date} onChange={(e) => setF('date', e.target.value)} required />
         </FormField>
         <FormField label="Branch / Godown" required>
-          <Select value={form.branch_id} onChange={(e) => setF('branch_id', e.target.value)} required>
+          <Select value={form.branch_id} onChange={onBranchChange} required>
             <option value="">Select…</option>
             {branches.map((b) => (
               <option key={b.id} value={b.id}>
@@ -1373,8 +1382,8 @@ export function StockTransfer() {
     remarks: '',
   })
   const [saving, setSaving] = useState(false)
-  const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }))
 
+  const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }))
   // Open lots for the selected From godown (drives the Lot Number dropdown)
   const [lots, setLots] = useState([])
   useEffect(() => {
@@ -1410,6 +1419,8 @@ export function StockTransfer() {
     date_to: '',
     search: '',
   })
+  // Two-way sync with the top-nav godown picker
+  const onFilterBranchChange = useGodownSync(filters.branch_id, (v) => setFilters((f) => ({ ...f, branch_id: v })))
 
   // Export PDF State
   const [exportModalOpen, setExportModalOpen] = useState(false)
@@ -1452,6 +1463,8 @@ export function StockTransfer() {
   })
   const setEditF = (k, v) => setEditForm((f) => ({ ...f, [k]: v }))
   const [editLots, setEditLots] = useState([])
+  // From-godown follows the top-nav godown picker (two-way; disabled while editing a transfer)
+  const onBranchChange = useGodownSync(form.from_branch_id, (v) => setF('from_branch_id', v), !editModalOpen)
 
   useEffect(() => {
     if (!editModalOpen || !editForm.from_branch_id) {
@@ -1877,7 +1890,10 @@ export function StockTransfer() {
             <FormField label="From Godown" required>
               <Select
                 value={form.from_branch_id}
-                onChange={(e) => setForm((f) => ({ ...f, from_branch_id: e.target.value, lot_number: '' }))}
+                onChange={(e) => {
+                  onBranchChange(e.target.value)
+                  setF('lot_number', '')
+                }}
                 required
               >
                 <option value="">Select From Godown…</option>
@@ -2042,7 +2058,7 @@ export function StockTransfer() {
               type="button"
               onClick={() => {
                 setActiveDuration('all')
-                setFilters({ branch_id: '', item_id: '', date_from: '', date_to: '', search: '' })
+                setFilters({ branch_id: branchId == null ? '' : String(branchId), item_id: '', date_from: '', date_to: '', search: '' })
               }}
               className="ml-auto text-xs text-rose-600 hover:underline"
             >
@@ -2079,9 +2095,9 @@ export function StockTransfer() {
             <label className="mb-1 block text-xs font-medium text-slate-600">Godown</label>
             <Select
               value={filters.branch_id}
-              onChange={(e) => setFilters((f) => ({ ...f, branch_id: e.target.value }))}
+              onChange={onFilterBranchChange}
             >
-              <option value="">{branchId ? 'As per godown switch' : 'All Godowns'}</option>
+              <option value="">All Godowns</option>
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>{b.name || b.branch_name}</option>
               ))}
@@ -2653,6 +2669,8 @@ export function StockLedger() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({ item_id: '', branch_id: '', date_from: '', date_to: '', lot_number: '' })
+  // Two-way sync with the top-nav godown picker
+  const onFilterBranchChange = useGodownSync(filters.branch_id, (v) => setFilters((f) => ({ ...f, branch_id: v })))
   const [exportModalOpen, setExportModalOpen] = useState(false)
   const [exportFilters, setExportFilters] = useState({
     branch_id: '',
@@ -2880,7 +2898,7 @@ export function StockLedger() {
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div>
           <label className="mb-1 block text-xs font-semibold text-slate-700">Godown</label>
-          <Select value={filters.branch_id} onChange={(e) => setFilters((f) => ({ ...f, branch_id: e.target.value }))}>
+          <Select value={filters.branch_id} onChange={onFilterBranchChange}>
             <option value="">All godowns</option>
             {branches.map((b) => (
               <option key={b.id} value={b.id}>{b.name || b.branch_name}</option>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, RotateCw, MapPin, Building2, Phone, ShieldCheck } from 'lucide-react'
+import { companyInitials, logoSrc } from '../../utils/helpers'
 
 export default function FlipBusinessCard({
   name,
@@ -20,6 +21,10 @@ export default function FlipBusinessCard({
   enableAutoCycle = true,
 }) {
   const [isFlipped, setIsFlipped] = useState(false)
+  const [logoFailed, setLogoFailed] = useState(false)
+  const logoUrl = logoSrc(logo)
+  const showLogo = Boolean(logoUrl) && !logoFailed
+  const initials = companyInitials({ company_name: name })
   const cardRef = useRef(null)
   const hasAutoFlippedOnScroll = useRef(false)
   const isHovered = useRef(false)
@@ -168,11 +173,16 @@ export default function FlipBusinessCard({
           {/* Center: Meaningful Logo Medallion */}
           <div className="flex flex-col items-center text-center my-auto py-4 relative z-10">
             <div className="relative flex items-center justify-center h-32 w-32 rounded-3xl bg-gradient-to-b from-amber-50/80 via-white to-slate-50 border border-amber-200/60 p-4 shadow-lg group-hover:scale-105 transition-transform duration-500">
-              <img
-                src={logo}
-                alt={`${name} Logo`}
-                className="max-h-full max-w-full object-contain drop-shadow-md"
-              />
+              {showLogo ? (
+                <img
+                  src={logoUrl}
+                  alt={`${name} Logo`}
+                  className="max-h-full max-w-full object-contain drop-shadow-md"
+                  onError={() => setLogoFailed(true)}
+                />
+              ) : (
+                <span className="text-4xl font-black text-[#8C6E14]">{initials}</span>
+              )}
             </div>
 
             {/* Meaning Pill */}
@@ -240,11 +250,16 @@ export default function FlipBusinessCard({
           {/* Top Bar: Floating Logo Chip & Flip Back button */}
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-xl border border-white/20 shadow-md">
-              <img
-                src={logo}
-                alt={`${name} Small Logo`}
-                className="h-6 w-auto object-contain"
-              />
+              {showLogo ? (
+                <img
+                  src={logoUrl}
+                  alt={`${name} Small Logo`}
+                  className="h-6 w-auto object-contain"
+                  onError={() => setLogoFailed(true)}
+                />
+              ) : (
+                <span className="text-xs font-black text-amber-300">{initials}</span>
+              )}
               <span className="text-xs font-black text-white">{name}</span>
             </div>
 

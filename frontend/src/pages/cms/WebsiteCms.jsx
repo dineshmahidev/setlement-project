@@ -736,12 +736,6 @@ export default function WebsiteCms() {
                   darkBg={true}
                   aspectRatio="logo"
                   badgeText="PDF & Navbar"
-                  presets={[
-                    { label: 'Laxmi (Trans)', value: '/logos/laxmi_traders_transparent.png' },
-                    { label: 'SM Traders (Trans)', value: '/logos/sm_traders_transparent.png' },
-                    { label: 'Shree Feeds (Trans)', value: '/logos/shree_feeds_transparent.png' },
-                    { label: 'Shree Laxmi (Trans)', value: '/logos/shree_laxmi_transparent.png' },
-                  ]}
                 />
               </div>
 
@@ -774,12 +768,6 @@ export default function WebsiteCms() {
                   darkBg={false}
                   aspectRatio="logo"
                   badgeText="General Web"
-                  presets={[
-                    { label: 'Laxmi Traders', value: '/logos/laxmi_traders.png' },
-                    { label: 'SM Traders', value: '/logos/sm_traders.png' },
-                    { label: 'Shree Feeds', value: '/logos/shree_feeds.png' },
-                    { label: 'Shree Laxmi', value: '/logos/shree_laxmi.png' },
-                  ]}
                 />
               </div>
 

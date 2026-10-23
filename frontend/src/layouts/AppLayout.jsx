@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
-import { resolveCompanyLogo } from '../utils/helpers'
+import CompanyLogo from '../components/CompanyLogo'
 import {
   LayoutDashboard,
   Building2,
@@ -29,6 +29,7 @@ import {
   Crown,
   Factory,
   ArrowRightLeft,
+  Image,
 } from 'lucide-react'
 
 const SETTLEMENT_NAVIGATION = [
@@ -42,6 +43,7 @@ const SETTLEMENT_NAVIGATION = [
 const MASTER_ADMIN_NAVIGATION = [
   { label: 'Godowns', to: '/panel/branches', icon: Building2 },
   { label: 'Companies', to: '/panel/companies', icon: Briefcase },
+  { label: 'Logo Management', to: '/panel/logo-management', icon: Image },
   { label: 'Website CMS', to: '/panel/cms', icon: Globe },
   { label: 'Leads & Traffic', to: '/panel/leads-traffic', icon: TrendingUp },
   { label: 'Users', to: '/panel/users', icon: UserCheck },
@@ -303,11 +305,7 @@ function CompanySwitcher({ companies = [], activeCompany, onSelect }) {
   }, [])
 
   const isMulti = Boolean(companies && companies.length > 1)
-  const label = activeCompany?.company_name || activeCompany?.short_name || 'LAXMI TRADERS'
-  const activeLogo = resolveCompanyLogo(activeCompany)
-  const resolvedLogoUrl = (activeLogo || '/logos/laxmi_traders_transparent.png').startsWith('/')
-    ? (activeLogo || '/logos/laxmi_traders_transparent.png')
-    : `/${activeLogo}`
+  const label = activeCompany?.company_name || activeCompany?.short_name || 'Active Company'
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -320,14 +318,7 @@ function CompanySwitcher({ companies = [], activeCompany, onSelect }) {
         title={isMulti ? 'Switch active company' : label}
       >
         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-50 border border-slate-200 p-0.5 shadow-2xs">
-          <img
-            src={resolvedLogoUrl}
-            alt={label}
-            className="h-full w-full object-contain"
-            onError={(e) => {
-              e.currentTarget.src = '/logos/laxmi_traders_transparent.png'
-            }}
-          />
+          <CompanyLogo company={activeCompany} initialsClass="text-[9px]" />
         </div>
         <div className="flex flex-col text-left min-w-0">
           <span className="max-w-[150px] truncate tracking-tight sm:max-w-[220px] font-extrabold text-xs text-[#0B1A2D] leading-tight">
@@ -363,7 +354,6 @@ function CompanySwitcher({ companies = [], activeCompany, onSelect }) {
           <div className="mt-3 space-y-1.5 max-h-72 overflow-y-auto pr-1">
             {companies.map((c) => {
               const isSelected = Number(activeCompany?.id) === Number(c.id)
-              const cLogo = resolveCompanyLogo(c)
               return (
                 <div
                   key={c.id}
@@ -379,14 +369,7 @@ function CompanySwitcher({ companies = [], activeCompany, onSelect }) {
                 >
                   <div className="flex min-w-0 items-center gap-2.5">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white border border-slate-200 p-0.5 shadow-2xs">
-                      <img
-                        src={cLogo.startsWith('/') ? cLogo : `/${cLogo}`}
-                        alt={c.company_name}
-                        className="h-full w-full object-contain"
-                        onError={(e) => {
-                          e.currentTarget.src = '/logos/laxmi_traders_transparent.png'
-                        }}
-                      />
+                      <CompanyLogo company={c} initialsClass="text-[10px]" />
                     </div>
                     <div className="min-w-0">
                       <div className="truncate text-xs font-extrabold text-[#0B1A2D]">{c.company_name}</div>
@@ -426,8 +409,7 @@ export default function AppLayout() {
 
   const displayName = user?.name || 'Administrator'
   const displayEmail = user?.email || ''
-  const companyShort = activeCompany?.short_name || activeCompany?.company_name || 'LAXMI TRADERS'
-  const currentCompanyLogo = resolveCompanyLogo(activeCompany)
+  const companyShort = activeCompany?.short_name || activeCompany?.company_name || 'Active Company'
   const isInventorySection = location.pathname.includes('/inventory')
 
   return (
@@ -449,13 +431,9 @@ export default function AppLayout() {
         {/* Brand Header */}
         <div className="flex h-16 items-center gap-2.5 border-b border-white/10 px-3.5">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 border border-white/15 p-1">
-            <img
-              src={currentCompanyLogo.startsWith('/') ? currentCompanyLogo : `/${currentCompanyLogo}`}
-              alt={companyShort}
-              className="h-full w-full object-contain"
-              onError={(e) => {
-                e.currentTarget.src = '/logos/laxmi_traders_transparent.png'
-              }}
+            <CompanyLogo
+              company={activeCompany}
+              initialsClass="text-sm text-[#C6F432]"
             />
           </div>
           <div className="flex-1 min-w-0">
