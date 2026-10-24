@@ -899,7 +899,7 @@ export default function SettlementForm() {
                   value={formData.contract_unit_rate ?? ''}
                   onChange={(e) => setFormData((prev) => ({ ...prev, contract_unit_rate: e.target.value }))}
                   onBlur={(e) => setFormData((prev) => ({ ...prev, contract_unit_rate: e.target.value }))}
-                  className="w-28 rounded-xl bg-white/10 px-3 py-1.5 text-xs font-bold text-white focus:bg-white focus:text-slate-900 focus:outline-none"
+                  className="w-32 rounded-xl bg-white px-3 py-1.5 text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400/80"
                   placeholder="e.g. 1880.00"
                 />
               </div>
@@ -916,7 +916,7 @@ export default function SettlementForm() {
                   value={formData.final_unit_rate ?? ''}
                   onChange={(e) => setFormData((prev) => ({ ...prev, final_unit_rate: e.target.value }))}
                   onBlur={(e) => setFormData((prev) => ({ ...prev, final_unit_rate: e.target.value }))}
-                  className="w-32 rounded-xl bg-white px-3 py-1.5 text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#d69e2e]"
+                  className="w-32 rounded-xl bg-white px-3 py-1.5 text-sm font-black text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#d69e2e]"
                   placeholder="e.g. 1830.00"
                 />
               </div>

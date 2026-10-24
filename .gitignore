@@ -45,3 +45,8 @@ Thumbs.db
 
 # Spec (optional local) — keep out of public repo if secret
 # SVMA_Agro_Master_Development_Spec.md
+
+# Local scratch and test artifacts
+*.sql
+scratch/
+test/

@@ -26,6 +26,7 @@ export default function VendorLedger() {
 
   const [vendorsList, setVendorsList] = useState([])
   const [selectedVendorId, setSelectedVendorId] = useState(initialVendorId)
+  const [filterSearch, setFilterSearch] = useState('')
   const [docTypeFilter, setDocTypeFilter] = useState('')
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
@@ -145,6 +146,21 @@ export default function VendorLedger() {
   const vendor = ledgerData?.vendor
   const entries = ledgerData?.entries || []
 
+  const displayedEntries = entries.filter((entry) => {
+    if (!filterSearch) return true
+    const q = filterSearch.toLowerCase().trim()
+    return (
+      (entry.document_number || '').toLowerCase().includes(q) ||
+      (entry.description || '').toLowerCase().includes(q) ||
+      (entry.lot_number || '').toLowerCase().includes(q) ||
+      (entry.vendor?.vendor_name || '').toLowerCase().includes(q) ||
+      (entry.vendor?.vendor_code || '').toLowerCase().includes(q)
+    )
+  })
+
+  const totalDebited = displayedEntries.reduce((s, e) => s + Number(e.debit || 0), 0)
+  const totalCredited = displayedEntries.reduce((s, e) => s + Number(e.credit || 0), 0)
+
   return (
     <div className="space-y-6">
       {/* Top Header */}
@@ -186,21 +202,87 @@ export default function VendorLedger() {
 
       {/* Vendor Selector & Filters */}
       <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs space-y-3">
-        <div className="w-full">
-          <Autocomplete
-            label="Select Vendor Account (leave empty for All Vendors)"
-            items={vendorsList}
-            value={selectedVendorId}
-            onChange={(val) => {
-              setSelectedVendorId(val)
-              setSearchParams(val ? { vendor_id: val } : {})
-            }}
-            displayKey="vendor_name"
-            secondaryKey="vendor_code"
-            extraInfoKey="gstin"
-            placeholder="Search vendor name, code, GSTIN… or clear to see all"
-            clearable
-          />
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+          <div className="md:col-span-7">
+            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+              Select Vendor Account <span className="text-slate-400 font-normal">(Empty / All Vendors = Full Company Statement)</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <select
+                value={selectedVendorId}
+                onChange={(e) => {
+                  const val = e.target.value
+                  setSelectedVendorId(val)
+                  setSearchParams(val ? { vendor_id: val } : {})
+                }}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 shadow-xs focus:border-[#0b3558] focus:outline-none focus:ring-2 focus:ring-[#0b3558]/20 cursor-pointer"
+              >
+                <option value="">— All Vendors (Show Company-wide Ledger) —</option>
+                {vendorsList.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.vendor_name} {v.vendor_code ? `(${v.vendor_code})` : ''} {v.city ? `• ${v.city}` : ''}
+                  </option>
+                ))}
+              </select>
+              {selectedVendorId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedVendorId('')
+                    setFilterSearch('')
+                    setSearchParams({})
+                  }}
+                  className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors whitespace-nowrap cursor-pointer"
+                  title="Clear vendor filter and show all vendors"
+                >
+                  ✕ Show All
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="md:col-span-5">
+            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+              Search by Full Vendor Name or Document / Particulars
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search vendor name, code, GSTIN… or clear to see all"
+                value={filterSearch}
+                onChange={(e) => {
+                  const q = e.target.value
+                  setFilterSearch(q)
+                  const trimmed = q.trim().toLowerCase()
+                  if (!trimmed) {
+                    return
+                  }
+                  // Check exact match on full vendor name or vendor code
+                  const exact = vendorsList.find(
+                    (v) =>
+                      (v.vendor_name || '').toLowerCase() === trimmed ||
+                      (v.vendor_code || '').toLowerCase() === trimmed
+                  )
+                  if (exact && String(exact.id) !== String(selectedVendorId)) {
+                    setSelectedVendorId(String(exact.id))
+                    setSearchParams({ vendor_id: String(exact.id) })
+                  }
+                }}
+                className="w-full rounded-lg border border-slate-300 bg-white pl-9 pr-8 py-2 text-xs text-slate-800 shadow-xs focus:border-[#0b3558] focus:outline-none focus:ring-2 focus:ring-[#0b3558]/20"
+              />
+              {filterSearch && (
+                <button
+                  type="button"
+                  onClick={() => setFilterSearch('')}
+                  className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 text-xs font-bold p-0.5 cursor-pointer"
+                  title="Clear search text"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100 text-xs">
@@ -321,10 +403,12 @@ export default function VendorLedger() {
           <div className="p-12 text-center">
             <PageSpinner label="Loading vendor statement..." />
           </div>
-        ) : entries.length === 0 ? (
+        ) : displayedEntries.length === 0 ? (
           <div className="p-12 text-center text-slate-400 text-xs">
             {selectedVendorId
               ? 'No transactions found for this vendor account.'
+              : filterSearch
+              ? 'No transactions found matching your search filter.'
               : 'No ledger entries found for this company.'}
           </div>
         ) : (
@@ -341,7 +425,7 @@ export default function VendorLedger() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {(Array.isArray(entries) ? entries : []).map((entry) => (
+                {displayedEntries.map((entry) => (
                   <tr key={entry.id} className="odd:bg-[#f1f5f9] even:bg-white hover:bg-amber-50/60 transition-colors">
                     <td className="py-3 px-4 text-slate-600 font-medium">{formatDate(entry.transaction_date)}</td>
                     <td className="py-3 px-4 font-mono font-bold text-[#0b3558]">{entry.document_number || '-'}</td>
@@ -378,10 +462,10 @@ export default function VendorLedger() {
                     Statement Totals:
                   </td>
                   <td className="py-3.5 px-4 text-right text-[#b37d14] font-mono">
-                    ₹{Number(ledgerData?.total_debit || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                    ₹{totalDebited.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                   <td className="py-3.5 px-4 text-right text-sky-800 font-mono">
-                    ₹{Number(ledgerData?.total_credit || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                    ₹{totalCredited.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                 </tr>
               </tfoot>

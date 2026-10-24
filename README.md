@@ -53,9 +53,9 @@ Vite proxies `/api` → `http://127.0.0.1:8000`.
 
 | Role | Email | Password |
 |------|-------|----------|
-| Super Admin | admin@svmaagro.com | password |
-| Manager | manager@svmaagro.com | password |
-| Inventory | inventory@svmaagro.com | password |
+| Super Admin | admin@laxmitraders.com | password |
+| Branch Manager | manager@laxmitraders.com | password |
+| Inventory | inventory@laxmitraders.com | password |
 
 ## Modules
 

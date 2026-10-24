@@ -31,7 +31,6 @@ import DebitNotes from '../pages/debit_notes/DebitNotes'
 import DebitNoteForm from '../pages/debit_notes/DebitNoteForm'
 import VendorLedger from '../pages/ledger/VendorLedger'
 import Inventory from '../pages/inventory/Inventory'
-import Grades from '../pages/inventory/Grades'
 import Items from '../pages/inventory/Items'
 import Materials from '../pages/inventory/Materials'
 import Units from '../pages/masters/Units'
@@ -154,7 +153,6 @@ const panelChildren = [
   <Route key="inventory-items" path="inventory/items" element={<Items />} />,
   <Route key="inventory-materials" path="inventory/materials" element={<Items />} />,
   <Route key="inventory-units" path="inventory/units" element={<Units />} />,
-  <Route key="inventory-grades" path="inventory/grades" element={<Grades />} />,
   <Route key="inventory-lots" path="inventory/lots" element={<Lots />} />,
   <Route key="inventory-inward" path="inventory/inward" element={<Inward />} />,
   <Route key="inventory-outward" path="inventory/outward" element={<Outward />} />,
