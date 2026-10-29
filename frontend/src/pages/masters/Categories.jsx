@@ -8,9 +8,9 @@ export default function Categories() {
       title="Categories"
       subtitle="Item categories"
       endpoint="/categories"
-      canCreate={can('items.create')}
-      canEdit={can('items.edit')}
-      canDelete={can('items.delete')}
+      canCreate={can('products.create')}
+      canEdit={can('products.edit')}
+      canDelete={can('products.delete')}
       searchPlaceholder="Search categories…"
       columns={[
         { key: 'code', label: 'Code' },

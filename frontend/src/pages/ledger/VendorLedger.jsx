@@ -22,7 +22,7 @@ import { today, formatDate, extractList } from '../../utils/helpers'
 export default function VendorLedger() {
   const [searchParams, setSearchParams] = useSearchParams()
   const initialVendorId = searchParams.get('vendor_id') || ''
-  const { branchId, branches } = useAuth()
+  const { branchId, branches, can } = useAuth()
 
   const [vendorsList, setVendorsList] = useState([])
   const [selectedVendorId, setSelectedVendorId] = useState(initialVendorId)
@@ -173,30 +173,36 @@ export default function VendorLedger() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <button
-            onClick={() => setAdjModalOpen(true)}
-            disabled={!selectedVendorId}
-            title={selectedVendorId ? 'Post a manual debit/credit adjustment' : 'Select a vendor first'}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-[#fbf5ea] hover:text-[#0b3558] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Plus className="w-4 h-4 text-emerald-600" />
-            New Adjustment
-          </button>
-          <button
-            onClick={handleExportPdf}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-[#fbf5ea] hover:text-[#0b3558] disabled:opacity-50"
-          >
-            <Printer className="w-4 h-4 text-[#b37d14]" />
-            Print PDF
-          </button>
-          <button
-            onClick={handleExportCsv}
-            disabled={!entries.length}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-[#fbf5ea] hover:text-[#0b3558] disabled:opacity-50"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-[#b37d14]" />
-            Export CSV
-          </button>
+          {can('vendor_ledger.adjust') && (
+            <button
+              onClick={() => setAdjModalOpen(true)}
+              disabled={!selectedVendorId}
+              title={selectedVendorId ? 'Post a manual debit/credit adjustment' : 'Select a vendor first'}
+              className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-[#fbf5ea] hover:text-[#0b3558] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Plus className="w-4 h-4 text-emerald-600" />
+              New Adjustment
+            </button>
+          )}
+          {can('vendor_ledger.export') && (
+            <>
+              <button
+                onClick={handleExportPdf}
+                className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-[#fbf5ea] hover:text-[#0b3558] disabled:opacity-50"
+              >
+                <Printer className="w-4 h-4 text-[#b37d14]" />
+                Print PDF
+              </button>
+              <button
+                onClick={handleExportCsv}
+                disabled={!entries.length}
+                className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-[#fbf5ea] hover:text-[#0b3558] disabled:opacity-50"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-[#b37d14]" />
+                Export CSV
+              </button>
+            </>
+          )}
         </div>
       </div>
 

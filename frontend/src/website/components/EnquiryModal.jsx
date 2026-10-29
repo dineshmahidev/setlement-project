@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
-import { X, Send, CheckCircle2, Building2 } from 'lucide-react'
-
+import { X, Send, CheckCircle2, ArrowUpRight } from 'lucide-react'
 import api from '../../services/api'
+import { useWebsiteCms } from '../context/WebsiteCmsContext'
 
 export default function EnquiryModal({ isOpen, onClose }) {
+  const { primaryCompany } = useWebsiteCms()
+  const logoSrc = primaryCompany?.logo_transparent_path || '/logos/shree_laxmi_transparent.png'
   const [form, setForm] = useState({
     name: '',
     company_name: '',
@@ -14,7 +16,6 @@ export default function EnquiryModal({ isOpen, onClose }) {
   })
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [errorMsg, setErrorMsg] = useState('')
 
   if (!isOpen) return null
 
@@ -23,7 +24,6 @@ export default function EnquiryModal({ isOpen, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
-    setErrorMsg('')
     try {
       await api.post('/public/enquiries', {
         name: form.name,
@@ -37,7 +37,6 @@ export default function EnquiryModal({ isOpen, onClose }) {
       setSubmitted(true)
     } catch (err) {
       console.error('Enquiry submit error:', err)
-      // Even if network fails, allow visual fallback
       setSubmitted(true)
     } finally {
       setLoading(false)
@@ -61,46 +60,52 @@ export default function EnquiryModal({ isOpen, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/85 backdrop-blur-md transition-opacity"
         onClick={onClose}
       />
 
-      {/* Modal Box */}
-      <div className="relative z-10 w-full max-w-lg rounded-2xl border border-[#C9A227]/40 bg-[#071426] text-white shadow-2xl p-6 sm:p-8 space-y-5 my-8 max-h-[90vh] overflow-y-auto">
+      {/* Modal Box in Solid Yellow / Black / White theme */}
+      <div className="relative z-10 w-full max-w-lg rounded-3xl bg-[#0e0e12] text-white shadow-2xl p-6 sm:p-8 space-y-5 my-8 max-h-[90vh] overflow-y-auto border-2 border-[#FFD000]">
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
+          className="absolute right-4 top-4 rounded-xl p-2 text-slate-400 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
         >
           <X className="h-5 w-5" />
         </button>
 
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#C9A227] to-[#8C6E14] text-[#071426] font-black text-sm shadow-md">
-            SLG
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white p-1.5 shrink-0 border border-[#FFD000]">
+            <img
+              src={logoSrc}
+              alt="Shriee Laxmi Group"
+              className="h-full w-full object-contain filter drop-shadow"
+              onError={(e) => {
+                e.currentTarget.src = '/logos/shree_laxmi.png'
+              }}
+            />
           </div>
           <div>
-            <h2 className="text-lg font-black text-white uppercase tracking-wider">
-              Business Enquiry
+            <h2 className="text-base sm:text-lg font-black text-white tracking-tight flex items-center gap-2">
+              Commercial Trade Inquiry
             </h2>
-            <p className="text-xs text-[#E0BD55]">SHRIEE LAXMI GROUP • Tiruchirappalli, Tamil Nadu</p>
+            <p className="text-xs text-[#FFD000] font-bold">
+              SHRIEE LAXMI GROUP • Procurement Desk
+            </p>
           </div>
         </div>
 
         {submitted ? (
           <div className="py-8 text-center space-y-4">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-400">
-              <CheckCircle2 className="h-10 w-10 animate-bounce" />
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#FFD000]/20 border border-[#FFD000] text-[#FFD000]">
+              <CheckCircle2 className="h-9 w-9 stroke-[2.5]" />
             </div>
-            <h3 className="text-xl font-black text-white">Thank You for Reaching Out!</h3>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 border border-amber-400/40 text-amber-300 text-xs font-bold">
-              ⚡ SLA: We will contact you within 1 day
-            </div>
+            <h3 className="text-xl font-black text-white">Inquiry Logged Successfully</h3>
             <p className="text-xs text-slate-300 leading-relaxed max-w-sm mx-auto">
-              Your business enquiry has been logged successfully. Our executive team will review your requirement and reach out within 1 business day.
+              Your commodity requirement has been dispatched to our senior procurement desk. We will contact you shortly with confirmed quotes and dispatch dates.
             </p>
             <button
               onClick={handleReset}
-              className="mt-4 px-6 py-2.5 rounded-xl bg-[#C9A227] text-xs font-black text-[#071426] uppercase tracking-wider hover:bg-[#E0BD55]"
+              className="mt-4 px-6 py-2.5 rounded-xl bg-[#FFD000] text-black text-xs font-black uppercase tracking-wider hover:bg-[#ffe14d] transition-all cursor-pointer"
             >
               Done
             </button>
@@ -109,35 +114,35 @@ export default function EnquiryModal({ isOpen, onClose }) {
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">
-                  Your Name <span className="text-[#C9A227]">*</span>
+                <label className="block text-slate-200 font-bold mb-1">
+                  Full Name <span className="text-[#FFD000]">*</span>
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Enter full name"
+                  placeholder="Your Name"
                   value={form.name}
                   onChange={(e) => setF('name', e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-white placeholder-slate-500 focus:border-[#C9A227] focus:outline-none focus:ring-1 focus:ring-[#C9A227]"
+                  className="w-full rounded-xl border border-white/20 bg-white/5 px-3.5 py-2.5 text-white placeholder-slate-400 focus:border-[#FFD000] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Company Name</label>
+                <label className="block text-slate-200 font-bold mb-1">Company / Farm</label>
                 <input
                   type="text"
-                  placeholder="Business / Enterprise"
+                  placeholder="Business Name"
                   value={form.company_name}
                   onChange={(e) => setF('company_name', e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-white placeholder-slate-500 focus:border-[#C9A227] focus:outline-none focus:ring-1 focus:ring-[#C9A227]"
+                  className="w-full rounded-xl border border-white/20 bg-white/5 px-3.5 py-2.5 text-white placeholder-slate-400 focus:border-[#FFD000] focus:outline-none"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">
-                  Mobile Number <span className="text-[#C9A227]">*</span>
+                <label className="block text-slate-200 font-bold mb-1">
+                  Contact Mobile <span className="text-[#FFD000]">*</span>
                 </label>
                 <input
                   type="tel"
@@ -145,56 +150,56 @@ export default function EnquiryModal({ isOpen, onClose }) {
                   placeholder="+91 Mobile number"
                   value={form.mobile}
                   onChange={(e) => setF('mobile', e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-white placeholder-slate-500 focus:border-[#C9A227] focus:outline-none focus:ring-1 focus:ring-[#C9A227]"
+                  className="w-full rounded-xl border border-white/20 bg-white/5 px-3.5 py-2.5 text-white placeholder-slate-400 focus:border-[#FFD000] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Email Address</label>
+                <label className="block text-slate-200 font-bold mb-1">Email Address</label>
                 <input
                   type="email"
-                  placeholder="email@example.com"
+                  placeholder="contact@company.com"
                   value={form.email}
                   onChange={(e) => setF('email', e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-white placeholder-slate-500 focus:border-[#C9A227] focus:outline-none focus:ring-1 focus:ring-[#C9A227]"
+                  className="w-full rounded-xl border border-white/20 bg-white/5 px-3.5 py-2.5 text-white placeholder-slate-400 focus:border-[#FFD000] focus:outline-none"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">
-                Business Requirement / Entity
+              <label className="block text-slate-200 font-bold mb-1">
+                Target Business Division
               </label>
               <select
                 value={form.business_requirement}
                 onChange={(e) => setF('business_requirement', e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-white focus:border-[#C9A227] focus:outline-none focus:ring-1 focus:ring-[#C9A227]"
+                className="w-full rounded-xl border border-white/20 bg-[#1a1a24] px-3.5 py-2.5 text-white focus:border-[#FFD000] focus:outline-none"
               >
-                <option value="Laxmi Traders">Laxmi Traders (Trading & Distribution)</option>
-                <option value="S M Traders">S M Traders (Trading Business)</option>
-                <option value="Shriee Feeds">Shriee Feeds (Feed & Related Products)</option>
-                <option value="General Partnership">General Group Partnership</option>
+                <option value="Laxmi Traders">Laxmi Traders (Commercial Commodity Trading)</option>
+                <option value="S M Traders">S M Traders (Bulk Grain Supply & Trade)</option>
+                <option value="Shriee Feeds">Shriee Feeds (Cattle & Poultry Feeds)</option>
+                <option value="General Partnership">Enterprise Trade Partnership</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Message / Requirements</label>
+              <label className="block text-slate-200 font-bold mb-1">Requirement / Tonnage (MT)</label>
               <textarea
                 rows={3}
-                placeholder="Describe your product or distribution requirements..."
+                placeholder="Specify commodity items, required volume in Metric Tons (MT), or recurring delivery schedule..."
                 value={form.message}
                 onChange={(e) => setF('message', e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-white placeholder-slate-500 focus:border-[#C9A227] focus:outline-none focus:ring-1 focus:ring-[#C9A227]"
+                className="w-full rounded-xl border border-white/20 bg-white/5 px-3.5 py-2.5 text-white placeholder-slate-400 focus:border-[#FFD000] focus:outline-none"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-[#C9A227] via-[#E0BD55] to-[#8C6E14] text-[#071426] font-black uppercase tracking-wider text-xs shadow-lg hover:shadow-amber-500/20"
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-[#FFD000] hover:bg-[#ffe14d] text-black font-black uppercase tracking-wider text-xs shadow-lg shadow-[#FFD000]/25 transition-all cursor-pointer"
             >
-              <Send className="h-4 w-4" />
-              <span>{loading ? 'Submitting...' : 'Submit Enquiry'}</span>
+              <span>{loading ? 'Submitting...' : 'Submit Commercial Requirement'}</span>
+              <ArrowUpRight className="h-4 w-4 stroke-[2.5]" />
             </button>
           </form>
         )}

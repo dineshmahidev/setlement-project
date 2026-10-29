@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate, useParams, useSearchParams }
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
 import CompanyLogo from '../components/CompanyLogo'
+import ChangePasswordModal from '../components/ChangePasswordModal'
 import {
   LayoutDashboard,
   Building2,
@@ -30,14 +31,15 @@ import {
   Factory,
   ArrowRightLeft,
   Image,
+  KeyRound,
 } from 'lucide-react'
 
 const SETTLEMENT_NAVIGATION = [
-  { label: 'Dashboard', to: '/panel', icon: LayoutDashboard, perm: null, end: true },
+  { label: 'Dashboard', to: '/panel', icon: LayoutDashboard, perm: 'dashboard.view', end: true },
   { label: 'Vendors', to: '/panel/vendors', icon: Users2, perm: 'vendors.view' },
   { label: 'Products', to: '/panel/products', icon: Package, perm: 'products.view' },
   { label: 'Settlements', to: '/panel/settlements', icon: Scale, perm: 'settlements.view' },
-  { label: 'Vendor Ledger', to: '/panel/vendor-ledger', icon: BookOpen, perm: 'vendors.view' },
+  { label: 'Vendor Ledger', to: '/panel/vendor-ledger', icon: BookOpen, perm: 'vendor_ledger.view' },
 ]
 
 const MASTER_ADMIN_NAVIGATION = [
@@ -46,7 +48,6 @@ const MASTER_ADMIN_NAVIGATION = [
   { label: 'Logo Management', to: '/panel/logo-management', icon: Image },
   { label: 'Website CMS', to: '/panel/cms', icon: Globe },
   { label: 'Leads & Traffic', to: '/panel/leads-traffic', icon: TrendingUp },
-  { label: 'Users', to: '/panel/users', icon: UserCheck },
   { label: 'Settings', to: '/panel/settings', icon: Settings },
 ]
 
@@ -55,12 +56,12 @@ const INVENTORY_NAVIGATION = [
   { id: 'inward', label: 'Inward (Receipt)', to: '/panel/inventory/inward', icon: PlusCircle, perm: 'inventory.view' },
   { id: 'outward', label: 'Outward / Dispatch', to: '/panel/inventory/outward', icon: MinusCircle, perm: 'inventory.view' },
   { id: 'production', label: 'Mixing / Production', to: '/panel/inventory/production', icon: Factory, perm: 'inventory.view' },
-  { id: 'transfer', label: 'Stock Transfer', to: '/panel/inventory?tab=transfer', icon: ArrowRightLeft, perm: 'inventory.view' },
+  { id: 'transfer', label: 'Stock Transfer', to: '/panel/inventory?tab=transfer', icon: ArrowRightLeft, perm: 'inventory.transfer' },
   { id: 'lots', label: 'Lotwise Stock', to: '/panel/inventory/lots', icon: Boxes, perm: 'inventory.view' },
   { id: 'current-stock', label: 'Current Items Stock', to: '/panel/inventory?tab=current-stock', icon: Boxes, perm: 'inventory.view' },
   { id: 'ledger', label: 'Stock Ledger', to: '/panel/inventory?tab=ledger', icon: BookOpen, perm: 'inventory.view' },
-  { id: 'items', label: 'Items', to: '/panel/inventory/items', icon: Package, perm: 'inventory.view' },
-  { id: 'units', label: 'Units', to: '/panel/inventory/units', icon: Scale, perm: 'inventory.view' },
+  { id: 'items', label: 'Items', to: '/panel/inventory/items', icon: Package, perm: 'products.view' },
+  { id: 'units', label: 'Units', to: '/panel/inventory/units', icon: Scale, perm: 'products.view' },
 ]
 
 const navItemCls = (isActive) =>
@@ -395,9 +396,10 @@ function CompanySwitcher({ companies = [], activeCompany, onSelect }) {
 }
 
 export default function AppLayout() {
-  const { user, isSuperAdmin, isAdmin, isBranchManagerOrStaff, can, logout, branchId, setBranchId, branches, companies, activeCompany, setCompanyById } =
+  const { user, isSuperAdmin, can, logout, branchId, setBranchId, branches, companies, activeCompany, setCompanyById } =
     useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [passwordOpen, setPasswordOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const { slug: companySlug } = useParams()
@@ -411,6 +413,10 @@ export default function AppLayout() {
   const displayEmail = user?.email || ''
   const companyShort = activeCompany?.short_name || activeCompany?.company_name || 'Active Company'
   const isInventorySection = location.pathname.includes('/inventory')
+
+  const settlementNav = SETTLEMENT_NAVIGATION.filter((item) => !item.perm || can(item.perm))
+  const inventoryNav = INVENTORY_NAVIGATION.filter((item) => !item.perm || can(item.perm))
+  const showUserManagement = can('users.view')
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-br from-[#EADFFF] via-[#F7F2FF] to-[#E3D6FF] font-sans text-slate-800">
@@ -457,8 +463,8 @@ export default function AppLayout() {
 
         {/* Navigation Items */}
         <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-3">
-          {/* SECTION 1: SETTLEMENT (Super Admin & Admin; Hidden for Branch Manager & Staff) */}
-          {!isBranchManagerOrStaff && (
+          {/* SECTION 1: SETTLEMENT (visible only when the role has at least one screen permission) */}
+          {settlementNav.length > 0 && (
             <div className="space-y-1">
               <div className={sectionLabelCls}>
                 <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
@@ -467,7 +473,7 @@ export default function AppLayout() {
                 <div className="h-px w-10 bg-white/10" />
               </div>
 
-              {SETTLEMENT_NAVIGATION.filter((item) => !item.perm || can(item.perm)).map((item) => {
+              {settlementNav.map((item) => {
                 const Icon = item.icon
                 return (
                   <NavLink
@@ -485,7 +491,8 @@ export default function AppLayout() {
             </div>
           )}
 
-          {/* SECTION 2: INVENTORY (All Roles: Super Admin, Admin, Branch Manager, Staff) */}
+          {/* SECTION 2: INVENTORY (visible only when the role has inventory/product permissions) */}
+          {inventoryNav.length > 0 && (
           <div className="space-y-1 pt-2 border-t border-white/10">
             <div className={sectionLabelCls}>
               <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
@@ -494,7 +501,7 @@ export default function AppLayout() {
               <div className="h-px w-12 bg-white/10" />
             </div>
 
-            {INVENTORY_NAVIGATION.filter((item) => !item.perm || can(item.perm)).map((item) => {
+            {inventoryNav.map((item) => {
               const Icon = item.icon
               const targetPath = item.to.split('?')[0]
               const targetSearch = item.to.includes('?') ? `?${item.to.split('?')[1]}` : ''
@@ -520,9 +527,10 @@ export default function AppLayout() {
               )
             })}
           </div>
+          )}
 
-          {/* SECTION 3: USER MANAGEMENT FOR NORMAL ADMIN (Admin can access Users, but NOT other Master Admin modules) */}
-          {isAdmin && (
+          {/* SECTION 3: USER MANAGEMENT (visible when the role has users.view) */}
+          {showUserManagement && (
             <div className="space-y-1 pt-2 border-t border-white/10">
               <div className={sectionLabelCls}>
                 <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
@@ -538,6 +546,16 @@ export default function AppLayout() {
                 <UserCheck className="w-[18px] h-[18px] shrink-0" strokeWidth={2.1} />
                 <span className="truncate flex-1">Users & Staff</span>
               </NavLink>
+              {isSuperAdmin && (
+                <NavLink
+                  to={navTo('/panel/roles')}
+                  onClick={() => setSidebarOpen(false)}
+                  className={({ isActive }) => navItemCls(isActive)}
+                >
+                  <ShieldCheck className="w-[18px] h-[18px] shrink-0" strokeWidth={2.1} />
+                  <span className="truncate flex-1">Roles & Permissions</span>
+                </NavLink>
+              )}
             </div>
           )}
 
@@ -598,13 +616,22 @@ export default function AppLayout() {
                 <p className="text-[10px] font-semibold text-slate-700 truncate">{user?.role?.label || 'Administrator'}</p>
               </div>
             </div>
-            <button
-              onClick={() => logout()}
-              title="Sign out"
-              className="rounded-xl p-2 text-[#C6F432] bg-[#14151C] hover:bg-slate-800 shadow-xs transition-colors cursor-pointer shrink-0"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                onClick={() => setPasswordOpen(true)}
+                title="Change password"
+                className="rounded-xl p-2 text-[#C6F432] bg-[#14151C] hover:bg-slate-800 shadow-xs transition-colors cursor-pointer"
+              >
+                <KeyRound className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => logout()}
+                title="Sign out"
+                className="rounded-xl p-2 text-[#C6F432] bg-[#14151C] hover:bg-slate-800 shadow-xs transition-colors cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </aside>
@@ -669,6 +696,8 @@ export default function AppLayout() {
           <Outlet />
         </main>
       </div>
+
+      <ChangePasswordModal open={passwordOpen} onClose={() => setPasswordOpen(false)} />
     </div>
   )
 }

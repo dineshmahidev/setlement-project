@@ -7,7 +7,7 @@ import { PageSpinner, Modal, SettlementBillModal, ConfirmDialog } from '../../co
 import { extractList, formatDate } from '../../utils/helpers'
 
 export default function Settlements() {
-  const { branchId } = useAuth()
+  const { branchId, can } = useAuth()
   const [settlements, setSettlements] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -90,13 +90,15 @@ export default function Settlements() {
             Precision agro oil calculations, QC test parameters, bran valuation & debit note generation
           </p>
         </div>
-        <Link
-          to="/panel/settlements/new"
-          className="flex items-center gap-2 rounded-xl bg-[#0b3558] px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-[#07233b] border border-[#b37d14]/30 transition-colors"
-        >
-          <Plus className="w-4 h-4 text-[#d69e2e]" />
-          Create Settlement Bill
-        </Link>
+        {can('settlements.create') && (
+          <Link
+            to="/panel/settlements/new"
+            className="flex items-center gap-2 rounded-xl bg-[#0b3558] px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-[#07233b] border border-[#b37d14]/30 transition-colors"
+          >
+            <Plus className="w-4 h-4 text-[#d69e2e]" />
+            Create Settlement Bill
+          </Link>
+        )}
       </div>
 
       {/* Filter Bar */}
@@ -209,35 +211,41 @@ export default function Settlements() {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
-                        <Link
-                          to={`/panel/settlements/${s.id}/edit`}
-                          className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 shadow-xs hover:bg-[#fbf5ea] hover:text-[#0b3558] hover:border-[#0b3558] transition-colors"
-                          title="Edit Settlement Bill"
-                        >
-                          <Edit3 className="w-3.5 h-3.5 text-blue-600" />
-                          <span>Edit</span>
-                        </Link>
+                        {can('settlements.edit') && (
+                          <Link
+                            to={`/panel/settlements/${s.id}/edit`}
+                            className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 shadow-xs hover:bg-[#fbf5ea] hover:text-[#0b3558] hover:border-[#0b3558] transition-colors"
+                            title="Edit Settlement Bill"
+                          >
+                            <Edit3 className="w-3.5 h-3.5 text-blue-600" />
+                            <span>Edit</span>
+                          </Link>
+                        )}
 
-                        <button
-                          onClick={() => handlePrintPdf(s)}
-                          className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 shadow-xs hover:bg-[#fbf5ea] hover:text-[#0b3558] transition-colors cursor-pointer"
-                          title="Print / View Settlement Bill PDF"
-                        >
-                          <Printer className="w-3.5 h-3.5 text-slate-600" />
-                          <span>PDF</span>
-                        </button>
+                        {can('settlements.pdf') && (
+                          <button
+                            onClick={() => handlePrintPdf(s)}
+                            className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 shadow-xs hover:bg-[#fbf5ea] hover:text-[#0b3558] transition-colors cursor-pointer"
+                            title="Print / View Settlement Bill PDF"
+                          >
+                            <Printer className="w-3.5 h-3.5 text-slate-600" />
+                            <span>PDF</span>
+                          </button>
+                        )}
 
-                        <button
-                          onClick={() => {
-                            setSettlementToDelete(s)
-                            setDeleteConfirmOpen(true)
-                          }}
-                          className="flex items-center gap-1 rounded-lg border border-red-200 bg-red-50/60 px-2 py-1 text-[11px] font-semibold text-red-600 shadow-xs hover:bg-red-100 hover:border-red-300 transition-colors cursor-pointer"
-                          title="Delete Settlement Bill"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 text-red-600" />
-                          <span>Delete</span>
-                        </button>
+                        {can('settlements.edit') && (
+                          <button
+                            onClick={() => {
+                              setSettlementToDelete(s)
+                              setDeleteConfirmOpen(true)
+                            }}
+                            className="flex items-center gap-1 rounded-lg border border-red-200 bg-red-50/60 px-2 py-1 text-[11px] font-semibold text-red-600 shadow-xs hover:bg-red-100 hover:border-red-300 transition-colors cursor-pointer"
+                            title="Delete Settlement Bill"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                            <span>Delete</span>
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

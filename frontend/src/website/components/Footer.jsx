@@ -1,167 +1,156 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Building2, MapPin, Mail, Phone, ArrowUpRight, ShieldCheck } from 'lucide-react'
+import { MapPin, Mail, Phone, ArrowUpRight, ShieldCheck } from 'lucide-react'
 
 export default function Footer({ onOpenEnquiry }) {
   return (
-    <footer className="bg-[#071426] border-t border-[#C9A227]/30 text-slate-300">
-      {/* Top Banner Accent */}
-      <div className="h-1 w-full bg-gradient-to-r from-[#0B1F3A] via-[#C9A227] to-[#0B1F3A]" />
+    <footer className="relative bg-[#000000] text-slate-300 border-t border-[#FFD000]/30 overflow-hidden">
+      {/* Signature Yellow top accent glow */}
+      <div className="h-1 w-full bg-[#FFD000]" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
-          {/* Column 1: Brand Info */}
-          <div className="lg:col-span-2 space-y-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-12 items-start">
+          {/* Brand Info */}
+          <div className="lg:col-span-2 space-y-5">
             <div className="flex items-center gap-3">
-              <img
-                src="/logos/shree_laxmi_transparent.png"
-                alt="Shriee Laxmi Group Agro Traders & Feeds"
-                className="h-12 w-auto object-contain drop-shadow-md"
-                onError={(e) => {
-                  e.currentTarget.src = '/logos/shree_laxmi.png'
-                }}
-              />
+              <div className="h-11 w-11 rounded-xl bg-white p-1.5 flex items-center justify-center shrink-0 border border-[#FFD000]">
+                <img
+                  src="/logos/shree_laxmi_transparent.png"
+                  alt="Shriee Laxmi Group"
+                  className="h-full w-full object-contain filter drop-shadow"
+                  onError={(e) => {
+                    e.currentTarget.src = '/logos/shree_laxmi.png'
+                  }}
+                />
+              </div>
               <div className="flex flex-col">
                 <span className="text-base font-black tracking-tight text-white leading-tight">
                   SHRIEE LAXMI GROUP
                 </span>
-                <span className="text-[10px] font-bold text-[#E0BD55] tracking-wider uppercase">
+                <span className="text-[10px] font-black text-[#FFD000] tracking-wider uppercase">
                   Agro Commodities & Feeds
                 </span>
               </div>
             </div>
 
-            <p className="text-sm text-slate-300/80 leading-relaxed max-w-md">
-              "Building Trust. Growing Together."
-              <br />
-              Shriee Laxmi Group is a premier business group based in Tiruchirappalli, Tamil Nadu, operating across trading, distribution, and feed-related business segments.
+            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-md">
+              Leading commercial commodity trading, wholesale agro distribution, and precision livestock feed formulation engineered with verified weighing and prompt settlement.
             </p>
 
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex items-center gap-3 pt-1">
               <button
                 onClick={onOpenEnquiry}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#C9A227] text-xs font-black text-[#071426] uppercase tracking-wider hover:bg-[#E0BD55] transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#FFD000] hover:bg-[#ffe14d] text-black text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-[#FFD000]/20 cursor-pointer"
               >
-                <span>Send Enquiry</span>
-                <ArrowUpRight className="w-4 h-4" />
+                <span>Initiate Trade</span>
+                <ArrowUpRight className="w-3.5 h-3.5 stroke-[2.5]" />
               </button>
-              <Link
-                to="/panel/login"
-                rel="nofollow"
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-700 bg-slate-900/80 text-xs font-semibold text-slate-300 hover:text-white hover:border-[#C9A227]/40 transition-colors"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-[#C9A227]" />
-                <span>Staff Portal</span>
-              </Link>
             </div>
           </div>
 
-          {/* Column 2: Company */}
+          {/* Quick Links */}
           <div className="space-y-3">
-            <h3 className="text-xs font-extrabold text-[#E0BD55] uppercase tracking-widest border-b border-slate-800 pb-2">
-              Company
+            <h3 className="text-xs font-black text-[#FFD000] uppercase tracking-wider">
+              Navigation
             </h3>
-            <ul className="space-y-2 text-xs">
+            <ul className="space-y-2 text-xs text-slate-400">
               <li>
-                <Link to="/about" className="hover:text-[#E0BD55] transition-colors">
-                  About Us
+                <Link to="/" className="hover:text-white transition-colors">
+                  Home Overview
                 </Link>
               </li>
               <li>
-                <Link to="/our-businesses" className="hover:text-[#E0BD55] transition-colors">
-                  Our Businesses
+                <Link to="/about" className="hover:text-white transition-colors">
+                  Corporate Profile
                 </Link>
               </li>
               <li>
-                <Link to="/our-presence" className="hover:text-[#E0BD55] transition-colors">
-                  Our Presence
+                <Link to="/our-businesses" className="hover:text-white transition-colors">
+                  Operating Enterprises
                 </Link>
               </li>
               <li>
-                <Link to="/products-services" className="hover:text-[#E0BD55] transition-colors">
-                  Products & Services
+                <Link to="/products-services" className="hover:text-white transition-colors">
+                  Commodity Catalog
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="hover:text-[#E0BD55] transition-colors">
-                  Contact Us
+                <Link to="/our-presence" className="hover:text-white transition-colors">
+                  Statewide Network
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" className="hover:text-white transition-colors">
+                  Trade Inquiries
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 3: Business Verticals */}
+          {/* Enterprises */}
           <div className="space-y-3">
-            <h3 className="text-xs font-extrabold text-[#E0BD55] uppercase tracking-widest border-b border-slate-800 pb-2">
-              Businesses
+            <h3 className="text-xs font-black text-[#FFD000] uppercase tracking-wider">
+              Enterprises
             </h3>
-            <ul className="space-y-2 text-xs">
+            <ul className="space-y-2.5 text-xs">
               <li>
-                <Link
-                  to="/business/laxmi-traders"
-                  className="hover:text-[#E0BD55] transition-colors font-medium"
-                >
+                <Link to="/business/laxmi-traders" className="text-white hover:text-[#FFD000] font-bold block transition-colors">
                   Laxmi Traders
                 </Link>
-                <span className="block text-[10px] text-slate-400">Trading & Distribution</span>
+                <span className="text-[10.5px] text-slate-400">Commercial Commodity Distribution</span>
               </li>
-              <li className="pt-1">
-                <Link
-                  to="/business/sm-traders"
-                  className="hover:text-[#E0BD55] transition-colors font-medium"
-                >
+              <li>
+                <Link to="/business/sm-traders" className="text-white hover:text-[#FFD000] font-bold block transition-colors">
                   S M Traders
                 </Link>
-                <span className="block text-[10px] text-slate-400">Trading Business</span>
+                <span className="text-[10.5px] text-slate-400">Bulk Grain Trade & Logistics</span>
               </li>
-              <li className="pt-1">
-                <Link
-                  to="/business/shriee-feeds"
-                  className="hover:text-[#E0BD55] transition-colors font-medium"
-                >
+              <li>
+                <Link to="/business/shriee-feeds" className="text-white hover:text-[#FFD000] font-bold block transition-colors">
                   Shriee Feeds
                 </Link>
-                <span className="block text-[10px] text-slate-400">Feed & Related Products</span>
+                <span className="text-[10.5px] text-slate-400">Livestock & Poultry Formulations</span>
               </li>
             </ul>
           </div>
 
-          {/* Column 4: Contact & Location */}
+          {/* Central Desk */}
           <div className="space-y-3">
-            <h3 className="text-xs font-extrabold text-[#E0BD55] uppercase tracking-widest border-b border-slate-800 pb-2">
-              Location
+            <h3 className="text-xs font-black text-[#FFD000] uppercase tracking-wider">
+              Headquarters
             </h3>
-            <div className="space-y-2 text-xs text-slate-300">
-              <div className="flex items-start gap-2">
-                <MapPin className="w-4 h-4 text-[#C9A227] shrink-0 mt-0.5" />
-                <span>
-                  <strong>SHRIEE LAXMI GROUP</strong>
-                  <br />
-                  Tiruchirappalli,
-                  <br />
-                  Tamil Nadu, India
+            <div className="space-y-2.5 text-xs text-slate-400">
+              <div className="flex items-start gap-2.5">
+                <MapPin className="w-4 h-4 text-[#FFD000] shrink-0 mt-0.5" />
+                <span className="text-slate-300 leading-relaxed">
+                  103, Bharathiyar Street, Ariyamangalam, Tiruchirappalli - 620010, Tamil Nadu
                 </span>
               </div>
-              <div className="pt-2 text-[11px] text-slate-400 space-y-1">
-                <p>• Ariyamangalam Hub, Tiruchirappalli - 620010</p>
-                <p>• Manapparai / Usilampatti Hub - 621312</p>
+              <div className="flex items-center gap-2.5">
+                <Phone className="w-4 h-4 text-[#FFD000] shrink-0" />
+                <a href="tel:+919842456789" className="text-white hover:text-[#FFD000] font-bold">
+                  +91 98424 56789
+                </a>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <Mail className="w-4 h-4 text-[#FFD000] shrink-0" />
+                <a href="mailto:info@laxmitraders.in" className="text-white hover:text-[#FFD000]">
+                  info@laxmitraders.in
+                </a>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="mt-12 pt-6 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">
-          <p>© 2026 Shriee Laxmi Group. All Rights Reserved.</p>
-          <div className="flex items-center gap-6 text-[11px]">
+        {/* Bottom bar */}
+        <div className="mt-14 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
+          <p>© 2026 Shriee Laxmi Group. All rights reserved.</p>
+          <div className="flex items-center gap-6">
             <Link to="/contact" className="hover:text-white transition-colors">
               Privacy Policy
             </Link>
             <Link to="/contact" className="hover:text-white transition-colors">
-              Terms & Conditions
-            </Link>
-            <Link to="/panel/login" rel="nofollow" className="text-[#E0BD55] hover:underline">
-              Management Portal
+              Terms of Supply
             </Link>
           </div>
         </div>

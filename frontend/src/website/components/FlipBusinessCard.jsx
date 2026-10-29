@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, RotateCw, MapPin, Building2, Phone, ShieldCheck } from 'lucide-react'
+import { ArrowRight, RotateCw, MapPin, Phone, ShieldCheck } from 'lucide-react'
 import { companyInitials, logoSrc } from '../../utils/helpers'
 
 export default function FlipBusinessCard({
@@ -11,7 +11,6 @@ export default function FlipBusinessCard({
   banner,
   location,
   gstin,
-  godowns,
   phone,
   description,
   keyProducts = [],
@@ -300,12 +299,6 @@ export default function FlipBusinessCard({
                 <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
                 <span>GSTIN: <strong className="text-white font-mono">{gstin}</strong></span>
               </div>
-              {godowns && (
-                <div className="flex items-center gap-2 text-slate-200">
-                  <Building2 className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>{godowns}</span>
-                </div>
-              )}
               {phone && (
                 <div className="flex items-center gap-2 text-slate-200">
                   <Phone className="w-4 h-4 text-amber-400 shrink-0" />

@@ -262,54 +262,15 @@ export function AuthProvider({ children }) {
     (permission) => {
       if (!user) return false
       if (isSuperAdmin) return true
-
-      // Branch Manager / Staff: ONLY Inventory is accessible
-      if (isBranchManagerOrStaff) {
-        if (!permission) return true
-        return permission.startsWith('inventory')
-      }
-
-      // Admin role can access Settlement, Inventory, and User Management
-      if (isAdmin) {
-        if (
-          permission &&
-          (permission === 'super_admin' ||
-            permission.startsWith('branches.') ||
-            permission.startsWith('companies.') ||
-            permission.startsWith('settings.') ||
-            permission.startsWith('audit.') ||
-            permission.startsWith('cms.'))
-        ) {
-          return false
-        }
-        return true
-      }
-
-      // Confidential modules restricted ONLY to Super Admin / Master Admin
-      if (
-        permission &&
-        (permission === 'super_admin' ||
-          permission.startsWith('branches.') ||
-          permission.startsWith('companies.') ||
-          permission.startsWith('settings.') ||
-          permission.startsWith('audit.') ||
-          permission.startsWith('cms.'))
-      ) {
-        return false
-      }
-
-      const roleName = (user.role?.name || '').toUpperCase()
-      if (roleName.includes('ADMIN')) return true
-      const perms = user.permissions || []
-      if (perms.includes('*')) return true
       if (!permission) return true
-      if (perms.includes(permission)) return true
+
+      const perms = user.permissions || []
+      if (perms.includes('*') || perms.includes(permission)) return true
+
       const [group] = permission.split('.')
-      if (perms.includes(`${group}.manage`) || perms.includes(`${group}.*`)) return true
-      if (permission.startsWith('inventory') && perms.some((p) => p.startsWith('inventory'))) return true
-      return false
+      return perms.includes(`${group}.manage`) || perms.includes(`${group}.*`)
     },
-    [user, isSuperAdmin, isAdmin, isBranchManagerOrStaff],
+    [user, isSuperAdmin],
   )
 
   const branches = useMemo(() => {

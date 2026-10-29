@@ -1,27 +1,27 @@
-import React, { useEffect, useState } from 'react'
+import React, { useMemo } from 'react'
 import FlipBusinessCard from '../components/FlipBusinessCard'
-import api from '../../services/api'
 import { logoSrc } from '../../utils/helpers'
+import { useWebsiteCms } from '../context/WebsiteCmsContext'
 
 export default function OurBusinessesPage() {
-  const [cmsLogos, setCmsLogos] = useState({})
+  const { companies } = useWebsiteCms()
 
-  useEffect(() => {
-    api
-      .get('/public/cms')
-      .then((res) => {
-        const list = res.data?.data || []
-        setCmsLogos(
-          Object.fromEntries(
-            list.map((c) => [
-              (c.company_name || '').toUpperCase(),
-              c.show_logo_website === false ? '' : logoSrc(c.logo_transparent_path || c.logo_path),
-            ]),
-          ),
-        )
-      })
-      .catch(() => {})
-  }, [])
+  const cmsByCompany = useMemo(
+    () =>
+      Object.fromEntries(
+        companies.map((company) => [
+          (company.company_name || '').toUpperCase(),
+          {
+            logo:
+              company.show_logo_website === false
+                ? ''
+                : logoSrc(company.logo_transparent_path || company.logo_path),
+            banner: company.cms_images?.businesses_banner || '',
+          },
+        ]),
+      ),
+    [companies],
+  )
 
   return (
     <div className="pt-24 space-y-0 bg-[#FAFAFC] text-slate-800">
@@ -47,11 +47,10 @@ export default function OurBusinessesPage() {
               name="LAXMI TRADERS"
               category="Trading & Distribution"
               meaning="Growth, Trade & Business"
-              logo={cmsLogos['LAXMI TRADERS'] || ''}
-              banner="/banners/laxmi_traders_banner.png"
+              logo={cmsByCompany['LAXMI TRADERS']?.logo || ''}
+              banner={cmsByCompany['LAXMI TRADERS']?.banner || '/banners/laxmi_traders_banner.png'}
               location="103, Bharathiyar Street, Ariyamangalam, Tiruchirappalli - 620010"
               gstin="33BWLKP6363A3ZN"
-              godowns="2 Active Godowns (Ariyamangalam & Bazaar)"
               phone="+91 98424 56789 / 0431-2456789"
               description="Established commercial trading business based in Ariyamangalam, Tiruchirappalli, serving customers through dependable sourcing and commodity supply."
               keyProducts={['Cottonseed Oil Cake', 'Grain Trading', 'Agro Commodities']}
@@ -65,11 +64,10 @@ export default function OurBusinessesPage() {
               name="S M TRADERS"
               category="Trading & Warehousing"
               meaning="Godown, Grains & Farming"
-              logo={cmsLogos['S M TRADERS'] || ''}
-              banner="/banners/sm_traders_banner.png"
+              logo={cmsByCompany['S M TRADERS']?.logo || ''}
+              banner={cmsByCompany['S M TRADERS']?.banner || '/banners/sm_traders_banner.png'}
               location="103/A, Bharathiyar Street, Ariyamangalam, Tiruchirappalli - 620010"
               gstin="33DTNPM3407G1ZQ"
-              godowns="Bulk Grain Godown Capacity"
               phone="+91 98424 67890 / 0431-2456790"
               description="Wholesale grain trading operations with spacious godowns, transparent weighing, and robust farmer-to-market trade."
               keyProducts={['Bulk Grains', 'Warehouse Storage', 'Commercial Distribution']}
@@ -83,11 +81,10 @@ export default function OurBusinessesPage() {
               name="SHRIEE FEEDS"
               category="Cattle & Poultry Feeds"
               meaning="Agriculture, Cattle & Poultry"
-              logo={cmsLogos['SHRIEE FEEDS'] || ''}
-              banner="/banners/shree_feeds_banner.png"
+              logo={cmsByCompany['SHRIEE FEEDS']?.logo || ''}
+              banner={cmsByCompany['SHRIEE FEEDS']?.banner || '/banners/shree_feeds_banner.png'}
               location="Door No. 3/1044, Nandanar Metu Mill New Colony, Manapparai - 621306"
               gstin="33BOZPS3759G1Z5"
-              godowns="Feed Mill & Processing Godown"
               phone="+91 98424 78901 / 0431-2456791"
               description="High-protein cattle feeds and specialized poultry nutrition engineered for superior livestock health, higher yield, and farmer prosperity."
               keyProducts={['High-Protein Feed', 'Cattle Nutrition', 'Poultry Rations']}

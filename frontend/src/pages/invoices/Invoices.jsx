@@ -8,7 +8,7 @@ import { PageSpinner, StatusBadge, Modal } from '../../components'
 import { extractList, formatDate } from '../../utils/helpers'
 
 export default function Invoices() {
-  const { branchId } = useAuth()
+  const { branchId, can } = useAuth()
   const toast = useToast()
   const [invoices, setInvoices] = useState([])
   const [loading, setLoading] = useState(true)
@@ -77,13 +77,15 @@ export default function Invoices() {
           <h1 className="text-xl font-bold tracking-tight text-slate-900">Purchase Invoices</h1>
           <p className="text-xs text-slate-500">Record vendor delivery invoices, weights, contract rates and GST</p>
         </div>
-        <Link
-          to="/panel/invoices/new"
-          className="flex items-center gap-2 rounded-xl bg-[#0b3558] px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-[#07233b] border border-[#b37d14]/30 transition-colors"
-        >
-          <Plus className="w-4 h-4 text-[#d69e2e]" />
-          Enter New Invoice
-        </Link>
+        {can('invoices.create') && (
+          <Link
+            to="/panel/invoices/new"
+            className="flex items-center gap-2 rounded-xl bg-[#0b3558] px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-[#07233b] border border-[#b37d14]/30 transition-colors"
+          >
+            <Plus className="w-4 h-4 text-[#d69e2e]" />
+            Enter New Invoice
+          </Link>
+        )}
       </div>
 
       {/* Filter Bar */}
@@ -157,9 +159,13 @@ export default function Invoices() {
                 {(Array.isArray(invoices) ? invoices : []).map((inv) => (
                   <tr key={inv.id} className="hover:bg-[#fbf5ea]/60 transition-colors">
                     <td className="py-3 px-4 font-mono font-bold text-[#0b3558]">
-                      <Link to={`/panel/invoices/${inv.id}/edit`} className="hover:text-[#b37d14] hover:underline">
-                        {inv.invoice_number}
-                      </Link>
+                      {can('invoices.edit') ? (
+                        <Link to={`/panel/invoices/${inv.id}/edit`} className="hover:text-[#b37d14] hover:underline">
+                          {inv.invoice_number}
+                        </Link>
+                      ) : (
+                        inv.invoice_number
+                      )}
                     </td>
                     <td className="py-3 px-4 text-slate-600">{formatDate(inv.invoice_date)}</td>
                     <td className="py-3 px-4">
@@ -184,16 +190,18 @@ export default function Invoices() {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        <Link
-                          to={`/panel/invoices/${inv.id}/edit`}
-                          className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 shadow-xs hover:bg-[#fbf5ea] hover:text-[#0b3558] hover:border-[#0b3558] transition-colors"
-                          title="Edit Purchase Invoice"
-                        >
-                          <Edit3 className="w-3.5 h-3.5 text-blue-600" />
-                          <span>Edit</span>
-                        </Link>
+                        {can('invoices.edit') && (
+                          <Link
+                            to={`/panel/invoices/${inv.id}/edit`}
+                            className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 shadow-xs hover:bg-[#fbf5ea] hover:text-[#0b3558] hover:border-[#0b3558] transition-colors"
+                            title="Edit Purchase Invoice"
+                          >
+                            <Edit3 className="w-3.5 h-3.5 text-blue-600" />
+                            <span>Edit</span>
+                          </Link>
+                        )}
 
-                        {inv.status !== 'cancelled' && (
+                        {inv.status !== 'cancelled' && can('invoices.cancel') && (
                           <button
                             onClick={() => {
                               setInvoiceToCancel(inv)

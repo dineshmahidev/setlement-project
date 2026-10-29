@@ -127,7 +127,7 @@ export function SettlementList() {
         title="Settlement Bills"
         subtitle="Create, submit, approve settlement bills"
         actions={
-          can('settlement.create') ? (
+          can('settlements.create') ? (
             <Link to="/billing/settlement-bills/new">
               <Button>New Settlement Bill</Button>
             </Link>
@@ -185,7 +185,7 @@ export function SettlementList() {
               <Button size="sm" variant="secondary" onClick={() => openDetail(row)}>
                 View
               </Button>
-              {row.status === 'DRAFT' && can('settlement.edit') && (
+              {row.status === 'DRAFT' && can('settlements.edit') && (
                 <Link to={`/billing/settlement-bills/${row.id}/edit`}>
                   <Button size="sm" variant="secondary">Edit</Button>
                 </Link>
@@ -199,7 +199,7 @@ export function SettlementList() {
                   Submit
                 </Button>
               )}
-              {row.status === 'SUBMITTED' && can('settlement.approve') && (
+              {row.status === 'SUBMITTED' && can('settlements.approve') && (
                 <Button
                   size="sm"
                   onClick={() => setConfirm({ row, action: 'approve', label: 'Approve this bill?' })}
@@ -207,7 +207,7 @@ export function SettlementList() {
                   Approve
                 </Button>
               )}
-              {['DRAFT', 'SUBMITTED'].includes(row.status) && can('settlement.cancel') && (
+              {['DRAFT', 'SUBMITTED'].includes(row.status) && can('settlements.cancel') && (
                 <Button
                   size="sm"
                   variant="danger"
@@ -678,7 +678,7 @@ export function SettlementForm() {
             <Link to="/billing/settlement-bills">
               <Button variant="secondary">Back</Button>
             </Link>
-            {(!isEdit || can('settlement.edit')) && (
+            {(!isEdit || can('settlements.edit')) && (
               <Button onClick={save} loading={saving}>
                 Save Draft
               </Button>
@@ -737,7 +737,7 @@ export function SettlementForm() {
               <FormField label="Item">
                 <Select value={form.item_id} onChange={(e) => setF('item_id', e.target.value)}>
                   <option value="">Select…</option>
-                  {items.map((it) => (
+                  {products.map((it) => (
                     <option key={it.id} value={it.id}>
                       {it.name}
                     </option>

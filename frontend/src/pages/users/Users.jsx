@@ -15,13 +15,12 @@ import {
   XCircle,
   Layers,
   Sparkles,
-  Check,
 } from 'lucide-react'
 import { extractList } from '../../utils/helpers'
 
 export default function Users() {
   const toast = useToast()
-  const { isSuperAdmin, isAdmin, activeCompany, companies: authCompanies } = useAuth()
+  const { isSuperAdmin, can, activeCompany, companies: authCompanies } = useAuth()
   const [users, setUsers] = useState([])
   const [roles, setRoles] = useState([])
   const [companies, setCompanies] = useState([])
@@ -262,7 +261,10 @@ export default function Users() {
     const initialCompany = activeCompany?.id || companies[0]?.id || ''
     const initialGodowns = branches.filter((b) => !initialCompany || String(b.company_id) === String(initialCompany))
     const firstGodown = initialGodowns[0]?.id || ''
-    const defaultRole = selectableRoles[0]?.id ? String(selectableRoles[0].id) : ''
+    const defaultRoleObj =
+      selectableRoles.find((r) => !/super|master/i.test(`${r.name || ''} ${r.label || ''}`)) ||
+      selectableRoles[0]
+    const defaultRole = defaultRoleObj?.id ? String(defaultRoleObj.id) : ''
 
     setForm({
       name: '',
@@ -289,10 +291,10 @@ export default function Users() {
 
     setEditingUser(u)
     const userCompanyIds = (u.companies || []).map((c) => Number(c.id))
-    const userBranchIds = (u.branches || []).map((b) => Number(b.id))
 
     const hasAllCompanies = companies.length > 0 && userCompanyIds.length >= companies.length
-    const hasAllBranches = branches.length > 0 && userBranchIds.length >= branches.length
+    const rawBranchIds = (u.branches || []).map((b) => Number(b.id))
+    const hasAllBranches = branches.length > 0 && rawBranchIds.length >= branches.length
     const isEnterpriseAll = isSuperAdmin && hasAllCompanies && hasAllBranches
 
     setAccessMode(isEnterpriseAll ? 'all' : 'custom')
@@ -308,6 +310,26 @@ export default function Users() {
       userCompanyIds.push(Number(userCompanyId))
     }
 
+    // Keep only godowns that belong to the companies selected above.
+    const scopedBranchIds = branches.length > 0
+      ? new Set(
+          branches
+            .filter((b) => userCompanyIds.includes(Number(b.company_id)))
+            .map((b) => Number(b.id)),
+        )
+      : null
+    const userBranchIds = rawBranchIds.filter((id) => !scopedBranchIds || scopedBranchIds.has(id))
+
+    const rawDefaultBranchId = u.default_branch_id
+      ? Number(u.default_branch_id)
+      : u.default_branch?.id
+        ? Number(u.default_branch.id)
+        : null
+    const defaultBranchId =
+      rawDefaultBranchId && (!scopedBranchIds || scopedBranchIds.has(rawDefaultBranchId))
+        ? rawDefaultBranchId
+        : userBranchIds[0] || null
+
     setForm({
       name: u.name || '',
       employee_id: u.employee_id || '',
@@ -317,7 +339,7 @@ export default function Users() {
       role_id: u.role_id ? String(u.role_id) : u.role?.id ? String(u.role.id) : '',
       company_id: userCompanyId ? String(userCompanyId) : '',
       company_ids: userCompanyIds,
-      default_branch_id: u.default_branch_id ? String(u.default_branch_id) : u.default_branch?.id ? String(u.default_branch.id) : '',
+      default_branch_id: defaultBranchId ? String(defaultBranchId) : '',
       branch_ids: userBranchIds,
       status: u.status || 'active',
     })
@@ -430,13 +452,15 @@ export default function Users() {
             Create employee logins, assign specific Company affiliation, designate primary Godown, and configure multi-godown security scopes.
           </p>
         </div>
-        <button
-          onClick={handleOpenCreate}
-          className="flex items-center justify-center gap-2 rounded-xl bg-[#0b3558] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#07233b] border border-[#b37d14]/40 transition-all hover:scale-[1.01] cursor-pointer"
-        >
-          <UserPlus className="w-4 h-4 text-[#d69e2e]" />
-          Create New User
-        </button>
+        {can('users.create') && (
+          <button
+            onClick={handleOpenCreate}
+            className="flex items-center justify-center gap-2 rounded-xl bg-[#0b3558] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#07233b] border border-[#b37d14]/40 transition-all hover:scale-[1.01] cursor-pointer"
+          >
+            <UserPlus className="w-4 h-4 text-[#d69e2e]" />
+            Create New User
+          </button>
+        )}
       </div>
 
       {/* Filter Toolbar */}
@@ -658,23 +682,27 @@ export default function Users() {
 
                       <td className="px-5 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => handleOpenEdit(u)}
-                            className="rounded-lg p-1.5 text-slate-600 hover:bg-amber-100 hover:text-amber-900 transition-colors cursor-pointer"
-                            title="Edit User"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setDeletingUser(u)
-                              setDeleteModal(true)
-                            }}
-                            className="rounded-lg p-1.5 text-slate-500 hover:bg-rose-100 hover:text-rose-700 transition-colors cursor-pointer"
-                            title="Deactivate User"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {can('users.edit') && (
+                            <button
+                              onClick={() => handleOpenEdit(u)}
+                              className="rounded-lg p-1.5 text-slate-600 hover:bg-amber-100 hover:text-amber-900 transition-colors cursor-pointer"
+                              title="Edit User"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                          )}
+                          {can('users.delete') && (
+                            <button
+                              onClick={() => {
+                                setDeletingUser(u)
+                                setDeleteModal(true)
+                              }}
+                              className="rounded-lg p-1.5 text-slate-500 hover:bg-rose-100 hover:text-rose-700 transition-colors cursor-pointer"
+                              title="Deactivate User"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

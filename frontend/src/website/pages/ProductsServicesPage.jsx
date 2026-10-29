@@ -1,9 +1,11 @@
 import React from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { Layers, Truck, Package, Users, ArrowRight } from 'lucide-react'
+import { useWebsiteCms } from '../context/WebsiteCmsContext'
 
 export default function ProductsServicesPage() {
   const { onOpenEnquiry } = useOutletContext()
+  const { getCmsImage } = useWebsiteCms()
 
   const CATEGORIES = [
     {
@@ -58,7 +60,7 @@ export default function ProductsServicesPage() {
               >
                 <div className="relative h-60 overflow-hidden">
                   <img
-                    src={cat.image}
+                    src={getCmsImage(`products_services_image_${idx + 1}`, cat.image)}
                     alt={cat.title}
                     className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
                   />

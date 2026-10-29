@@ -90,7 +90,7 @@ export function DebitNoteList() {
         title="Debit Notes"
         subtitle="Vendor debit notes with GST"
         actions={
-          can('debitnote.create') ? (
+          can('debit_notes.create') ? (
             <Link to="/billing/debit-notes/new">
               <Button>New Debit Note</Button>
             </Link>
@@ -159,12 +159,12 @@ export function DebitNoteList() {
               >
                 View
               </Button>
-              {row.status === 'DRAFT' && can('debitnote.create') && (
+              {row.status === 'DRAFT' && can('debit_notes.edit') && (
                 <Link to={`/billing/debit-notes/${row.id}/edit`}>
                   <Button size="sm" variant="secondary">Edit</Button>
                 </Link>
               )}
-              {row.status === 'DRAFT' && can('debitnote.approve') && (
+              {row.status === 'DRAFT' && can('debit_notes.approve') && (
                 <Button
                   size="sm"
                   onClick={() => setConfirm({ row, action: 'approve', label: 'Approve this debit note?' })}
@@ -172,7 +172,7 @@ export function DebitNoteList() {
                   Approve
                 </Button>
               )}
-              {row.status === 'DRAFT' && can('debitnote.approve') && (
+              {row.status === 'DRAFT' && can('debit_notes.cancel') && (
                 <Button
                   size="sm"
                   variant="danger"
@@ -181,20 +181,24 @@ export function DebitNoteList() {
                   Cancel
                 </Button>
               )}
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => openPdf(`/debit-notes/${row.id}/pdf`, `debit-note-${row.number || row.id}.pdf`)}
-              >
-                View
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => downloadPdf(`/debit-notes/${row.id}/pdf`, `debit-note-${row.number || row.id}.pdf`)}
-              >
-                Download
-              </Button>
+              {can('debit_notes.pdf') && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => openPdf(`/debit-notes/${row.id}/pdf`, `debit-note-${row.number || row.id}.pdf`)}
+                  >
+                    View
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => downloadPdf(`/debit-notes/${row.id}/pdf`, `debit-note-${row.number || row.id}.pdf`)}
+                  >
+                    Download
+                  </Button>
+                </>
+              )}
             </>
           ),
         }}
@@ -235,17 +239,21 @@ export function DebitNoteList() {
               <Button variant="secondary" onClick={() => setDetail(null)}>
                 Close
               </Button>
-              <Button
-                variant="secondary"
-                onClick={() => downloadPdf(`/debit-notes/${detail.id}/pdf`, `debit-note-${detail.number || detail.id}.pdf`)}
-              >
-                Download PDF
-              </Button>
-              <Button
-                onClick={() => openPdf(`/debit-notes/${detail.id}/pdf`, `debit-note-${detail.number || detail.id}.pdf`)}
-              >
-                Open PDF
-              </Button>
+              {can('debit_notes.pdf') && (
+                <>
+                  <Button
+                    variant="secondary"
+                    onClick={() => downloadPdf(`/debit-notes/${detail.id}/pdf`, `debit-note-${detail.number || detail.id}.pdf`)}
+                  >
+                    Download PDF
+                  </Button>
+                  <Button
+                    onClick={() => openPdf(`/debit-notes/${detail.id}/pdf`, `debit-note-${detail.number || detail.id}.pdf`)}
+                  >
+                    Open PDF
+                  </Button>
+                </>
+              )}
             </>
           ) : null
         }

@@ -32,7 +32,6 @@ import DebitNoteForm from '../pages/debit_notes/DebitNoteForm'
 import VendorLedger from '../pages/ledger/VendorLedger'
 import Inventory from '../pages/inventory/Inventory'
 import Items from '../pages/inventory/Items'
-import Materials from '../pages/inventory/Materials'
 import Units from '../pages/masters/Units'
 import Lots from '../pages/inventory/Lots'
 import Inward from '../pages/inventory/Inward'
@@ -46,6 +45,7 @@ import LeadsTraffic from '../pages/leads/LeadsTraffic'
 import Trash from '../pages/trash/Trash'
 import Reports from '../pages/reports/Reports'
 import Users from '../pages/users/Users'
+import Roles from '../pages/admin/Roles'
 import Settings from '../pages/settings/Settings'
 import AuditLogs from '../pages/audit/AuditLogs'
 
@@ -64,22 +64,11 @@ function RequireSuperAdmin({ children }) {
   return children
 }
 
-function RequireAdminOrSuperAdmin({ children }) {
-  const { user, isSuperAdmin, isAdmin, loading } = useAuth()
-  if (loading) return <AuthLoader label="Verifying access…" />
+function RequirePermission({ permission, children }) {
+  const { user, can, loading } = useAuth()
+  if (loading) return <AuthLoader label="Checking module access." />
   if (!user) return <Navigate to="/panel/login" replace />
-  if (!isSuperAdmin && !isAdmin) return <Navigate to="/panel/inventory" replace />
-  return children
-}
-
-function RequireSettlementAccess({ children }) {
-  const { user, isBranchManagerOrStaff, loading } = useAuth()
-  if (loading) return <AuthLoader label="Checking module access…" />
-  if (!user) return <Navigate to="/panel/login" replace />
-  // Branch Manager and Staff are restricted to Inventory section only
-  if (isBranchManagerOrStaff) {
-    return <Navigate to="/panel/inventory" replace />
-  }
+  if (!can(permission)) return <Navigate to="/panel" replace />
   return children
 }
 
@@ -92,20 +81,29 @@ function Guest({ children }) {
 /** /panel → /panel/<active-company-slug>. On /panel/:slug itself, render normally (no redirect loop). */
 function PanelHome() {
   const { slug } = useParams()
-  const { activeCompany, isBranchManagerOrStaff, loading } = useAuth()
-  if (loading) return <AuthLoader label="Loading company workspace…" />
+  const { activeCompany, can, loading } = useAuth()
+  if (loading) return <AuthLoader label="Loading company workspace." />
 
-  // Branch Manager and Staff are redirected directly to Inventory
-  if (isBranchManagerOrStaff) {
-    const target = slug
-      ? `/panel/${slug}/inventory`
-      : activeCompany?.slug
-      ? `/panel/${activeCompany.slug}/inventory`
-      : '/panel/inventory'
-    return <Navigate to={target} replace />
+  if (!can('dashboard.view')) {
+    const firstAllowed = [
+      ['inventory.view', '/inventory'],
+      ['settlements.view', '/settlements'],
+      ['invoices.view', '/invoices'],
+      ['debit_notes.view', '/debit-notes'],
+      ['vendor_ledger.view', '/vendor-ledger'],
+      ['vendors.view', '/vendors'],
+      ['products.view', '/products'],
+      ['reports.view', '/reports'],
+      ['users.view', '/users'],
+    ].find(([permission]) => can(permission))?.[1]
+
+    if (firstAllowed) {
+      const base = slug ? `/panel/${slug}` : activeCompany?.slug ? `/panel/${activeCompany.slug}` : '/panel'
+      return <Navigate to={`${base}${firstAllowed}`} replace />
+    }
   }
 
-  // Already on a company URL: CompanyShell keeps state in sync — never bounce away.
+  // Already on a company URL: CompanyShell keeps state in sync - never bounce away.
   if (slug) return <Dashboard />
   if (activeCompany?.slug) return <Navigate to={`/panel/${activeCompany.slug}`} replace />
   return <Dashboard />
@@ -124,40 +122,41 @@ const panelChildren = [
   <Route key="trash" path="trash" element={<RequireSuperAdmin><Trash /></RequireSuperAdmin>} />,
   <Route key="leads-traffic" path="leads-traffic" element={<RequireSuperAdmin><LeadsTraffic /></RequireSuperAdmin>} />,
 
-  // User Management: Accessible by Super Admin and Admin
-  <Route key="users" path="users" element={<RequireAdminOrSuperAdmin><Users /></RequireAdminOrSuperAdmin>} />,
+  // User Management: permission based
+  <Route key="users" path="users" element={<RequirePermission permission="users.view"><Users /></RequirePermission>} />,
+  <Route key="roles" path="roles" element={<RequireSuperAdmin><Roles /></RequireSuperAdmin>} />,
 
-  // Settlement & Operational Routes: Super Admin and Admin only (Hidden/blocked for Branch Manager & Staff)
-  <Route key="vendors" path="vendors" element={<RequireSettlementAccess><Vendors /></RequireSettlementAccess>} />,
-  <Route key="products" path="products" element={<RequireSettlementAccess><Products /></RequireSettlementAccess>} />,
+  // Settlement & Operational Routes: permission based
+  <Route key="vendors" path="vendors" element={<RequirePermission permission="vendors.view"><Vendors /></RequirePermission>} />,
+  <Route key="products" path="products" element={<RequirePermission permission="products.view"><Products /></RequirePermission>} />,
 
-  <Route key="invoices" path="invoices" element={<RequireSettlementAccess><Invoices /></RequireSettlementAccess>} />,
-  <Route key="invoices-new" path="invoices/new" element={<RequireSettlementAccess><InvoiceForm /></RequireSettlementAccess>} />,
-  <Route key="invoices-edit" path="invoices/:id/edit" element={<RequireSettlementAccess><InvoiceForm /></RequireSettlementAccess>} />,
+  <Route key="invoices" path="invoices" element={<RequirePermission permission="invoices.view"><Invoices /></RequirePermission>} />,
+  <Route key="invoices-new" path="invoices/new" element={<RequirePermission permission="invoices.create"><InvoiceForm /></RequirePermission>} />,
+  <Route key="invoices-edit" path="invoices/:id/edit" element={<RequirePermission permission="invoices.edit"><InvoiceForm /></RequirePermission>} />,
 
-  <Route key="settlements" path="settlements" element={<RequireSettlementAccess><Settlements /></RequireSettlementAccess>} />,
-  <Route key="settlements-new" path="settlements/new" element={<RequireSettlementAccess><SettlementForm /></RequireSettlementAccess>} />,
-  <Route key="settlements-show" path="settlements/:id" element={<RequireSettlementAccess><SettlementForm /></RequireSettlementAccess>} />,
-  <Route key="settlements-edit" path="settlements/:id/edit" element={<RequireSettlementAccess><SettlementForm /></RequireSettlementAccess>} />,
+  <Route key="settlements" path="settlements" element={<RequirePermission permission="settlements.view"><Settlements /></RequirePermission>} />,
+  <Route key="settlements-new" path="settlements/new" element={<RequirePermission permission="settlements.create"><SettlementForm /></RequirePermission>} />,
+  <Route key="settlements-show" path="settlements/:id" element={<RequirePermission permission="settlements.view"><SettlementForm /></RequirePermission>} />,
+  <Route key="settlements-edit" path="settlements/:id/edit" element={<RequirePermission permission="settlements.edit"><SettlementForm /></RequirePermission>} />,
 
-  <Route key="debit-notes" path="debit-notes" element={<RequireSettlementAccess><DebitNotes /></RequireSettlementAccess>} />,
-  <Route key="debit-notes-new" path="debit-notes/new" element={<RequireSettlementAccess><DebitNoteForm /></RequireSettlementAccess>} />,
-  <Route key="debit-notes-show" path="debit-notes/:id" element={<RequireSettlementAccess><DebitNoteForm /></RequireSettlementAccess>} />,
-  <Route key="debit-notes-edit" path="debit-notes/:id/edit" element={<RequireSettlementAccess><DebitNoteForm /></RequireSettlementAccess>} />,
+  <Route key="debit-notes" path="debit-notes" element={<RequirePermission permission="debit_notes.view"><DebitNotes /></RequirePermission>} />,
+  <Route key="debit-notes-new" path="debit-notes/new" element={<RequirePermission permission="debit_notes.create"><DebitNoteForm /></RequirePermission>} />,
+  <Route key="debit-notes-show" path="debit-notes/:id" element={<RequirePermission permission="debit_notes.view"><DebitNoteForm /></RequirePermission>} />,
+  <Route key="debit-notes-edit" path="debit-notes/:id/edit" element={<RequirePermission permission="debit_notes.edit"><DebitNoteForm /></RequirePermission>} />,
 
-  <Route key="vendor-ledger" path="vendor-ledger" element={<RequireSettlementAccess><VendorLedger /></RequireSettlementAccess>} />,
-  <Route key="reports" path="reports" element={<RequireSettlementAccess><Reports /></RequireSettlementAccess>} />,
+  <Route key="vendor-ledger" path="vendor-ledger" element={<RequirePermission permission="vendor_ledger.view"><VendorLedger /></RequirePermission>} />,
+  <Route key="reports" path="reports" element={<RequirePermission permission="reports.view"><Reports /></RequirePermission>} />,
 
-  // Inventory Routes: Accessible by All Roles (Super Admin, Admin, Branch Manager, Staff)
-  <Route key="inventory" path="inventory" element={<Inventory />} />,
-  <Route key="inventory-items" path="inventory/items" element={<Items />} />,
-  <Route key="inventory-materials" path="inventory/materials" element={<Items />} />,
-  <Route key="inventory-units" path="inventory/units" element={<Units />} />,
-  <Route key="inventory-lots" path="inventory/lots" element={<Lots />} />,
-  <Route key="inventory-inward" path="inventory/inward" element={<Inward />} />,
-  <Route key="inventory-outward" path="inventory/outward" element={<Outward />} />,
-  <Route key="inventory-production" path="inventory/production" element={<Production />} />,
-  <Route key="inventory-transfer" path="inventory/transfer" element={<Transfer />} />,
+  // Inventory Routes: permission based
+  <Route key="inventory" path="inventory" element={<RequirePermission permission="inventory.view"><Inventory /></RequirePermission>} />,
+  <Route key="inventory-items" path="inventory/items" element={<RequirePermission permission="products.view"><Items /></RequirePermission>} />,
+  <Route key="inventory-materials" path="inventory/materials" element={<RequirePermission permission="products.view"><Items /></RequirePermission>} />,
+  <Route key="inventory-units" path="inventory/units" element={<RequirePermission permission="products.view"><Units /></RequirePermission>} />,
+  <Route key="inventory-lots" path="inventory/lots" element={<RequirePermission permission="inventory.view"><Lots /></RequirePermission>} />,
+  <Route key="inventory-inward" path="inventory/inward" element={<RequirePermission permission="inventory.view"><Inward /></RequirePermission>} />,
+  <Route key="inventory-outward" path="inventory/outward" element={<RequirePermission permission="inventory.view"><Outward /></RequirePermission>} />,
+  <Route key="inventory-production" path="inventory/production" element={<RequirePermission permission="inventory.view"><Production /></RequirePermission>} />,
+  <Route key="inventory-transfer" path="inventory/transfer" element={<RequirePermission permission="inventory.transfer"><Transfer /></RequirePermission>} />,
 ]
 
 /** Keeps the URL in sync with the active company (/panel/:slug/...) and

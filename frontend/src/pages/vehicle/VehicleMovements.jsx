@@ -112,7 +112,7 @@ export default function VehicleMovements() {
         title="Vehicle Movements"
         subtitle="Track vehicle movement history"
         actions={
-          can('vehicle.view') ? (
+          can('vehicles.view') ? (
             <Button onClick={() => setModalOpen(true)}>New Movement</Button>
           ) : null
         }
@@ -221,7 +221,7 @@ export default function VehicleMovements() {
           <FormField label="Item">
             <Select value={form.item_id} onChange={(e) => setF('item_id', e.target.value)}>
               <option value="">Select…</option>
-              {items.map((i) => (
+              {products.map((i) => (
                 <option key={i.id} value={i.id}>{i.name}</option>
               ))}
             </Select>

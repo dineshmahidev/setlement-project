@@ -19,9 +19,9 @@ export default function Items() {
       title="Items"
       subtitle="Item master with type and measurement units"
       endpoint="/items"
-      canCreate={can('items.create') || can('inventory.view')}
-      canEdit={can('items.edit') || can('inventory.view')}
-      canDelete={can('items.delete') || can('inventory.view') || true}
+      canCreate={can('products.create')}
+      canEdit={can('products.edit')}
+      canDelete={can('products.delete')}
       deleteButtonLabel="Delete"
       deleteConfirmTitle="Delete Item"
       deleteConfirmMessage={(item) =>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import api, { apiErrorMessage, apiUrl, requestHeaders } from '../../services/api'
 import { useToast } from '../../context/ToastContext'
+import { useAuth } from '../../context/AuthContext'
 import {
   BarChart3,
   FileSpreadsheet,
@@ -42,6 +43,7 @@ const REPORT_TABS = [
 
 export default function Reports() {
   const toast = useToast()
+  const { can } = useAuth()
   const [activeTab, setActiveTab] = useState('settlements')
   const [rows, setRows] = useState([])
   const [gstSummary, setGstSummary] = useState(null)
@@ -153,24 +155,26 @@ export default function Reports() {
             Real-time multi-dimensional reports, settlement analytics, vendor ledgers and tax reconciliation.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleExport('csv')}
-            disabled={exporting || loading}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-[#fdfbf7] hover:text-[#0b3558] disabled:opacity-50"
-          >
-            <Download className="w-4 h-4 text-[#0b3558]" />
-            Export CSV
-          </button>
-          <button
-            onClick={() => handleExport('pdf')}
-            disabled={exporting || loading}
-            className="flex items-center gap-1.5 rounded-lg border border-[#b37d14]/40 bg-[#0b3558] px-3.5 py-2 text-xs font-semibold text-[#fdfbf7] shadow-xs hover:bg-[#07233b] disabled:opacity-50"
-          >
-            <FileText className="w-4 h-4 text-[#d69e2e]" />
-            Export PDF
-          </button>
-        </div>
+        {can('reports.export') && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleExport('csv')}
+              disabled={exporting || loading}
+              className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-[#fdfbf7] hover:text-[#0b3558] disabled:opacity-50"
+            >
+              <Download className="w-4 h-4 text-[#0b3558]" />
+              Export CSV
+            </button>
+            <button
+              onClick={() => handleExport('pdf')}
+              disabled={exporting || loading}
+              className="flex items-center gap-1.5 rounded-lg border border-[#b37d14]/40 bg-[#0b3558] px-3.5 py-2 text-xs font-semibold text-[#fdfbf7] shadow-xs hover:bg-[#07233b] disabled:opacity-50"
+            >
+              <FileText className="w-4 h-4 text-[#d69e2e]" />
+              Export PDF
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Tabs Menu */}

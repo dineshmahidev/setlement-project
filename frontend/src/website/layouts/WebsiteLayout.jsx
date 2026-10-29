@@ -3,7 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import EnquiryModal from '../components/EnquiryModal'
-import { MessageSquare } from 'lucide-react'
+import { MessageSquare, ArrowUpRight } from 'lucide-react'
 import { trackPageVisit } from '../../services/trafficTracker'
 
 export default function WebsiteLayout() {
@@ -15,7 +15,7 @@ export default function WebsiteLayout() {
   }, [location.pathname])
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-800 font-sans selection:bg-[#C9A227] selection:text-white overflow-x-hidden w-full max-w-full">
+    <div className="min-h-screen flex flex-col bg-[#050507] text-white font-sans selection:bg-[#FFD000] selection:text-black overflow-x-hidden w-full max-w-full">
       {/* Header Navbar */}
       <Navbar onOpenEnquiry={() => setEnquiryOpen(true)} />
 
@@ -30,14 +30,16 @@ export default function WebsiteLayout() {
       {/* Interactive Enquiry Modal */}
       <EnquiryModal isOpen={enquiryOpen} onClose={() => setEnquiryOpen(false)} />
 
-      {/* Floating Quick Action Widget */}
-      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2.5">
+      {/* Floating Action Button (Solid Yellow & Black) */}
+      <div className="fixed bottom-6 right-6 z-40">
         <button
           onClick={() => setEnquiryOpen(true)}
-          className="flex items-center gap-2 rounded-full border-2 border-[#E0BD55] bg-gradient-to-r from-[#C9A227] to-[#B37D14] px-4 py-3 text-xs font-black text-white shadow-xl shadow-amber-950/20 hover:scale-105 active:scale-95 transition-all group"
+          className="flex items-center gap-2 rounded-2xl bg-[#FFD000] hover:bg-[#ffe14d] text-black px-5 py-3 text-xs font-black shadow-2xl hover:scale-105 active:scale-95 transition-all cursor-pointer group border-2 border-black"
+          title="Quick Trade Inquiry"
         >
-          <MessageSquare className="h-4 w-4 text-white animate-pulse" />
-          <span className="hidden sm:inline font-extrabold uppercase tracking-wider">Quick Enquiry</span>
+          <span className="h-2 w-2 rounded-full bg-black animate-pulse" />
+          <span className="uppercase tracking-wider text-[11px] font-black">Trade Desk</span>
+          <ArrowUpRight className="h-4 w-4 stroke-[2.5] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
         </button>
       </div>
     </div>
