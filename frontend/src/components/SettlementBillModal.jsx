@@ -82,6 +82,9 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
     ? parseFloat(settlement.rebate_amount)
     : (parseFloat(settlement.note_amount) > 0 ? parseFloat(settlement.note_amount) : (calculatedDiff > 0 ? calculatedDiff : 0))
 
+  // Hide the Debit/Credit Note section entirely when there is no actual note (zero amount & no saved note)
+  const showNote = rebateAmount > 0 || Number(existingNote?.taxable_amount) > 0
+
   const invoiceValue = parseFloat(settlement.original_invoice_value) > 0
     ? parseFloat(settlement.original_invoice_value)
     : (isCredit
@@ -136,7 +139,7 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
           <div className="flex items-center gap-2.5">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
             <span className="text-sm font-bold tracking-wide">
-              Settlement Bill & {noteLabel} (Detailed Document Preview)
+              {showNote ? `Settlement Bill & ${noteLabel} (Detailed Document Preview)` : 'Settlement Bill (Detailed Document Preview)'}
             </span>
           </div>
 
@@ -369,10 +372,11 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
 
             {/* Remarks (Positioned below Net Payable & above Debit/Credit Note) */}
             <div className="text-[10px] text-[#0b3558] font-bold bg-[#f8fafc] border border-slate-300 p-1.5 rounded-xs">
-              <strong>Remarks:</strong> {settlement.remarks || (isCredit ? 'Auto-generated Credit Note posted to vendor ledger' : 'Auto-generated Debit Note posted to vendor ledger')}
+              <strong>Remarks:</strong> {settlement.remarks || (showNote ? (isCredit ? 'Auto-generated Credit Note posted to vendor ledger' : 'Auto-generated Debit Note posted to vendor ledger') : '-')}
             </div>
 
             {/* SECTION 2: DEBIT / CREDIT NOTE */}
+            {showNote && (
             <div className="space-y-2 pt-1">
               <div className="bg-[#0b3558] text-white text-center font-bold text-xs tracking-widest py-1 uppercase rounded-xs">
                 <span className="inline-block w-5 h-px bg-[#d69e2e] align-middle mr-2"></span>
@@ -489,6 +493,7 @@ export default function SettlementBillModal({ settlement, isOpen, onClose }) {
                 </div>
               </div>
             </div>
+            )}
 
             {/* Clean Footer Divider Line */}
             <div className="h-0.5 bg-[#0b3558]"></div>

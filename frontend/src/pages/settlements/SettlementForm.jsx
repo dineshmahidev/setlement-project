@@ -513,10 +513,10 @@ export default function SettlementForm() {
     try {
       if (isEdit) {
         await api.put(`/settlements/${id}`, payload)
-        toast.success('Settlement bill & debit note updated successfully')
+        toast.success(calc.rebate_amount > 0 ? 'Settlement bill & debit note updated successfully' : 'Settlement bill updated successfully')
       } else {
         await api.post('/settlements', payload)
-        toast.success('Settlement bill & debit note created and posted to ledger')
+        toast.success(calc.rebate_amount > 0 ? 'Settlement bill & debit note created and posted to ledger' : 'Settlement bill created successfully')
       }
       navigate('/panel/settlements')
     } catch (err) {
@@ -1023,8 +1023,9 @@ export default function SettlementForm() {
             </div>
           </div>
 
-          {/* Rebate / Note Live Container (Debit or Credit Note) */}
-          {calc.rebate_amount > 0 ? (
+          {/* Rebate / Note Live Container (Debit or Credit Note) — hidden when Original Invoice Taxable Value is empty */}
+          {parseFloat(formData.original_invoice_value) > 0 ? (
+          calc.rebate_amount > 0 ? (
             calc.note_type === 'credit' ? (
               <div className="rounded-xl bg-[#065f46] p-5 text-white shadow-md space-y-4">
                 <div className="flex items-center justify-between">
@@ -1131,7 +1132,8 @@ export default function SettlementForm() {
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
               Settlement value matches or is equal to bill value. No debit / credit note adjustment needed.
             </div>
-          )}
+          )
+          ) : null}
         </div>
 
         {/* ========================================================================= */}
